@@ -25,7 +25,6 @@ type Capabilities = {
 };
 
 const MAX_CHARACTERS = 12_000;
-const MIN_USABLE_CHARACTERS = 200;
 const DEAD_STATUSES = new Set([401, 404, 410]);
 const SHELL_MARKERS = [
   "enable javascript",
@@ -56,8 +55,9 @@ function validateURL(input: string): string {
 
 function isUsable(content: string, contentType: ExtractResult["contentType"]): boolean {
   if (contentType === "pdf") return content.trim().length >= 10;
-  if (content.length < MIN_USABLE_CHARACTERS) return false;
-  const head = content.slice(0, 4000).toLowerCase();
+  const value = content.trim();
+  if (!value) return false;
+  const head = value.slice(0, 4000).toLowerCase();
   return !SHELL_MARKERS.some((marker) => head.includes(marker));
 }
 
@@ -78,9 +78,6 @@ function classify(result: Retrieved): ExtractAttempt["outcome"] {
 function detail(result: Retrieved): string | undefined {
   if (result.status !== undefined && result.status >= 400) return `HTTP ${result.status}`;
   if (!result.content) return "No content returned";
-  if (result.contentType !== "pdf" && result.content.length < MIN_USABLE_CHARACTERS) {
-    return `Only ${result.content.length} characters returned`;
-  }
   if (!isUsable(result.content, result.contentType)) return "Response appears to be a JavaScript shell or block page";
   return undefined;
 }
