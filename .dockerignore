@@ -1,0 +1,6 @@
+.env
+.git
+.gitignore
+logs
+services
+openclaygent-go

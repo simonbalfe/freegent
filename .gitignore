@@ -1,0 +1,5 @@
+/logs/
+/*.log
+/openclaygent-go
+/.env
+services/openextract/node_modules/
