@@ -115,6 +115,12 @@ func runBatchWith(ctx context.Context, request APIRequest, rows []map[string]any
 }
 
 func runBatchWithProgress(ctx context.Context, request APIRequest, rows []map[string]any, run func(context.Context, APIRequest, map[string]any) APIResult, progress func(int, APIResult)) []APIResult {
+	return runBatchIndexedProgress(ctx, request, rows, func(ctx context.Context, request APIRequest, index int, row map[string]any) APIResult {
+		return run(ctx, request, row)
+	}, progress)
+}
+
+func runBatchIndexedProgress(ctx context.Context, request APIRequest, rows []map[string]any, run func(context.Context, APIRequest, int, map[string]any) APIResult, progress func(int, APIResult)) []APIResult {
 	limit := request.Concurrency
 	if limit < 1 {
 		limit = 5
@@ -141,7 +147,7 @@ func runBatchWithProgress(ctx context.Context, request APIRequest, rows []map[st
 				if i >= len(rows) {
 					return
 				}
-				results[i] = run(ctx, request, rows[i])
+				results[i] = run(ctx, request, i, rows[i])
 				if progress != nil {
 					progress(i, results[i])
 				}
@@ -153,6 +159,10 @@ func runBatchWithProgress(ctx context.Context, request APIRequest, rows []map[st
 }
 
 func runOne(ctx context.Context, request APIRequest, values map[string]any) APIResult {
+	return runOneWithEvents(ctx, request, values, nil)
+}
+
+func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(AgentEvent)) APIResult {
 	started := time.Now()
 	runID := newRunID()
 	modelName := request.Model
@@ -196,7 +206,7 @@ func runOne(ctx context.Context, request APIRequest, values map[string]any) APIR
 		maxSteps = 5
 	}
 	tools := defaultTools()
-	agent := Agent{Model: OpenRouterModel{APIKey: key, Model: modelName, Client: &http.Client{Timeout: 90 * time.Second}, Tools: toolList(tools), MaxOutputTokens: request.MaxOutputTokens}, Tools: tools, MaxSteps: maxSteps, Verbose: request.Verbose}
+	agent := Agent{Model: OpenRouterModel{APIKey: key, Model: modelName, Client: &http.Client{Timeout: 90 * time.Second}, Tools: toolList(tools), MaxOutputTokens: request.MaxOutputTokens}, Tools: tools, MaxSteps: maxSteps, Verbose: request.Verbose, Event: event}
 	run, err := agent.Run(ctx, action, row)
 	result.DurationMS = time.Since(started).Milliseconds()
 	result.Result, result.Reasoning, result.Sources, result.AgentLog, result.Evidence, result.Tokens = run.Answer, run.Reasoning, run.Sources, run.Steps, run.Evidence, run.Tokens

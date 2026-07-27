@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/a-h/templ"
 )
@@ -158,6 +159,46 @@ func dashboardStepLabel(step Step) string {
 		return step.Kind
 	}
 	return step.Kind + " · " + step.Name
+}
+
+func dashboardEventLabel(event DashboardEvent) string {
+	if event.Row == 0 {
+		return "run"
+	}
+	return fmt.Sprintf("row %d", event.Row)
+}
+
+func dashboardEventTime(value time.Time) string {
+	return value.Local().Format("15:04:05")
+}
+
+func dashboardEventMessage(message string) string {
+	if strings.HasPrefix(message, "run start") {
+		return "Agent started research"
+	}
+	if strings.Contains(message, "model requested tool=") {
+		start := strings.Index(message, "tool=") + len("tool=")
+		end := strings.Index(message[start:], " ")
+		if end < 0 {
+			end = len(message) - start
+		}
+		return "Agent selected " + message[start:start+end]
+	}
+	if strings.Contains(message, "tool=") && strings.Contains(message, "completed") {
+		start := strings.Index(message, "tool=") + len("tool=")
+		end := strings.Index(message[start:], " ")
+		if end < 0 {
+			end = len(message) - start
+		}
+		return message[start:start+end] + " completed"
+	}
+	if strings.Contains(message, "schema-valid final answer") {
+		return "Answer passed schema validation"
+	}
+	if strings.HasPrefix(message, "finalizer start") {
+		return "Agent is finalizing the answer"
+	}
+	return message
 }
 
 func dashboardActive(job DashboardJob) bool {

@@ -11,6 +11,11 @@ type Agent struct {
 	Tools    map[string]Tool
 	MaxSteps int
 	Verbose  bool
+	Event    func(AgentEvent)
+}
+
+type AgentEvent struct {
+	Message string
 }
 
 func (a Agent) Run(ctx context.Context, action Action, row Row) (RunResult, error) {
@@ -90,7 +95,11 @@ func (a Agent) finalize(ctx context.Context, task string, action Action, ledger 
 }
 
 func (a Agent) tracef(format string, args ...any) {
+	message := fmt.Sprintf(format, args...)
+	if a.Event != nil {
+		a.Event(AgentEvent{Message: message})
+	}
 	if a.Verbose {
-		fmt.Fprintf(os.Stderr, "[agent] "+format+"\n", args...)
+		fmt.Fprintln(os.Stderr, "[agent] "+message)
 	}
 }

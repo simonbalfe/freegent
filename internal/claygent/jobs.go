@@ -13,14 +13,21 @@ type JobStore struct {
 }
 
 type DashboardJob struct {
-	ID          string         `json:"id"`
-	Status      string         `json:"status"`
-	Total       int            `json:"total"`
-	Completed   int            `json:"completed"`
-	StartedAt   time.Time      `json:"startedAt,omitempty"`
-	FinishedAt  time.Time      `json:"finishedAt,omitempty"`
-	Rows        []DashboardRow `json:"rows"`
-	LatestEvent string         `json:"latestEvent,omitempty"`
+	ID          string           `json:"id"`
+	Status      string           `json:"status"`
+	Total       int              `json:"total"`
+	Completed   int              `json:"completed"`
+	StartedAt   time.Time        `json:"startedAt,omitempty"`
+	FinishedAt  time.Time        `json:"finishedAt,omitempty"`
+	Rows        []DashboardRow   `json:"rows"`
+	Events      []DashboardEvent `json:"events"`
+	LatestEvent string           `json:"latestEvent,omitempty"`
+}
+
+type DashboardEvent struct {
+	At      time.Time `json:"at"`
+	Row     int       `json:"row,omitempty"`
+	Message string    `json:"message"`
 }
 
 type DashboardRow struct {
@@ -37,7 +44,7 @@ func NewJobStore() *JobStore {
 
 func (s *JobStore) Start(request APIRequest, rows []map[string]any) string {
 	id := newRunID()
-	job := &DashboardJob{ID: id, Status: "queued", Total: len(rows), Rows: make([]DashboardRow, len(rows))}
+	job := &DashboardJob{ID: id, Status: "queued", Total: len(rows), Rows: make([]DashboardRow, len(rows)), Events: []DashboardEvent{{At: time.Now(), Message: "Job queued"}}}
 	for index, row := range rows {
 		job.Rows[index] = DashboardRow{Index: index, Input: row, Status: "queued"}
 	}
@@ -53,8 +60,16 @@ func (s *JobStore) run(id string, request APIRequest, rows []map[string]any) {
 		job.Status = "running"
 		job.StartedAt = time.Now()
 		job.LatestEvent = "Agent run started"
+		job.Events = append(job.Events, DashboardEvent{At: time.Now(), Message: "Agent run started"})
 	})
-	results := runBatchWithProgress(context.Background(), request, rows, runOne, func(index int, result APIResult) {
+	results := runBatchIndexedProgress(context.Background(), request, rows, func(ctx context.Context, request APIRequest, index int, values map[string]any) APIResult {
+		return runOneWithEvents(ctx, request, values, func(event AgentEvent) {
+			s.update(id, func(job *DashboardJob) {
+				job.Events = append(job.Events, DashboardEvent{At: time.Now(), Row: index + 1, Message: event.Message})
+				job.LatestEvent = event.Message
+			})
+		})
+	}, func(index int, result APIResult) {
 		s.update(id, func(job *DashboardJob) {
 			status := "completed"
 			if result.Error != "" {
@@ -67,6 +82,7 @@ func (s *JobStore) run(id string, request APIRequest, rows []map[string]any) {
 			job.Rows[index].AgentLog = result.AgentLog
 			job.Completed++
 			job.LatestEvent = "Row " + strconv.Itoa(index+1) + " " + status
+			job.Events = append(job.Events, DashboardEvent{At: time.Now(), Row: index + 1, Message: "Row " + strconv.Itoa(index+1) + " " + status})
 		})
 	})
 	s.update(id, func(job *DashboardJob) {
@@ -91,6 +107,7 @@ func (s *JobStore) Get(id string) (DashboardJob, bool) {
 	}
 	copy := *job
 	copy.Rows = append([]DashboardRow(nil), job.Rows...)
+	copy.Events = append([]DashboardEvent(nil), job.Events...)
 	s.mu.RUnlock()
 	return copy, true
 }
