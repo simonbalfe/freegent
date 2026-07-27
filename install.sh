@@ -16,6 +16,10 @@ if ! command -v go >/dev/null 2>&1; then
   echo "Go is required to install the freegent CLI. Install Go and run this script again."
   exit 1
 fi
+if ! command -v curl >/dev/null 2>&1; then
+  echo "curl is required. Install curl and run this script again."
+  exit 1
+fi
 if ! docker compose version >/dev/null 2>&1; then
   echo "Docker Compose is required. Update Docker Desktop and run this script again."
   exit 1
