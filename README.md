@@ -20,8 +20,9 @@ Install the full stack on a new machine:
 curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh | bash
 ```
 
-The installer clones the repo, asks for provider keys, builds the Go API and
-OpenExtract images, and starts Docker Compose.
+The installer clones the repo, asks for provider keys, pulls the prebuilt Go
+API and OpenExtract images from GHCR, and starts Docker Compose. If GHCR is
+unavailable, it falls back to building locally.
 
 ```bash
 cp .env.example .env

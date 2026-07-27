@@ -57,8 +57,12 @@ else
   chmod 600 .env
 fi
 
-echo "Building and starting Freegent"
-docker compose up -d --build
+echo "Pulling and starting prebuilt Freegent images"
+if ! docker compose pull; then
+  echo "Prebuilt images could not be pulled. Building locally instead."
+  docker compose build
+fi
+docker compose up -d
 
 if [ -w /usr/local/bin ]; then
   cli_path=/usr/local/bin/freegent
