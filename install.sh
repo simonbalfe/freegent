@@ -46,7 +46,7 @@ else
   exa_key="${FREEGENT_EXA_API_KEY:-}"
   tavily_key="${FREEGENT_TAVILY_API_KEY:-}"
   apify_key="${FREEGENT_APIFY_API_TOKEN:-}"
-  if [ -t 0 ] && [ -r /dev/tty ]; then
+  if [ -r /dev/tty ]; then
     [ -n "$openrouter_key" ] || read -r -p "OpenRouter API key: " openrouter_key </dev/tty
     [ -n "$serper_key" ] || read -r -p "Serper API key (recommended): " serper_key </dev/tty
     [ -n "$exa_key" ] || read -r -p "Exa API key: " exa_key </dev/tty
