@@ -14,6 +14,15 @@ There is no queue or database yet. Requests run synchronously with limited concu
 
 ## Start
 
+Install the full stack on a new machine:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh | bash
+```
+
+The installer clones the repo, asks for provider keys, builds the Go API and
+OpenExtract images, and starts Docker Compose.
+
 ```bash
 cp .env.example .env
 docker compose up -d --build
