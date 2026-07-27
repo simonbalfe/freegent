@@ -16,39 +16,40 @@ import (
 	"strings"
 )
 
-const cliHelp = `freegent — per-row web-research agent
+const cliHelp = `freegent — research rows through the Freegent API
 
-Usage:
-  freegent --instructions <text> --template <text> --schema <json> [row options]
-  freegent --action <file.json> [row options]
-  freegent serve --port 8080
+Quick start:
+  freegent --instructions "Research this company." \
+    --template "Research {{company}} at {{domain}}." \
+    --schema '{"summary":"string","source":"string"}' \
+    --row 'company=Figma,domain=figma.com' --pretty
 
-Research:
-  --instructions <text>
-  --template <text>
-  --schema <json>
-  --action <file.json>
+Research a CSV:
+  freegent --rows companies.csv \
+    --instructions "Research each company for GTM outbound." \
+    --template "Research {{company}} at {{domain}}." \
+    --schema '{"product":"string","targetCustomer":"string"}' --json
+
+Required:
+  --instructions  What the agent should find
+  --template      Prompt template using row fields, such as {{company}}
+  --schema        JSON fields to return
 
 Rows:
-  --input k=v
-  --row k=v,k=v
-  --rows <file.csv>
-  --require <field>
+  --row k=v,k=v   One row (repeatable)
+  --input k=v     One row field
+  --rows file.csv CSV batch
 
-Runtime:
-  --model <openrouter-id>
-  --max-steps <n>
-  --max-output-tokens <n>
-  --concurrency <n>
-  --api-url <url>       default http://localhost:8080
-  --verbose
-  --demo
+Useful options:
+  --concurrency n Run rows in parallel (default: 5)
+  --api-url url   API address (default: http://localhost:8080)
+  --pretty        Human-readable results
+  --json          Full JSON results
+  --out file      Save JSON results to a file
+  --action file   Load a reusable job configuration
 
-Output:
-  --json
-  --pretty
-  --out <file>
-  --help`
+Run the local API:
+  freegent serve --port 8080`
 
 type repeatedInputs map[string]string
 
