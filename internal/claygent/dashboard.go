@@ -23,7 +23,7 @@ func (s *JobStore) List() []DashboardJob {
 }
 
 func handleJob(writer http.ResponseWriter, request *http.Request, store *JobStore) {
-	input, rows, err := decodeJobRequest(request)
+	input, rows, err := decodeJobRequest(writer, request)
 	if err != nil {
 		writeJSON(writer, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
@@ -73,9 +73,9 @@ func handleDashboardJobStatus(writer http.ResponseWriter, request *http.Request,
 	renderDashboard(writer, DashboardJobStatus(job))
 }
 
-func decodeJobRequest(request *http.Request) (APIRequest, []map[string]any, error) {
+func decodeJobRequest(writer http.ResponseWriter, request *http.Request) (APIRequest, []map[string]any, error) {
 	defer request.Body.Close()
-	decoder := json.NewDecoder(http.MaxBytesReader(nil, request.Body, 2<<20))
+	decoder := json.NewDecoder(http.MaxBytesReader(writer, request.Body, 2<<20))
 	decoder.DisallowUnknownFields()
 	var input APIRequest
 	if err := decoder.Decode(&input); err != nil {
