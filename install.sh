@@ -64,12 +64,21 @@ else
   chmod 600 .env
 fi
 
+if ! grep -q '^OPENROUTER_API_KEY=.' .env; then
+  echo "OPENROUTER_API_KEY is required. Run again and provide it."
+  exit 1
+fi
+if ! grep -Eq '^(SERPER_API_KEY|EXA_API_KEY|TAVILY_API_KEY)=.' .env; then
+  echo "At least one search key is required: SERPER_API_KEY, EXA_API_KEY, or TAVILY_API_KEY."
+  exit 1
+fi
+
 echo "Pulling and starting prebuilt Freegent images"
 if ! docker compose pull; then
   echo "Prebuilt images could not be pulled. Building locally instead."
   docker compose build
 fi
-docker compose up -d
+docker compose up -d --force-recreate
 
 if [ -w /usr/local/bin ]; then
   cli_path=/usr/local/bin/freegent
@@ -85,7 +94,7 @@ cp skills/freegent/SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
 
 echo "Waiting for services"
 for attempt in $(seq 1 30); do
-  if curl -fsS http://localhost:8080/health >/dev/null 2>&1 && curl -fsS http://localhost:8081/healthz >/dev/null 2>&1; then
+  if curl -fsS http://localhost:8080/health >/dev/null 2>&1 && curl -fsS http://localhost:8081/healthz >/dev/null 2>&1 && docker compose exec -T api sh -c 'test -n "$OPENROUTER_API_KEY"'; then
     echo
     echo "Freegent is ready: http://localhost:8080/dashboard"
     echo "CLI installed at $cli_path"
