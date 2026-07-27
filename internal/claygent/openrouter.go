@@ -163,7 +163,7 @@ func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 	}
 	answer, err := parseJSONObject(message.Content)
 	if err != nil {
-		return ModelResponse{}, fmt.Errorf("model final answer: %w", err)
+		return ModelResponse{Usage: usage}, nil
 	}
 	reasoning, _ := answer["reasoning"].(string)
 	if nested, ok := answer["answer"].(map[string]any); ok {
