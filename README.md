@@ -21,6 +21,9 @@ docker compose up -d --build
 
 Add your provider keys to `.env`, then check the services:
 
+Serper is the default search provider. Exa and Tavily are automatic fallbacks
+when Serper is not configured or returns an error.
+
 ```bash
 curl http://localhost:8080/health
 curl http://localhost:8081/healthz
