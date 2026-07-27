@@ -31,14 +31,14 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Freegent</title><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a}textarea,input{width:100%;box-sizing:border-box;margin:6px 0 14px;padding:9px}textarea{min-height:90px}button{padding:9px 14px}.card{border:1px solid #ddd;border-radius:8px;padding:16px;margin:16px 0}.muted{color:#667}.ok{color:#18794e}.error{color:#b42318}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #eee;padding:8px}</style></head><body><h1>Freegent</h1><p class=\"muted\">Submit a research job and watch each row complete.</p><form method=\"post\" action=\"/dashboard/jobs\" class=\"card\"><label>Instructions</label> <textarea name=\"instructions\">Use current web evidence and cite the source.</textarea> <label>Template</label> <input name=\"template\" value=\"Research the supplied row.\"> <label>Output schema</label> <textarea name=\"schema\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Freegent</title><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a}textarea,input{width:100%;box-sizing:border-box;margin:6px 0 14px;padding:9px}textarea{min-height:90px}button{padding:9px 14px}.card{border:1px solid #ddd;border-radius:8px;padding:16px;margin:16px 0}.muted{color:#667}.ok{color:#18794e}.error{color:#b42318}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #eee;padding:8px}</style></head><body><h1>Freegent</h1><p class=\"muted\">Research target accounts for GTM outbound and watch each row complete.</p><form method=\"post\" action=\"/dashboard/jobs\" class=\"card\"><label>Instructions</label> <textarea name=\"instructions\">Research each account using current first-party evidence. Assess whether it looks like a good GTM outbound prospect. Do not guess unsupported facts.</textarea> <label>Template</label> <input name=\"template\" value=\"Research {{company}} ({{domain}}) for GTM outbound. What do they sell, who do they serve, and why might they be a good prospect?\"> <label>Output schema</label> <textarea name=\"schema\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(`{"answer":"string","source":"string"}`)
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(`{"company":"string","product":"string","targetCustomer":"string","fit":"high|medium|low","rationale":"string","source":"string"}`)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/claygent/dashboard.templ`, Line: 24, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/claygent/dashboard.templ`, Line: 24, Col: 160}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -49,9 +49,9 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(`[{"company":"Mastra","domain":"mastra.ai"}]`)
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(`[{"company":"Linear","domain":"linear.app"}]`)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/claygent/dashboard.templ`, Line: 26, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/claygent/dashboard.templ`, Line: 26, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {

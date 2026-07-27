@@ -14,16 +14,16 @@ templ DashboardPage(jobs []DashboardJob) {
 </head>
 <body>
   <h1>Freegent</h1>
-  <p class="muted">Submit a research job and watch each row complete.</p>
+  <p class="muted">Research target accounts for GTM outbound and watch each row complete.</p>
   <form method="post" action="/dashboard/jobs" class="card">
     <label>Instructions</label>
-    <textarea name="instructions">Use current web evidence and cite the source.</textarea>
+    <textarea name="instructions">Research each account using current first-party evidence. Assess whether it looks like a good GTM outbound prospect. Do not guess unsupported facts.</textarea>
     <label>Template</label>
-    <input name="template" value="Research the supplied row." />
+    <input name="template" value="Research {{company}} ({{domain}}) for GTM outbound. What do they sell, who do they serve, and why might they be a good prospect?" />
     <label>Output schema</label>
-    <textarea name="schema">{ `{"answer":"string","source":"string"}` }</textarea>
+    <textarea name="schema">{ `{"company":"string","product":"string","targetCustomer":"string","fit":"high|medium|low","rationale":"string","source":"string"}` }</textarea>
     <label>Rows (JSON array)</label>
-    <textarea name="rows">{ `[{"company":"Mastra","domain":"mastra.ai"}]` }</textarea>
+    <textarea name="rows">{ `[{"company":"Linear","domain":"linear.app"}]` }</textarea>
     <button type="submit">Start research</button>
   </form>
   <h2>Recent jobs</h2>
