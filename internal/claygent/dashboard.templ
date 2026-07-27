@@ -64,11 +64,39 @@ templ DashboardJobStatus(job DashboardJob) {
 >
   <strong>{ job.Status }</strong>
   <p class="muted">{ fmt.Sprintf("%d/%d rows complete", job.Completed, job.Total) } · { job.LatestEvent }</p>
+  <p><strong>Tokens:</strong> { fmt.Sprintf("%d input · %d output", dashboardTokens(job).Input, dashboardTokens(job).Output) }</p>
   <table>
-    <thead><tr><th>Row</th><th>Status</th><th>Input</th><th>Steps</th><th>Error</th></tr></thead>
+    <thead><tr><th>Row</th><th>Status</th><th>Tokens</th><th>Steps</th><th>Details</th></tr></thead>
     <tbody>
       for _, row := range job.Rows {
-        <tr><td>{ fmt.Sprintf("%d", row.Index + 1) }</td><td>{ row.Status }</td><td><code>{ dashboardInput(row.Input) }</code></td><td>{ fmt.Sprintf("%d", len(row.AgentLog)) }</td><td class="error">{ row.Result.Error }</td></tr>
+        <tr>
+          <td>{ fmt.Sprintf("%d", row.Index + 1) }</td>
+          <td>{ row.Status }</td>
+          <td>{ fmt.Sprintf("%d in · %d out", row.Result.Tokens.Input, row.Result.Tokens.Output) }</td>
+          <td>{ fmt.Sprintf("%d", len(row.AgentLog)) }</td>
+          <td><details><summary>View row trace</summary>
+            <p><strong>Input</strong></p><pre>{ dashboardInput(row.Input) }</pre>
+            <p><strong>Steps</strong></p>
+            if len(row.AgentLog) == 0 {
+              <p class="muted">No steps recorded yet.</p>
+            } else {
+              <ol>
+                for _, step := range row.AgentLog {
+                  @DashboardStep(step)
+                }
+              </ol>
+            }
+            if row.Result.Result != nil {
+              <p><strong>Answer</strong></p><pre>{ dashboardJSON(row.Result.Result) }</pre>
+            }
+            if len(row.Result.Sources) > 0 {
+              @DashboardSources(row.Result.Sources)
+            }
+            if row.Result.Error != "" {
+              <p class="error"><strong>Error:</strong> { row.Result.Error }</p>
+            }
+          </details></td>
+        </tr>
       }
     </tbody>
   </table>
@@ -76,4 +104,22 @@ templ DashboardJobStatus(job DashboardJob) {
     <p><a href={ "/jobs/" + job.ID }>View JSON status</a></p>
   }
 </div>
+}
+
+templ DashboardStep(step Step) {
+<li>
+  <strong>{ dashboardStepLabel(step) }</strong>
+  if len(step.Input) > 0 {
+    <pre>{ dashboardInput(step.Input) }</pre>
+  }
+</li>
+}
+
+templ DashboardSources(sources []string) {
+<p><strong>Sources</strong></p>
+<ul>
+  for _, source := range sources {
+    <li><a href={ source } target="_blank" rel="noreferrer">{ source }</a></li>
+  }
+</ul>
 }

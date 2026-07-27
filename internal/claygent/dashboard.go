@@ -140,6 +140,26 @@ func dashboardInput(value map[string]any) string {
 	return string(data)
 }
 
+func dashboardJSON(value any) string {
+	data, _ := json.Marshal(value)
+	return string(data)
+}
+
+func dashboardTokens(job DashboardJob) TokenUsage {
+	total := TokenUsage{}
+	for _, row := range job.Rows {
+		total.Add(row.Result.Tokens)
+	}
+	return total
+}
+
+func dashboardStepLabel(step Step) string {
+	if step.Name == "" {
+		return step.Kind
+	}
+	return step.Kind + " · " + step.Name
+}
+
 func dashboardActive(job DashboardJob) bool {
 	return job.Status == "queued" || job.Status == "running"
 }
