@@ -1,0 +1,79 @@
+package claygent
+
+import "fmt"
+
+templ DashboardPage(jobs []DashboardJob) {
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Freegent</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a}textarea,input{width:100%;box-sizing:border-box;margin:6px 0 14px;padding:9px}textarea{min-height:90px}button{padding:9px 14px}.card{border:1px solid #ddd;border-radius:8px;padding:16px;margin:16px 0}.muted{color:#667}.ok{color:#18794e}.error{color:#b42318}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #eee;padding:8px}</style>
+</head>
+<body>
+  <h1>Freegent</h1>
+  <p class="muted">Submit a research job and watch each row complete.</p>
+  <form method="post" action="/dashboard/jobs" class="card">
+    <label>Instructions</label>
+    <textarea name="instructions">Use current web evidence and cite the source.</textarea>
+    <label>Template</label>
+    <input name="template" value="Research the supplied row." />
+    <label>Output schema</label>
+    <textarea name="schema">{ `{"answer":"string","source":"string"}` }</textarea>
+    <label>Rows (JSON array)</label>
+    <textarea name="rows">{ `[{"company":"Mastra","domain":"mastra.ai"}]` }</textarea>
+    <button type="submit">Start research</button>
+  </form>
+  <h2>Recent jobs</h2>
+  if len(jobs) == 0 {
+    <p class="muted">No jobs yet.</p>
+  } else {
+    for _, job := range jobs {
+      <div class="card"><a href={ "/dashboard/jobs/" + job.ID }>{ job.ID }</a> · { job.Status } · { fmt.Sprintf("%d/%d rows", job.Completed, job.Total) }</div>
+    }
+  }
+</body>
+</html>
+}
+
+templ DashboardJobPage(job DashboardJob) {
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Freegent job</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a}.card{border:1px solid #ddd;border-radius:8px;padding:16px;margin:16px 0}.muted{color:#667}.error{color:#b42318}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #eee;padding:8px}pre{white-space:pre-wrap}</style>
+</head>
+<body>
+  <p><a href="/dashboard">← New job</a></p>
+  <h1>Job { job.ID }</h1>
+  <div id="job-status">@DashboardJobStatus(job)</div>
+</body>
+</html>
+}
+
+templ DashboardJobStatus(job DashboardJob) {
+<div class="card" 
+  if dashboardActive(job) {
+    hx-get={ "/dashboard/jobs/" + job.ID + "/status" } hx-trigger="every 1s" hx-target="#job-status" hx-swap="innerHTML"
+  }
+>
+  <strong>{ job.Status }</strong>
+  <p class="muted">{ fmt.Sprintf("%d/%d rows complete", job.Completed, job.Total) } · { job.LatestEvent }</p>
+  <table>
+    <thead><tr><th>Row</th><th>Status</th><th>Input</th><th>Steps</th><th>Error</th></tr></thead>
+    <tbody>
+      for _, row := range job.Rows {
+        <tr><td>{ fmt.Sprintf("%d", row.Index + 1) }</td><td>{ row.Status }</td><td><code>{ dashboardInput(row.Input) }</code></td><td>{ fmt.Sprintf("%d", len(row.AgentLog)) }</td><td class="error">{ row.Result.Error }</td></tr>
+      }
+    </tbody>
+  </table>
+  if !dashboardActive(job) {
+    <p><a href={ "/jobs/" + job.ID }>View JSON status</a></p>
+  }
+</div>
+}

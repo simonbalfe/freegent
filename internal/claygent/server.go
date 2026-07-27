@@ -54,6 +54,25 @@ func serve(args []string) {
 		writeJSON(writer, http.StatusOK, map[string]bool{"ok": true})
 	})
 	mux.HandleFunc("POST /run", handleRun)
+	store := NewJobStore()
+	mux.HandleFunc("POST /jobs", func(writer http.ResponseWriter, request *http.Request) {
+		handleJob(writer, request, store)
+	})
+	mux.HandleFunc("GET /jobs/{id}", func(writer http.ResponseWriter, request *http.Request) {
+		handleJobJSON(writer, request, store)
+	})
+	mux.HandleFunc("GET /dashboard", func(writer http.ResponseWriter, request *http.Request) {
+		handleDashboard(writer, request, store)
+	})
+	mux.HandleFunc("POST /dashboard/jobs", func(writer http.ResponseWriter, request *http.Request) {
+		handleDashboardJob(writer, request, store)
+	})
+	mux.HandleFunc("GET /dashboard/jobs/{id}", func(writer http.ResponseWriter, request *http.Request) {
+		handleDashboardJobPage(writer, request, store)
+	})
+	mux.HandleFunc("GET /dashboard/jobs/{id}/status", func(writer http.ResponseWriter, request *http.Request) {
+		handleDashboardJobStatus(writer, request, store)
+	})
 	fmt.Fprintf(os.Stderr, "openclaygent-go listening on http://localhost:%d\n", *port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), mux); err != nil {
 		fmt.Fprintf(os.Stderr, "openclaygent-go server stopped: %v\n", err)
@@ -88,10 +107,14 @@ func handleRun(writer http.ResponseWriter, request *http.Request) {
 }
 
 func runBatch(ctx context.Context, request APIRequest, rows []map[string]any) []APIResult {
-	return runBatchWith(ctx, request, rows, runOne)
+	return runBatchWithProgress(ctx, request, rows, runOne, nil)
 }
 
 func runBatchWith(ctx context.Context, request APIRequest, rows []map[string]any, run func(context.Context, APIRequest, map[string]any) APIResult) []APIResult {
+	return runBatchWithProgress(ctx, request, rows, run, nil)
+}
+
+func runBatchWithProgress(ctx context.Context, request APIRequest, rows []map[string]any, run func(context.Context, APIRequest, map[string]any) APIResult, progress func(int, APIResult)) []APIResult {
 	limit := request.Concurrency
 	if limit < 1 {
 		limit = 5
@@ -119,6 +142,9 @@ func runBatchWith(ctx context.Context, request APIRequest, rows []map[string]any
 					return
 				}
 				results[i] = run(ctx, request, rows[i])
+				if progress != nil {
+					progress(i, results[i])
+				}
 			}
 		}()
 	}

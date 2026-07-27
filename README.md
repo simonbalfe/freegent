@@ -26,6 +26,8 @@ curl http://localhost:8080/health
 curl http://localhost:8081/healthz
 ```
 
+Open [http://localhost:8080/dashboard](http://localhost:8080/dashboard) to submit a JSON row batch and watch each row update as the agent runs.
+
 Watch logs:
 
 ```bash

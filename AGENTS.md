@@ -6,12 +6,15 @@
 - The Go CLI always submits work to the Go API. Keep `--demo` as the only offline exception.
 - `internal/claygent` owns the CLI, HTTP API, synchronous row worker pool, agent loop, output schemas, OpenRouter adapter, search ladder, URL provenance, run logs, and Apify enrichment tools.
 - `internal/openextract` is only a typed HTTP client for the standalone OpenExtract service.
+- `internal/claygent/jobs.go` owns the in-memory dashboard job status used by the HTMX dashboard.
+- `internal/claygent/dashboard.templ` and its generated Go file render the server-side dashboard.
 - `services/openextract` is a self-contained TypeScript API. It owns direct retrieval, HTML cleanup, Markdown conversion, structured data, link discovery, PDF parsing, Patchright browsers, proxies, solvers, and Tavily extraction fallback.
 - `compose.yaml` runs two containers: `api` and `openextract`.
 
 Keep the Go API independent from extraction implementation details. OpenExtract must remain deployable on a separate server, with the Go API configured through `OPENEXTRACT_URL`.
 
 Do not add queueing, Postgres, or River until explicitly requested. The current API processes a submitted batch synchronously with bounded concurrency.
+The dashboard's `POST /jobs` endpoint is an in-memory asynchronous view over the same worker loop; job state is lost when the API restarts.
 
 ## Development
 
