@@ -60,15 +60,28 @@ fi
 echo "Building and starting Freegent"
 docker compose up -d --build
 
-mkdir -p "$HOME/.local/bin"
-go build -trimpath -o "$HOME/.local/bin/freegent" ./cmd/openclaygent-go
+if [ -w /usr/local/bin ]; then
+  cli_path=/usr/local/bin/freegent
+else
+  mkdir -p "$HOME/.local/bin"
+  cli_path="$HOME/.local/bin/freegent"
+fi
+go build -trimpath -o "$cli_path" ./cmd/openclaygent-go
+
+mkdir -p "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
+cp skills/freegent/SKILL.md "$HOME/.codex/skills/freegent/SKILL.md"
+cp skills/freegent/SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
 
 echo "Waiting for services"
 for attempt in $(seq 1 30); do
   if curl -fsS http://localhost:8080/health >/dev/null 2>&1 && curl -fsS http://localhost:8081/healthz >/dev/null 2>&1; then
     echo
     echo "Freegent is ready: http://localhost:8080/dashboard"
-    echo "CLI installed at $HOME/.local/bin/freegent"
+    echo "CLI installed at $cli_path"
+    if [[ ":$PATH:" != *":$(dirname "$cli_path"):"* ]]; then
+      echo "Add $(dirname "$cli_path") to PATH to call freegent from any shell."
+    fi
+    echo "Codex and Claude skill installed."
     echo "CLI usage: freegent --help"
     exit 0
   fi
