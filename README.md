@@ -1,6 +1,6 @@
-# OpenClaygent Go
+# Freegent
 
-OpenClaygent Go is a row-based research agent with three clear parts:
+Freegent is a row-based research agent with three clear parts:
 
 ```text
 Go CLI
