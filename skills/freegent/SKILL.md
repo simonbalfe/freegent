@@ -14,6 +14,8 @@ curl -fsS http://localhost:8080/health
 freegent --help
 ```
 
+The live dashboard runs at [http://localhost:8080/dashboard](http://localhost:8080/dashboard). Use it to submit jobs interactively and inspect row progress, agent steps, evidence sources, answers, errors, and token usage.
+
 ## Submit one row
 
 ```bash
@@ -40,6 +42,8 @@ freegent \
 ```
 
 Use `--out results.json` to save the full response. Use `--api-url` when the API is on another host.
+
+For a visual live trace while a batch runs, open `http://localhost:8080/dashboard` in a browser. The dashboard is optional; the CLI and API remain the primary automation interface.
 
 ## What Freegent handles
 
