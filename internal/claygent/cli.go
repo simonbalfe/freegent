@@ -16,12 +16,12 @@ import (
 	"strings"
 )
 
-const cliHelp = `openclaygent-go — per-row web-research agent
+const cliHelp = `freegent — per-row web-research agent
 
 Usage:
-  openclaygent-go --instructions <text> --template <text> --schema <json> [row options]
-  openclaygent-go --action <file.json> [row options]
-  openclaygent-go serve --port 8080
+  freegent --instructions <text> --template <text> --schema <json> [row options]
+  freegent --action <file.json> [row options]
+  freegent serve --port 8080
 
 Research:
   --instructions <text>
