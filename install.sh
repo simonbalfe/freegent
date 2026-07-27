@@ -35,17 +35,24 @@ fi
 
 cd "$install_dir"
 
-if [ -f .env ]; then
+if [ -f .env ] && [ "${FREEGENT_REFRESH_KEYS:-0}" != "1" ]; then
   echo "Keeping existing .env"
 else
-  cp .env.example .env
+  [ -f .env ] || cp .env.example .env
   echo
   echo "Enter provider keys. Leave a key blank to use the next fallback."
-  read -r -p "OpenRouter API key: " openrouter_key
-  read -r -p "Serper API key (recommended): " serper_key
-  read -r -p "Exa API key: " exa_key
-  read -r -p "Tavily API key: " tavily_key
-  read -r -p "Apify API token (optional): " apify_key
+  openrouter_key="${FREEGENT_OPENROUTER_API_KEY:-}"
+  serper_key="${FREEGENT_SERPER_API_KEY:-}"
+  exa_key="${FREEGENT_EXA_API_KEY:-}"
+  tavily_key="${FREEGENT_TAVILY_API_KEY:-}"
+  apify_key="${FREEGENT_APIFY_API_TOKEN:-}"
+  if [ -t 0 ] && [ -r /dev/tty ]; then
+    [ -n "$openrouter_key" ] || read -r -p "OpenRouter API key: " openrouter_key </dev/tty
+    [ -n "$serper_key" ] || read -r -p "Serper API key (recommended): " serper_key </dev/tty
+    [ -n "$exa_key" ] || read -r -p "Exa API key: " exa_key </dev/tty
+    [ -n "$tavily_key" ] || read -r -p "Tavily API key: " tavily_key </dev/tty
+    [ -n "$apify_key" ] || read -r -p "Apify API token (optional): " apify_key </dev/tty
+  fi
 
   {
     printf 'OPENROUTER_API_KEY=%s\n' "$openrouter_key"
