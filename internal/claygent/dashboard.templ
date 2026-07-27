@@ -23,7 +23,18 @@ templ DashboardPage(jobs []DashboardJob) {
     <label>Output schema</label>
     <textarea name="schema">{ `{"company":"string","product":"string","targetCustomer":"string","fit":"high|medium|low","rationale":"string","source":"string"}` }</textarea>
     <label>Rows (JSON array)</label>
-    <textarea name="rows">{ `[{"company":"Linear","domain":"linear.app"}]` }</textarea>
+    <textarea name="rows">{ `[
+  {"company":"Linear","domain":"linear.app"},
+  {"company":"Notion","domain":"notion.so"},
+  {"company":"Vercel","domain":"vercel.com"},
+  {"company":"Supabase","domain":"supabase.com"},
+  {"company":"Sentry","domain":"sentry.io"},
+  {"company":"Resend","domain":"resend.com"},
+  {"company":"PostHog","domain":"posthog.com"},
+  {"company":"Clerk","domain":"clerk.com"},
+  {"company":"Retool","domain":"retool.com"},
+  {"company":"Figma","domain":"figma.com"}
+]` }</textarea>
     <button type="submit">Start research</button>
   </form>
   <h2>Recent jobs</h2>
