@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -137,12 +138,32 @@ func renderDashboard(writer http.ResponseWriter, component templ.Component) {
 }
 
 func dashboardInput(value map[string]any) string {
-	data, _ := json.Marshal(value)
-	return string(data)
+	return dashboardPretty(value)
 }
 
-func dashboardJSON(value any) string {
-	data, _ := json.Marshal(value)
+type DashboardField struct {
+	Key   string
+	Value string
+}
+
+func dashboardFields(value map[string]any) []DashboardField {
+	keys := make([]string, 0, len(value))
+	for key := range value {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	fields := make([]DashboardField, 0, len(keys))
+	for _, key := range keys {
+		fields = append(fields, DashboardField{Key: key, Value: dashboardPretty(value[key])})
+	}
+	return fields
+}
+
+func dashboardPretty(value any) string {
+	if text, ok := value.(string); ok {
+		return text
+	}
+	data, _ := json.MarshalIndent(value, "", "  ")
 	return string(data)
 }
 
@@ -158,7 +179,7 @@ func dashboardStepLabel(step Step) string {
 	if step.Name == "" {
 		return step.Kind
 	}
-	return step.Kind + " · " + step.Name
+	return strings.Title(step.Kind) + " · " + step.Name
 }
 
 func dashboardEventLabel(event DashboardEvent) string {

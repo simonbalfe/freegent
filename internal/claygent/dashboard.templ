@@ -46,7 +46,7 @@ templ DashboardJobPage(job DashboardJob) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Freegent job</title>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}.card{background:#fff;border:1px solid #e2e4e8;border-radius:12px;padding:20px;margin:16px 0;box-shadow:0 2px 8px #17202a0a}.muted{color:#667085}.error{color:#b42318}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.metric{background:#f5f7fa;border-radius:8px;padding:12px}.metric strong{display:block;font-size:20px}.flow{background:#101828;color:#e6edf3;border-radius:8px;padding:14px;max-height:280px;overflow:auto;font:13px ui-monospace,monospace}.event{padding:6px 0;border-bottom:1px solid #ffffff1f}.event span{color:#98a2b3;margin-right:12px}.row-card{border:1px solid #e2e4e8;border-radius:10px;padding:16px;margin:12px 0}.row-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.status{color:#18794e;font-weight:600}.tokens{color:#667085;font-size:14px}pre{white-space:pre-wrap;overflow:auto;background:#f5f7fa;padding:10px;border-radius:6px}details{margin-top:12px}summary{cursor:pointer;font-weight:600}a{color:#175cd3}</style>
+  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}.card{background:#fff;border:1px solid #e2e4e8;border-radius:12px;padding:20px;margin:16px 0;box-shadow:0 2px 8px #17202a0a}.muted{color:#667085}.error{color:#b42318}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.metric{background:#f5f7fa;border-radius:8px;padding:12px}.metric strong{display:block;font-size:20px}.flow{background:#101828;color:#e6edf3;border-radius:8px;padding:14px;max-height:280px;overflow:auto;font:13px ui-monospace,monospace}.event{padding:6px 0;border-bottom:1px solid #ffffff1f}.event span{color:#98a2b3;margin-right:12px}.row-card{border:1px solid #e2e4e8;border-radius:10px;padding:16px;margin:12px 0}.row-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.status{color:#18794e;font-weight:600}.tokens{color:#667085;font-size:14px}.answer,.step-input{display:grid;gap:10px}.answer-row,.step-input-row{border-top:1px solid #eaecf0;padding-top:10px}.answer-row dt,.step-input-row dt{font-weight:600}.answer-row dd,.step-input-row dd{margin:4px 0 0;white-space:pre-wrap}.step{margin:14px 0}.step-title{font-weight:600;font-size:17px}pre{white-space:pre-wrap;overflow:auto;background:#f5f7fa;padding:10px;border-radius:6px}details{margin-top:12px}summary{cursor:pointer;font-weight:600}a{color:#175cd3}</style>
 </head>
 <body>
   <p><a href="/dashboard">← New job</a></p>
@@ -71,7 +71,7 @@ templ DashboardJobStatus(job DashboardJob) {
   <h3>Live activity</h3>
   <div class="flow">
     for _, event := range job.Events {
-      <div class="event"><span>{ dashboardEventTime(event.At) } · { dashboardEventLabel(event) }</span>{ dashboardEventMessage(event.Message) }</div>
+      <div class="event"><span>{ dashboardEventTime(event.At) } · { dashboardEventLabel(event) }</span> <strong>{ dashboardEventMessage(event.Message) }</strong></div>
     }
   </div>
   <h3>Rows</h3>
@@ -90,7 +90,12 @@ templ DashboardJobStatus(job DashboardJob) {
           </ol>
         }
         if row.Result.Result != nil {
-          <p><strong>Answer</strong></p><pre>{ dashboardJSON(row.Result.Result) }</pre>
+          <p><strong>Answer</strong></p>
+          <dl class="answer">
+            for _, field := range dashboardFields(row.Result.Result) {
+              <div class="answer-row"><dt>{ field.Key }</dt><dd>{ field.Value }</dd></div>
+            }
+          </dl>
         }
         if len(row.Result.Sources) > 0 {
           @DashboardSources(row.Result.Sources)
@@ -108,10 +113,14 @@ templ DashboardJobStatus(job DashboardJob) {
 }
 
 templ DashboardStep(step Step) {
-<li>
-  <strong>{ dashboardStepLabel(step) }</strong>
+<li class="step">
+  <div class="step-title">{ dashboardStepLabel(step) }</div>
   if len(step.Input) > 0 {
-    <pre>{ dashboardInput(step.Input) }</pre>
+    <dl class="step-input">
+      for _, field := range dashboardFields(step.Input) {
+        <div class="step-input-row"><dt>{ field.Key }</dt><dd>{ field.Value }</dd></div>
+      }
+    </dl>
   }
 </li>
 }
