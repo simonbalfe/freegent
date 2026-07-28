@@ -12,10 +12,6 @@ if ! command -v docker >/dev/null 2>&1; then
   echo "Docker is required. Install Docker Desktop and run this script again."
   exit 1
 fi
-if ! command -v go >/dev/null 2>&1; then
-  echo "Go is required to install the freegent CLI. Install Go and run this script again."
-  exit 1
-fi
 if ! command -v curl >/dev/null 2>&1; then
   echo "curl is required. Install curl and run this script again."
   exit 1
@@ -86,7 +82,8 @@ else
   mkdir -p "$HOME/.local/bin"
   cli_path="$HOME/.local/bin/freegent"
 fi
-go build -trimpath -o "$cli_path" ./cmd/freegent
+docker compose cp api:/usr/local/bin/freegent "$cli_path"
+chmod 755 "$cli_path"
 
 mkdir -p "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
 cp skills/freegent/SKILL.md "$HOME/.codex/skills/freegent/SKILL.md"
@@ -94,7 +91,15 @@ cp skills/freegent/SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
 
 echo "Waiting for services"
 for attempt in $(seq 1 30); do
-  if curl -fsS http://localhost:8080/health >/dev/null 2>&1 && curl -fsS http://localhost:8081/healthz >/dev/null 2>&1 && docker compose exec -T worker sh -c 'test -n "$OPENROUTER_API_KEY"'; then
+  running_services="$(docker compose ps --status running --services)"
+  if curl -fsS http://localhost:8080/health >/dev/null 2>&1 \
+    && curl -fsS http://localhost:8081/healthz >/dev/null 2>&1 \
+    && printf '%s\n' "$running_services" | grep -qx postgres \
+    && printf '%s\n' "$running_services" | grep -qx api \
+    && printf '%s\n' "$running_services" | grep -qx worker \
+    && printf '%s\n' "$running_services" | grep -qx openextract \
+    && docker compose exec -T worker sh -c 'test -n "$OPENROUTER_API_KEY"' \
+    && "$cli_path" --help >/dev/null 2>&1; then
     echo
     echo "Freegent is ready: http://localhost:8080/dashboard"
     echo "CLI installed at $cli_path"

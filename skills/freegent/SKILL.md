@@ -1,11 +1,11 @@
 ---
 name: freegent
-description: Use the Freegent CLI to submit one or many web-research rows to the local Freegent API. Use for structured company research, GTM enrichment, source-backed extraction, and batch jobs.
+description: Use the thin Freegent CLI to submit a CSV or one JSON row to the Freegent API. Use for structured company research, GTM enrichment, source-backed extraction, and batch jobs.
 ---
 
 # Freegent
 
-Freegent is a local research API with a small CLI surface. Do not implement the search, browser, retry, or extraction logic in the calling agent. Submit the task and rows to Freegent instead.
+Freegent is a research API with a thin remote CLI. Do not implement parsing, search, browser, retry, extraction, queueing, or model logic in the calling agent. Submit the prompt and input to Freegent instead.
 
 ## Check the service
 
@@ -20,11 +20,8 @@ The live dashboard runs at [http://localhost:8080/dashboard](http://localhost:80
 
 ```bash
 freegent \
-  --instructions "Research the company using current first-party evidence. Do not guess unsupported facts." \
-  --template "Research {{company}} at {{domain}} for GTM outbound." \
-  --schema '{"product":"string","targetCustomer":"string","fit":"high|medium|low","source":"string"}' \
-  --row 'company=Figma,domain=figma.com' \
-  --pretty
+  --row '{"company":"Figma","domain":"figma.com"}' \
+  --prompt "Research {{company}} at {{domain}} for GTM outbound."
 ```
 
 ## Submit many rows
@@ -33,17 +30,15 @@ Use a CSV with headers matching the template fields:
 
 ```bash
 freegent \
-  --rows companies.csv \
-  --instructions "Research each company using current evidence." \
-  --template "Research {{company}} at {{domain}}." \
-  --schema '{"product":"string","targetCustomer":"string","source":"string"}' \
-  --json
+  --csv companies.csv \
+  --prompt "Research {{company}} at {{domain}}." \
+  > results.csv
 ```
 
-Use `--out results.json` to save the full response. Use `--api-url` when the API is on another host.
+The default schema is `{"answer":"string"}`. Add `--schema` only when a different structured result is required. Use `--api-url` when the API is on another host.
 Use `--detach` for a large batch when the caller only needs the job ID and dashboard URL immediately.
 
-Every CLI submission creates a PostgreSQL-backed batch. Each row becomes one independently retryable River operation. For a visual live trace or previous results, open `http://localhost:8080/dashboard` in a browser. Workers resume queued operations independently of API restarts.
+CSV input is uploaded directly to the API, and the completed enriched CSV is streamed back to stdout. Every CLI submission creates a PostgreSQL-backed batch. Each row becomes one independently retryable River operation. For a visual live trace or previous results, open `http://localhost:8080/dashboard` in a browser. Workers resume queued operations independently of API restarts.
 
 ## What Freegent handles
 

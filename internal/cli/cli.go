@@ -3,104 +3,75 @@ package cli
 import (
 	"bytes"
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
-	"strconv"
 	"strings"
 	"time"
-
-	"github.com/simonbalfe/freegent/internal/agent"
-	"github.com/simonbalfe/freegent/internal/api"
 )
 
-type APIRequest = api.APIRequest
-type APIResult = api.APIResult
-type Row = agent.Row
-
-const cliHelp = `freegent — research rows through the Freegent API
-
-Quick start:
-  freegent --instructions "Research this company." \
-    --template "Research {{company}} at {{domain}}." \
-    --schema '{"summary":"string","source":"string"}' \
-    --row 'company=Figma,domain=figma.com' --pretty
-
-Research a CSV:
-  freegent --rows companies.csv \
-    --instructions "Research each company for GTM outbound." \
-    --template "Research {{company}} at {{domain}}." \
-    --schema '{"product":"string","targetCustomer":"string"}' --json
-
-Required:
-  --instructions  What the agent should find
-  --template      Prompt template using row fields, such as {{company}}
-  --schema        JSON fields to return
-
-Rows:
-  --row k=v,k=v   One row (repeatable)
-  --input k=v     One row field
-  --rows file.csv CSV batch
-
-Useful options:
-  --api-url url   API address (default: http://localhost:8080)
-  --detach        Submit the job and return without waiting
-  --pretty        Human-readable results
-  --json          Full JSON results
-  --out file      Save JSON results to a file
-  --action file   Load a reusable job configuration
-
-Run the local API:
-  freegent serve --port 8080`
-
-type repeatedInputs map[string]string
-
-func (i *repeatedInputs) String() string {
-	return ""
+type APIRequest struct {
+	Instructions string           `json:"instructions"`
+	Template     string           `json:"template"`
+	Schema       json.RawMessage  `json:"schema"`
+	Rows         []map[string]any `json:"rows"`
 }
 
-func (i *repeatedInputs) Set(value string) error {
-	key, fieldValue, found := strings.Cut(value, "=")
-	if !found || strings.TrimSpace(key) == "" {
-		return fmt.Errorf("invalid --input %q; use key=value", value)
-	}
-	if *i == nil {
-		*i = repeatedInputs{}
-	}
-	(*i)[strings.TrimSpace(key)] = fieldValue
-	return nil
+type remoteResult struct {
+	Result map[string]any `json:"result"`
+	Error  string         `json:"error,omitempty"`
 }
+
+type remoteRow struct {
+	Result remoteResult `json:"result"`
+}
+
+type remoteJob struct {
+	Status string      `json:"status"`
+	Rows   []remoteRow `json:"rows"`
+}
+
+const defaultInstructions = "Research the requested answer using current web evidence. Do not guess unsupported facts."
+
+const defaultSchema = `{"answer":"string"}`
+
+const cliHelp = `freegent — submit research to the Freegent API
+
+CSV:
+  freegent --csv companies.csv \
+    --prompt "Research {{company}} at {{domain}}."
+
+  The enriched CSV is written to stdout.
+
+One row:
+  freegent --row '{"company":"Figma","domain":"figma.com"}' \
+    --prompt "Research {{company}} at {{domain}}."
+
+  The answer is written as JSON.
+
+Options:
+  --csv file       Upload a CSV batch
+  --row json       Submit one JSON object
+  --prompt text    Prompt using row fields such as {{company}}
+  --schema json    Answer schema (default: {"answer":"string"})
+  --detach         Return the job ID without waiting
+  --api-url url    API address (default: http://localhost:8080)`
 
 func Run(args []string) {
 	flags := flag.NewFlagSet("freegent", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
-	var inputs repeatedInputs
-	flags.Var(&inputs, "input", "row field key=value; repeatable")
-	actionPath := flags.String("action", "", "action JSON file")
-	instructions := flags.String("instructions", "", "research instructions")
-	template := flags.String("template", "", "task template")
-	task := flags.String("task", "", "alias for --template")
-	schemaValue := flags.String("schema", "", "short form or JSON Schema")
-	rowValue := flags.String("row", "", "comma-separated row fields")
-	rowsPath := flags.String("rows", "", "CSV file")
-	requireField := flags.String("require", "", "skip rows missing this field")
-	model := flags.String("model", "google/gemini-3.1-flash-lite", "OpenRouter model")
-	maxSteps := flags.Int("max-steps", 5, "maximum model/tool turns")
-	maxOutputTokens := flags.Int("max-output-tokens", 1500, "maximum answer tokens")
+	csvPath := flags.String("csv", "", "CSV file")
+	rowValue := flags.String("row", "", "JSON row")
+	prompt := flags.String("prompt", "", "research prompt")
+	schemaValue := flags.String("schema", defaultSchema, "answer schema")
 	apiURL := flags.String("api-url", "", "Freegent API")
 	detach := flags.Bool("detach", false, "submit without waiting")
-	outPath := flags.String("out", "", "write full results JSON")
-	jsonOutput := flags.Bool("json", false, "print full results")
-	pretty := flags.Bool("pretty", false, "human-readable output")
-	verbose := flags.Bool("verbose", false, "write agent events to stderr")
-	demo := flags.Bool("demo", false, "offline deterministic demo")
 	help := flags.Bool("help", false, "show help")
 	if err := flags.Parse(args); err != nil {
 		failCLI(err)
@@ -109,158 +80,122 @@ func Run(args []string) {
 		fmt.Println(cliHelp)
 		return
 	}
-	if *demo {
-		runDemoCLI(*verbose)
-		return
+	if flags.NArg() != 0 {
+		failCLI(fmt.Errorf("unexpected arguments: %s", strings.Join(flags.Args(), " ")))
 	}
-
-	request, rows, err := buildCLIRequest(*actionPath, *instructions, firstNonEmpty(*template, *task), *schemaValue, *rowValue, inputs, *rowsPath)
-	if err != nil {
-		failCLI(err)
+	if (*csvPath == "") == (*rowValue == "") {
+		failCLI(errors.New("provide exactly one of --csv or --row"))
 	}
-	request.Model = *model
-	request.MaxSteps = *maxSteps
-	request.MaxOutputTokens = *maxOutputTokens
-	request.Require = *requireField
-	request.Verbose = *verbose
-	if *detach && *outPath != "" {
-		failCLI(errors.New("--out cannot be used with --detach"))
+	if strings.TrimSpace(*prompt) == "" {
+		failCLI(errors.New("--prompt is required"))
+	}
+	if !json.Valid([]byte(*schemaValue)) {
+		failCLI(errors.New("--schema must be valid JSON"))
 	}
 
 	resolvedAPIURL := firstNonEmpty(*apiURL, os.Getenv("FREEGENT_API_URL"), "http://localhost:8080")
-	jobID, err := submitRemoteJob(context.Background(), resolvedAPIURL, request)
+	ctx := context.Background()
+	var jobID string
+	var err error
+	if *csvPath != "" {
+		jobID, err = submitRemoteCSVJob(ctx, resolvedAPIURL, *csvPath, *prompt, *schemaValue)
+	} else {
+		request, requestError := buildRowRequest(*rowValue, *prompt, *schemaValue)
+		if requestError != nil {
+			failCLI(requestError)
+		}
+		jobID, err = submitRemoteJob(ctx, resolvedAPIURL, request)
+	}
 	if err != nil {
 		failCLI(err)
 	}
+
 	dashboardURL := strings.TrimRight(resolvedAPIURL, "/") + "/dashboard/jobs/" + jobID
+	downloadURL := strings.TrimRight(resolvedAPIURL, "/") + "/jobs/" + jobID + "/results.csv"
 	if *detach {
-		printJSON(map[string]any{"jobId": jobID, "status": "queued", "dashboard": dashboardURL})
+		printJSON(map[string]any{
+			"jobId":     jobID,
+			"status":    "queued",
+			"dashboard": dashboardURL,
+			"download":  downloadURL,
+		})
 		return
 	}
+
 	fmt.Fprintf(os.Stderr, "job %s · %s\n", jobID, dashboardURL)
-	job, err := waitRemoteJob(context.Background(), resolvedAPIURL, jobID)
+	job, err := waitRemoteJob(ctx, resolvedAPIURL, jobID)
 	if err != nil {
 		failCLI(err)
 	}
-	results := remoteJobResults(job)
-	renderCLIResults(rows, results, *jsonOutput, *pretty)
-	if *outPath != "" {
-		data, err := json.MarshalIndent(results, "", "  ")
-		if err != nil {
+	if *csvPath != "" {
+		if err := downloadRemoteCSV(ctx, resolvedAPIURL, jobID, os.Stdout); err != nil {
 			failCLI(err)
 		}
-		if err := os.WriteFile(*outPath, data, 0644); err != nil {
-			failCLI(err)
-		}
-		fmt.Fprintf(os.Stderr, "wrote %s\n", *outPath)
+		return
 	}
+	if len(job.Rows) != 1 {
+		failCLI(fmt.Errorf("API returned %d rows for a single-row request", len(job.Rows)))
+	}
+	result := job.Rows[0].Result
+	if result.Error != "" {
+		failCLI(errors.New(result.Error))
+	}
+	printJSON(result.Result)
 }
 
-func buildCLIRequest(actionPath, instructions, template, schemaValue, rowValue string, inputs repeatedInputs, rowsPath string) (APIRequest, []map[string]any, error) {
-	request := APIRequest{}
-	if actionPath != "" {
-		data, err := os.ReadFile(actionPath)
-		if err != nil {
-			return request, nil, err
-		}
-		var action struct {
-			Name         string          `json:"name"`
-			Instructions string          `json:"instructions"`
-			Template     string          `json:"template"`
-			Schema       json.RawMessage `json:"schema"`
-		}
-		if err := json.Unmarshal(data, &action); err != nil {
-			return request, nil, err
-		}
-		request.Name, request.Instructions, request.Template, request.Schema = action.Name, action.Instructions, action.Template, action.Schema
-	} else {
-		if instructions == "" {
-			instructions = "Research the requested fields using current web evidence."
-		}
-		if template == "" || schemaValue == "" {
-			return request, nil, errors.New("need --template and --schema, or --action <file>")
-		}
-		request.Instructions = instructions
-		request.Template = template
-		request.Schema = json.RawMessage(schemaValue)
+func buildRowRequest(rowValue, prompt, schemaValue string) (APIRequest, error) {
+	var row map[string]any
+	if err := json.Unmarshal([]byte(rowValue), &row); err != nil {
+		return APIRequest{}, fmt.Errorf("--row must be a JSON object: %w", err)
 	}
-	if _, err := agent.CompileOutputSchema(request.Schema); err != nil {
-		return request, nil, err
+	if len(row) == 0 {
+		return APIRequest{}, errors.New("--row must contain at least one field")
 	}
-
-	rows := []map[string]any{}
-	if rowsPath != "" {
-		loaded, err := readCSVRows(rowsPath)
-		if err != nil {
-			return request, nil, err
-		}
-		rows = loaded
-		if request.Name == "" {
-			request.Name = filepath.Base(rowsPath)
-		}
-	} else {
-		row := map[string]any{}
-		for key, value := range inputs {
-			row[key] = value
-		}
-		if rowValue != "" {
-			parsed, err := parseRow(rowValue)
-			if err != nil {
-				return request, nil, err
-			}
-			for key, value := range parsed {
-				row[key] = value
-			}
-		}
-		rows = []map[string]any{row}
-	}
-	request.Rows = rows
-	return request, rows, nil
+	return APIRequest{
+		Instructions: defaultInstructions,
+		Template:     prompt,
+		Schema:       json.RawMessage(schemaValue),
+		Rows:         []map[string]any{row},
+	}, nil
 }
 
-func readCSVRows(path string) ([]map[string]any, error) {
+func submitRemoteCSVJob(ctx context.Context, baseURL, path, prompt, schemaValue string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer file.Close()
-	reader := csv.NewReader(file)
-	records, err := reader.ReadAll()
-	if err != nil {
-		return nil, err
-	}
-	if len(records) == 0 {
-		return []map[string]any{}, nil
-	}
-	headers := records[0]
-	rows := make([]map[string]any, 0, len(records)-1)
-	for _, record := range records[1:] {
-		row := map[string]any{}
-		for index, header := range headers {
-			value := ""
-			if index < len(record) {
-				value = record[index]
-			}
-			row[strings.TrimSpace(header)] = value
-		}
-		rows = append(rows, row)
-	}
-	return rows, nil
-}
 
-func parseRow(value string) (Row, error) {
-	row := Row{}
-	if strings.TrimSpace(value) == "" {
-		return row, nil
-	}
-	for _, pair := range strings.Split(value, ",") {
-		key, fieldValue, found := strings.Cut(pair, "=")
-		if !found || strings.TrimSpace(key) == "" {
-			return nil, fmt.Errorf("invalid row field %q; use key=value,key=value", pair)
+	var body bytes.Buffer
+	form := multipart.NewWriter(&body)
+	for key, value := range map[string]string{
+		"name":         filepath.Base(path),
+		"instructions": defaultInstructions,
+		"template":     prompt,
+		"schema":       schemaValue,
+	} {
+		if err := form.WriteField(key, value); err != nil {
+			return "", err
 		}
-		row[strings.TrimSpace(key)] = strings.TrimSpace(fieldValue)
 	}
-	return row, nil
+	part, err := form.CreateFormFile("csv", filepath.Base(path))
+	if err != nil {
+		return "", err
+	}
+	if _, err := io.Copy(part, file); err != nil {
+		return "", err
+	}
+	if err := form.Close(); err != nil {
+		return "", err
+	}
+
+	endpoint := strings.TrimRight(baseURL, "/") + "/jobs"
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, &body)
+	if err != nil {
+		return "", err
+	}
+	request.Header.Set("Content-Type", form.FormDataContentType())
+	return submitJobRequest(request, endpoint)
 }
 
 func submitRemoteJob(ctx context.Context, baseURL string, request APIRequest) (string, error) {
@@ -274,12 +209,16 @@ func submitRemoteJob(ctx context.Context, baseURL string, request APIRequest) (s
 		return "", err
 	}
 	httpRequest.Header.Set("Content-Type", "application/json")
-	response, err := (&http.Client{}).Do(httpRequest)
+	return submitJobRequest(httpRequest, endpoint)
+}
+
+func submitJobRequest(request *http.Request, endpoint string) (string, error) {
+	response, err := (&http.Client{}).Do(request)
 	if err != nil {
 		return "", fmt.Errorf("cannot reach Freegent API at %s: %w", endpoint, err)
 	}
 	defer response.Body.Close()
-	data, err := io.ReadAll(io.LimitReader(response.Body, 100<<20))
+	data, err := io.ReadAll(io.LimitReader(response.Body, 1<<20))
 	if err != nil {
 		return "", err
 	}
@@ -298,137 +237,73 @@ func submitRemoteJob(ctx context.Context, baseURL string, request APIRequest) (s
 	return payload.JobID, nil
 }
 
-func getRemoteJob(ctx context.Context, baseURL, jobID string, summary bool) (api.DashboardJob, error) {
+func getRemoteJob(ctx context.Context, baseURL, jobID string, summary bool) (remoteJob, error) {
 	endpoint := strings.TrimRight(baseURL, "/") + "/jobs/" + jobID
 	if summary {
 		endpoint += "?summary=1"
 	}
-	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return api.DashboardJob{}, err
+		return remoteJob{}, err
 	}
-	response, err := (&http.Client{}).Do(httpRequest)
+	response, err := (&http.Client{}).Do(request)
 	if err != nil {
-		return api.DashboardJob{}, fmt.Errorf("cannot reach Freegent API at %s: %w", endpoint, err)
+		return remoteJob{}, fmt.Errorf("cannot reach Freegent API at %s: %w", endpoint, err)
 	}
 	defer response.Body.Close()
 	data, err := io.ReadAll(io.LimitReader(response.Body, 100<<20))
 	if err != nil {
-		return api.DashboardJob{}, err
+		return remoteJob{}, err
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return api.DashboardJob{}, fmt.Errorf("API %s: %s", response.Status, string(data))
+		return remoteJob{}, fmt.Errorf("API %s: %s", response.Status, string(data))
 	}
-	var job api.DashboardJob
+	var job remoteJob
 	if err := json.Unmarshal(data, &job); err != nil {
-		return api.DashboardJob{}, err
+		return remoteJob{}, err
 	}
 	return job, nil
 }
 
-func waitRemoteJob(ctx context.Context, baseURL, jobID string) (api.DashboardJob, error) {
+func waitRemoteJob(ctx context.Context, baseURL, jobID string) (remoteJob, error) {
 	ticker := time.NewTicker(250 * time.Millisecond)
 	defer ticker.Stop()
 	for {
 		job, err := getRemoteJob(ctx, baseURL, jobID, true)
 		if err != nil {
-			return api.DashboardJob{}, err
+			return remoteJob{}, err
 		}
 		if job.Status == "completed" || job.Status == "completed with errors" {
 			return getRemoteJob(ctx, baseURL, jobID, false)
 		}
 		select {
 		case <-ctx.Done():
-			return api.DashboardJob{}, ctx.Err()
+			return remoteJob{}, ctx.Err()
 		case <-ticker.C:
 		}
 	}
 }
 
-func remoteJobResults(job api.DashboardJob) []APIResult {
-	results := make([]APIResult, len(job.Rows))
-	for _, row := range job.Rows {
-		if row.Index >= 0 && row.Index < len(results) {
-			results[row.Index] = row.Result
-		}
-	}
-	return results
-}
-
-func renderCLIResults(rows []map[string]any, results []APIResult, fullJSON, pretty bool) {
-	if fullJSON {
-		value := any(results)
-		if len(results) == 1 {
-			value = results[0]
-		}
-		printJSON(value)
-		return
-	}
-	if pretty {
-		for index, result := range results {
-			label := "row " + strconv.Itoa(index+1)
-			if index < len(rows) {
-				for _, value := range rows[index] {
-					label = fmt.Sprint(value)
-					break
-				}
-			}
-			fmt.Printf("\n%s  %.1fs · %d in / %d out tok · %d sources\n", label, float64(result.DurationMS)/1000, result.Tokens.Input, result.Tokens.Output, len(result.Sources))
-			if result.Skipped {
-				fmt.Println("  skipped")
-				continue
-			}
-			if result.Error != "" {
-				fmt.Println("  error:", result.Error)
-				continue
-			}
-			keys := make([]string, 0, len(result.Result))
-			for key := range result.Result {
-				keys = append(keys, key)
-			}
-			sort.Strings(keys)
-			for _, key := range keys {
-				fmt.Printf("  %s  %v\n", key, result.Result[key])
-			}
-			if result.Reasoning != "" {
-				fmt.Println("  »", result.Reasoning)
-			}
-		}
-		return
-	}
-	answers := make([]map[string]any, len(results))
-	for index, result := range results {
-		answers[index] = map[string]any{"result": result.Result, "reasoning": result.Reasoning, "sources": result.Sources}
-	}
-	if len(answers) == 1 {
-		printJSON(answers[0])
-	} else {
-		printJSON(answers)
-	}
-}
-
-func runDemoCLI(verbose bool) {
-	schema, err := agent.CompileOutputSchema(json.RawMessage(`{"company":"string","summary":"string","confidence":"low|medium|high"}`))
+func downloadRemoteCSV(ctx context.Context, baseURL, jobID string, output io.Writer) error {
+	endpoint := strings.TrimRight(baseURL, "/") + "/jobs/" + jobID + "/results.csv"
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		failCLI(err)
+		return err
 	}
-	action := agent.Action{
-		Instructions:          agent.ResearchInstructions("Research the company.", string(schema.Canonical)),
-		FinalizerInstructions: agent.FinalizerInstructions("Research the company."),
-		Template:              "Research {{company}}.",
-		Schema:                schema.Canonical,
-		Validator:             schema,
-	}
-	result, err := (agent.Agent{
-		Model:    DemoModel{},
-		Tools:    map[string]agent.Tool{"web_search": DemoSearchTool{}},
-		MaxSteps: 3,
-		Verbose:  verbose,
-	}).Run(context.Background(), action, Row{"company": "Acme"})
+	response, err := (&http.Client{}).Do(request)
 	if err != nil {
-		failCLI(err)
+		return fmt.Errorf("cannot reach Freegent API at %s: %w", endpoint, err)
 	}
-	printJSON(result)
+	defer response.Body.Close()
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		data, readError := io.ReadAll(io.LimitReader(response.Body, 1<<20))
+		if readError != nil {
+			return readError
+		}
+		return fmt.Errorf("API %s: %s", response.Status, string(data))
+	}
+	_, err = io.Copy(output, response.Body)
+	return err
 }
 
 func printJSON(value any) {

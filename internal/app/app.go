@@ -6,7 +6,7 @@ import (
 )
 
 func Run(args []string) {
-	if len(args) > 0 && (args[0] == "api" || args[0] == "serve") {
+	if len(args) > 0 && args[0] == "api" {
 		api.Serve(args[1:])
 		return
 	}

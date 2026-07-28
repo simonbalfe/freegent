@@ -3,9 +3,9 @@
 ## Architecture
 
 - `cmd/freegent` is the only Go executable entry point.
-- The Go CLI always submits work to the Go API. Keep `--demo` as the only offline exception.
+- The user-facing Go CLI only submits work to the Go API. Keep API and worker process modes internal to the Compose deployment.
 - `internal/app` routes the executable to the CLI, HTTP API, or River worker.
-- `internal/cli` owns argument parsing, CSV input, the remote API client, result rendering, and the offline demo.
+- `internal/cli` is a thin remote API client. It uploads CSV files through multipart `POST /jobs`, submits JSON rows through the same endpoint, polls job state, and streams the CSV download or JSON answer.
 - `internal/api` owns the HTTP API, PostgreSQL job history and state, River workers, run logs, and HTMX dashboard.
 - `internal/agent` owns the agent loop, shared model and tool contracts, output schemas, prompts, and URL provenance.
 - `internal/openrouter` is the OpenRouter model adapter.
@@ -17,7 +17,7 @@
 - `internal/api/dashboard.templ` and its generated Go file render the server-side dashboard.
 - `services/openextract` is a self-contained TypeScript API. It owns direct retrieval, HTML cleanup, Markdown conversion, structured data, link discovery, PDF parsing, Patchright browsers, proxies, solvers, and Tavily extraction fallback.
 - OpenExtract bounds all active extraction requests and browser contexts separately. Saturation returns HTTP `429`; River remains the only durable queue and retry owner.
-- `compose.yaml` runs PostgreSQL, API, worker, and OpenExtract services.
+- `compose.yaml` runs PostgreSQL, API, worker, and OpenExtract services. The API and worker use separate multi-architecture GHCR images built from distinct Dockerfile targets.
 - The current deployment target is one Docker Compose stack. Do not add K3s, KEDA, a custom replica scaler, or Hetzner node autoscaling until the roadmap item is explicitly started.
 
 Keep the Go API independent from extraction implementation details. OpenExtract must remain deployable on a separate server, with the Go API configured through `OPENEXTRACT_URL`.
@@ -32,7 +32,7 @@ Worker concurrency is deployment-wide capacity configured per replica. Do not re
 
 ## Development
 
-- Use `go run ./cmd/freegent --demo` for the offline executable check.
+- Use `go run ./cmd/freegent --help` for the executable check.
 - Use `FREEGENT_DATABASE_URL=... go run ./cmd/freegent api -port 8080` to run the API without leaving a binary in the repository.
 - Use `FREEGENT_DATABASE_URL=... go run ./cmd/freegent worker -concurrency 10 -timeout 15m` to run a worker.
 - Use `go test ./...`, `go test -race ./...`, and `go vet ./...` for Go verification.

@@ -1,75 +1,81 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
-
-	"github.com/simonbalfe/freegent/internal/agent"
 )
 
-func TestBuildCLIRequestFromActionAndCSV(t *testing.T) {
-	directory := t.TempDir()
-	actionPath := filepath.Join(directory, "action.json")
-	rowsPath := filepath.Join(directory, "rows.csv")
-	if err := os.WriteFile(actionPath, []byte(`{"name":"crm","instructions":"Find the CRM.","template":"{{company}} {{domain}}","schema":{"crm":"string?","confidence":"low|medium|high"}}`), 0644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(rowsPath, []byte("company,domain\nLinear,linear.app\nVercel,vercel.com\n"), 0644); err != nil {
-		t.Fatal(err)
-	}
-	request, rows, err := buildCLIRequest(actionPath, "", "", "", "", nil, rowsPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if request.Name != "crm" || len(rows) != 2 || rows[1]["domain"] != "vercel.com" {
-		t.Fatalf("unexpected CLI request: %#v %#v", request, rows)
-	}
-}
-
-func TestBuildCLIRequestUsesCSVFilenameAsJobName(t *testing.T) {
-	rowsPath := filepath.Join(t.TempDir(), "prospects.csv")
-	if err := os.WriteFile(rowsPath, []byte("company\nLinear\n"), 0644); err != nil {
-		t.Fatal(err)
-	}
-	request, _, err := buildCLIRequest("", "Research.", "{{company}}", `{"summary":"string"}`, "", nil, rowsPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if request.Name != "prospects.csv" {
-		t.Fatalf("expected CSV filename, got %q", request.Name)
-	}
-}
-
-func TestBuildCLIRequestMergesRepeatedInputsAndRow(t *testing.T) {
-	request, rows, err := buildCLIRequest(
-		"",
-		"Research.",
-		"{{company}} {{domain}}",
-		`{"summary":"string"}`,
-		"domain=linear.app",
-		repeatedInputs{"company": "Linear"},
-		"",
+func TestBuildRowRequest(t *testing.T) {
+	request, err := buildRowRequest(
+		`{"company":"Linear","domain":"linear.app"}`,
+		"Research {{company}} at {{domain}}.",
+		`{"answer":"string"}`,
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if request.Template != "{{company}} {{domain}}" || rows[0]["company"] != "Linear" || rows[0]["domain"] != "linear.app" {
-		t.Fatalf("unexpected merged row: %#v", rows)
+	if request.Instructions != defaultInstructions || request.Template != "Research {{company}} at {{domain}}." {
+		t.Fatalf("unexpected request: %#v", request)
+	}
+	if len(request.Rows) != 1 || request.Rows[0]["domain"] != "linear.app" {
+		t.Fatalf("unexpected row: %#v", request.Rows)
 	}
 }
 
-func TestResearchInstructionsIncludeDoctrineAndTaskRules(t *testing.T) {
-	value := agent.ResearchInstructions("Check only official sources.", `{"name":{"type":"string"}}`)
-	for _, expected := range []string{"Never fabricate a URL", "Task-specific rules:", "Check only official sources.", "Answer schema:"} {
-		if !strings.Contains(value, expected) {
-			t.Fatalf("missing %q in instructions", expected)
+func TestBuildRowRequestRejectsNonObject(t *testing.T) {
+	if _, err := buildRowRequest(`["Linear"]`, "Research.", defaultSchema); err == nil {
+		t.Fatal("expected JSON object error")
+	}
+}
+
+func TestSubmitRemoteCSVJobUsesMultipartAPI(t *testing.T) {
+	csvPath := filepath.Join(t.TempDir(), "companies.csv")
+	if err := os.WriteFile(csvPath, []byte("company,domain\nLinear,linear.app\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodPost || request.URL.Path != "/jobs" {
+			http.NotFound(writer, request)
+			return
 		}
+		if err := request.ParseMultipartForm(1 << 20); err != nil {
+			t.Fatal(err)
+		}
+		if request.FormValue("instructions") != defaultInstructions {
+			t.Fatalf("unexpected instructions %q", request.FormValue("instructions"))
+		}
+		if request.FormValue("template") != "Research {{company}}." || request.FormValue("schema") != defaultSchema {
+			t.Fatalf("unexpected form: %#v", request.MultipartForm.Value)
+		}
+		file, _, err := request.FormFile("csv")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer file.Close()
+		data, err := io.ReadAll(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(data) != "company,domain\nLinear,linear.app\n" {
+			t.Fatalf("unexpected CSV %q", string(data))
+		}
+		writeTestJSON(writer, http.StatusAccepted, map[string]any{"jobId": "job-csv", "status": "queued"})
+	}))
+	defer server.Close()
+
+	jobID, err := submitRemoteCSVJob(context.Background(), server.URL, csvPath, "Research {{company}}.", defaultSchema)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if jobID != "job-csv" {
+		t.Fatalf("unexpected job ID %q", jobID)
 	}
 }
 
@@ -78,6 +84,9 @@ func TestRemoteJobSubmissionAndPolling(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		switch {
 		case request.Method == http.MethodPost && request.URL.Path == "/jobs":
+			if request.Header.Get("Content-Type") != "application/json" {
+				t.Fatalf("unexpected content type %q", request.Header.Get("Content-Type"))
+			}
 			writeTestJSON(writer, http.StatusAccepted, map[string]any{"jobId": "job-1", "status": "queued"})
 		case request.Method == http.MethodGet && request.URL.Path == "/jobs/job-1":
 			requests++
@@ -88,7 +97,7 @@ func TestRemoteJobSubmissionAndPolling(t *testing.T) {
 				rows = []map[string]any{{
 					"index":  0,
 					"status": "completed",
-					"result": map[string]any{"runId": "run-1", "result": map[string]any{"summary": "done"}},
+					"result": map[string]any{"runId": "run-1", "result": map[string]any{"answer": "done"}},
 				}}
 			}
 			writeTestJSON(writer, http.StatusOK, map[string]any{"id": "job-1", "status": status, "rows": rows})
@@ -99,9 +108,9 @@ func TestRemoteJobSubmissionAndPolling(t *testing.T) {
 	defer server.Close()
 
 	id, err := submitRemoteJob(context.Background(), server.URL, APIRequest{
-		Instructions: "Research.",
+		Instructions: defaultInstructions,
 		Template:     "{{company}}",
-		Schema:       json.RawMessage(`{"summary":"string"}`),
+		Schema:       json.RawMessage(defaultSchema),
 		Rows:         []map[string]any{{"company": "Linear"}},
 	})
 	if err != nil {
@@ -111,9 +120,28 @@ func TestRemoteJobSubmissionAndPolling(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	results := remoteJobResults(job)
-	if len(results) != 1 || results[0].Result["summary"] != "done" {
-		t.Fatalf("unexpected results: %#v", results)
+	if len(job.Rows) != 1 || job.Rows[0].Result.Result["answer"] != "done" {
+		t.Fatalf("unexpected job: %#v", job)
+	}
+}
+
+func TestDownloadRemoteCSV(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodGet || request.URL.Path != "/jobs/job-1/results.csv" {
+			http.NotFound(writer, request)
+			return
+		}
+		writer.Header().Set("Content-Type", "text/csv")
+		_, _ = writer.Write([]byte("company,answer\nLinear,done\n"))
+	}))
+	defer server.Close()
+
+	var output bytes.Buffer
+	if err := downloadRemoteCSV(context.Background(), server.URL, "job-1", &output); err != nil {
+		t.Fatal(err)
+	}
+	if output.String() != "company,answer\nLinear,done\n" {
+		t.Fatalf("unexpected output %q", output.String())
 	}
 }
 

@@ -23,9 +23,7 @@ Install the full stack on a new machine:
 curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh | bash
 ```
 
-The installer clones the repo, asks for provider keys, pulls the prebuilt Go
-API/worker and OpenExtract images from GHCR, and starts Docker Compose. If GHCR is
-unavailable, it falls back to building locally.
+The installer clones the repo, asks for provider keys, pulls the separate prebuilt Go API, River worker, and OpenExtract images from GHCR, and starts Docker Compose. It copies the thin `freegent` CLI from the API image, so Go is not required on the server. If GHCR is unavailable, it falls back to building the images locally.
 
 ## API keys and credentials
 
@@ -77,38 +75,33 @@ docker compose logs -f api worker openextract postgres
 
 ## Run research
 
-The CLI talks to `http://localhost:8080` by default:
+The CLI is only a client for `http://localhost:8080` by default. It does not run research, parse CSV batches, or execute workers locally.
 
 ```bash
 go run ./cmd/freegent \
-  --row 'company=Mastra,domain=mastra.ai' \
-  --instructions 'Use current first-party evidence.' \
-  --template 'Research {{company}} at {{domain}}.' \
-  --schema '{"summary":"string","source":"string"}' \
-  --pretty
+  --row '{"company":"Mastra","domain":"mastra.ai"}' \
+  --prompt 'Research {{company}} at {{domain}}.'
 ```
 
 For CSV input:
 
 ```bash
 go run ./cmd/freegent \
-  --rows companies.csv \
-  --instructions 'Find the primary product.' \
-  --template 'Research {{company}} at {{domain}}.' \
-  --schema '{"product":"string","source":"string"}' \
-  --json
+  --csv companies.csv \
+  --prompt 'Research {{company}} at {{domain}}.' \
+  > results.csv
 ```
 
-The CLI parses the CSV, creates one durable batch, stores one operation per CSV record, waits for completion, and prints results in the original CSV order. The dashboard displays the same batch while it runs and after it completes.
+The default schema is `{"answer":"string"}`. Use `--schema` only when the answer needs a different structured shape.
+
+The CLI uploads the CSV directly to `POST /jobs`, waits for completion, then streams `GET /jobs/{id}/results.csv` to stdout. For one JSON row, it prints the result object. The API owns validation, PostgreSQL persistence, River enqueueing, defaults, and execution.
 
 Use `--detach` to submit a large batch without keeping the terminal open:
 
 ```bash
 freegent \
-  --rows companies.csv \
-  --instructions 'Find the primary product.' \
-  --template 'Research {{company}} at {{domain}}.' \
-  --schema '{"product":"string","source":"string"}' \
+  --csv companies.csv \
+  --prompt 'Research {{company}} at {{domain}}.' \
   --detach
 ```
 
@@ -213,7 +206,7 @@ cmd/freegent/              executable entry point
 internal/agent/            agent loop, schemas, prompts, and provenance
 internal/api/              HTTP API, PostgreSQL state, River workers, and dashboard
 internal/app/              CLI/API/worker command routing
-internal/cli/              remote CLI and offline demo
+internal/cli/              thin remote API client
 internal/openrouter/       OpenRouter model adapter
 internal/tools/            search, fetch, and Apify tools
 internal/toolset/          tool registration
