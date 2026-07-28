@@ -4,6 +4,32 @@ set -euo pipefail
 repo_url="${FREEGENT_REPO_URL:-https://github.com/simonbalfe/freegent.git}"
 install_dir="${FREEGENT_DIR:-$HOME/freegent}"
 
+has_env_value() {
+  local key="$1"
+  awk -v key="$key" '
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      if (line !~ "^[[:space:]]*" key "[[:space:]]*=") {
+        next
+      }
+      sub("^[[:space:]]*" key "[[:space:]]*=[[:space:]]*", "", line)
+      sub(/[[:space:]]+#.*$/, "", line)
+      sub(/^[[:space:]]+/, "", line)
+      sub(/[[:space:]]+$/, "", line)
+      if ((line ~ /^".*"$/) || (line ~ /^'\''.*'\''$/)) {
+        line = substr(line, 2, length(line) - 2)
+      }
+      if (length(line) > 0) {
+        found = 1
+      }
+    }
+    END {
+      exit found ? 0 : 1
+    }
+  ' .env
+}
+
 if ! command -v git >/dev/null 2>&1; then
   echo "git is required. Install git and run this script again."
   exit 1
@@ -42,7 +68,7 @@ else
   exa_key="${FREEGENT_EXA_API_KEY:-}"
   tavily_key="${FREEGENT_TAVILY_API_KEY:-}"
   apify_key="${FREEGENT_APIFY_API_TOKEN:-}"
-  if [ -r /dev/tty ]; then
+  if [ "${FREEGENT_NONINTERACTIVE:-0}" != "1" ] && [ -r /dev/tty ]; then
     [ -n "$openrouter_key" ] || read -r -p "OpenRouter API key: " openrouter_key </dev/tty
     [ -n "$serper_key" ] || read -r -p "Serper API key (recommended): " serper_key </dev/tty
     [ -n "$exa_key" ] || read -r -p "Exa API key: " exa_key </dev/tty
@@ -60,11 +86,13 @@ else
   chmod 600 .env
 fi
 
-if ! grep -q '^OPENROUTER_API_KEY=.' .env; then
+if ! has_env_value OPENROUTER_API_KEY; then
   echo "OPENROUTER_API_KEY is required. Run again and provide it."
   exit 1
 fi
-if ! grep -Eq '^(SERPER_API_KEY|EXA_API_KEY|TAVILY_API_KEY)=.' .env; then
+if ! has_env_value SERPER_API_KEY \
+  && ! has_env_value EXA_API_KEY \
+  && ! has_env_value TAVILY_API_KEY; then
   echo "At least one search key is required: SERPER_API_KEY, EXA_API_KEY, or TAVILY_API_KEY."
   exit 1
 fi

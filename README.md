@@ -60,6 +60,7 @@ curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh
 ```
 
 Enter your keys when asked. The installer starts Freegent and installs the `freegent` command.
+It stops before starting Docker unless an OpenRouter key and at least one Serper, Exa, or Tavily search key are present.
 
 Check that it worked:
 
