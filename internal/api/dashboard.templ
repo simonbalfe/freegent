@@ -14,32 +14,25 @@ templ DashboardPage(jobs []DashboardJob) {
 </head>
 <body>
   <h1>Freegent</h1>
-  <p class="muted"><strong>Open source Freegent</strong>{ " for " }GTM outbound research.</p>
+  <p class="muted"><strong>Open source Freegent</strong>{ " for " }researching any spreadsheet.</p>
   <p class="muted">Upload a CSV or paste JSON rows, then watch every row complete. Job history survives API restarts.</p>
   <form method="post" action="/dashboard/jobs" enctype="multipart/form-data" class="card">
     <label>Job name</label>
     <input name="name" placeholder="Optional, defaults to the CSV filename" />
     <label>Instructions</label>
-    <textarea name="instructions">Research each account using current first-party evidence. Assess whether it looks like a good GTM outbound prospect. Do not guess unsupported facts.</textarea>
+    <textarea name="instructions">Use current reliable evidence. Follow the requested task exactly and do not guess unsupported facts.</textarea>
     <label>Template</label>
-    <input name="template" value="Research {{company}} ({{domain}}) for GTM outbound. What do they sell, who do they serve, and why might they be a good prospect?" />
+    <input name="template" value="Research {{subject}} using {{url}} when supplied. Return a concise factual answer." />
     <label>Output schema</label>
-    <textarea name="schema">{ `{"company":"string","product":"string","targetCustomer":"string","fit":"high|medium|low","rationale":"string","source":"string"}` }</textarea>
+    <textarea name="schema">{ `{"answer":"string"}` }</textarea>
     <label>CSV file</label>
     <input type="file" name="csv" accept=".csv,text/csv" />
-    <p class="muted">The first row must contain headers matching template fields such as { "{{company}}" } and { "{{domain}}" }. A CSV takes precedence over JSON rows.</p>
+    <p class="muted">The first row must contain headers matching template fields such as { "{{subject}}" } and { "{{url}}" }. A CSV takes precedence over JSON rows.</p>
     <label>Rows (optional JSON array)</label>
     <textarea name="rows">{ `[
-  {"company":"Linear","domain":"linear.app"},
-  {"company":"Notion","domain":"notion.so"},
-  {"company":"Vercel","domain":"vercel.com"},
-  {"company":"Supabase","domain":"supabase.com"},
-  {"company":"Sentry","domain":"sentry.io"},
-  {"company":"Resend","domain":"resend.com"},
-  {"company":"PostHog","domain":"posthog.com"},
-  {"company":"Clerk","domain":"clerk.com"},
-  {"company":"Retool","domain":"retool.com"},
-  {"company":"Figma","domain":"figma.com"}
+  {"subject":"Figma","url":"https://figma.com"},
+  {"subject":"Dario Amodei","url":""},
+  {"subject":"EU AI Act","url":""}
 ]` }</textarea>
     <button type="submit">Start research</button>
   </form>

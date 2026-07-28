@@ -86,8 +86,8 @@ docker compose cp api:/usr/local/bin/freegent "$cli_path"
 chmod 755 "$cli_path"
 
 mkdir -p "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
-cp skills/freegent/SKILL.md "$HOME/.codex/skills/freegent/SKILL.md"
-cp skills/freegent/SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
+cp SKILL.md "$HOME/.codex/skills/freegent/SKILL.md"
+cp SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
 
 echo "Waiting for services"
 for attempt in $(seq 1 30); do

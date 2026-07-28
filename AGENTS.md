@@ -15,7 +15,8 @@
 - `internal/api/postgres_store.go` owns the PostgreSQL schema, durable batch and row state, and transactional River enqueue.
 - `internal/api/river_worker.go` owns queued operation execution, retry policy, and worker lifecycle.
 - `internal/api/dashboard.templ` and its generated Go file render the server-side dashboard.
-- `services/openextract` is a self-contained TypeScript API. It owns direct retrieval, HTML cleanup, Markdown conversion, structured data, link discovery, PDF parsing, Patchright browsers, proxies, solvers, and Tavily extraction fallback.
+- `openextract` is a top-level, self-contained TypeScript API. It owns direct retrieval, HTML cleanup, Markdown conversion, structured data, link discovery, PDF parsing, Patchright browsers, proxies, solvers, and Tavily extraction fallback.
+- `openextract/src/server.ts` owns only HTTP lifecycle and request handling. Browser escalation lives in `openextract/src/browser`, extraction providers in `openextract/src/extraction`, backpressure in `openextract/src/concurrency`, and environment parsing in `openextract/src/config`.
 - OpenExtract bounds all active extraction requests and browser contexts separately. Saturation returns HTTP `429`; River remains the only durable queue and retry owner.
 - `compose.yaml` runs PostgreSQL, API, worker, and OpenExtract services. The API and worker use separate multi-architecture GHCR images built from distinct Dockerfile targets.
 - The current deployment target is one Docker Compose stack. Do not add K3s, KEDA, a custom replica scaler, or Hetzner node autoscaling until the roadmap item is explicitly started.
@@ -37,7 +38,7 @@ Worker concurrency is deployment-wide capacity configured per replica. Do not re
 - Use `FREEGENT_DATABASE_URL=... go run ./cmd/freegent worker -concurrency 10 -timeout 15m` to run a worker.
 - Use `go test ./...`, `go test -race ./...`, and `go vet ./...` for Go verification.
 - Use `OPENEXTRACT_URL=http://localhost:8081 RUN_LIVE_OPENEXTRACT=1 go test -count=1 ./internal/openextract -run '^TestLiveOpenExtract$' -v` for the live Go-to-TypeScript check.
-- Run `bun install` and `bun run typecheck` from `services/openextract` after TypeScript changes.
+- Run `bun install` and `bun run typecheck` from `openextract` after TypeScript changes.
 - Use `docker compose up -d --build` for the local PostgreSQL, API, worker, and OpenExtract stack.
 - Use `RUN_LIVE_APIFY=1 go test ./internal/tools/apify -run '^TestLiveLinkedInCompany$' -v` only when a paid Apify smoke test is intended.
 - Generated run traces belong in `logs/` and must not be committed.

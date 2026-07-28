@@ -15,13 +15,14 @@ import (
 func TestBuildRowRequest(t *testing.T) {
 	request, err := buildRowRequest(
 		`{"company":"Linear","domain":"linear.app"}`,
+		"Use first-party evidence.",
 		"Research {{company}} at {{domain}}.",
 		`{"answer":"string"}`,
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if request.Instructions != defaultInstructions || request.Template != "Research {{company}} at {{domain}}." {
+	if request.Instructions != "Use first-party evidence." || request.Template != "Research {{company}} at {{domain}}." {
 		t.Fatalf("unexpected request: %#v", request)
 	}
 	if len(request.Rows) != 1 || request.Rows[0]["domain"] != "linear.app" {
@@ -30,7 +31,7 @@ func TestBuildRowRequest(t *testing.T) {
 }
 
 func TestBuildRowRequestRejectsNonObject(t *testing.T) {
-	if _, err := buildRowRequest(`["Linear"]`, "Research.", defaultSchema); err == nil {
+	if _, err := buildRowRequest(`["Linear"]`, defaultInstructions, "Research.", defaultSchema); err == nil {
 		t.Fatal("expected JSON object error")
 	}
 }
@@ -48,7 +49,7 @@ func TestSubmitRemoteCSVJobUsesMultipartAPI(t *testing.T) {
 		if err := request.ParseMultipartForm(1 << 20); err != nil {
 			t.Fatal(err)
 		}
-		if request.FormValue("instructions") != defaultInstructions {
+		if request.FormValue("instructions") != "Use primary sources." {
 			t.Fatalf("unexpected instructions %q", request.FormValue("instructions"))
 		}
 		if request.FormValue("template") != "Research {{company}}." || request.FormValue("schema") != defaultSchema {
@@ -70,7 +71,14 @@ func TestSubmitRemoteCSVJobUsesMultipartAPI(t *testing.T) {
 	}))
 	defer server.Close()
 
-	jobID, err := submitRemoteCSVJob(context.Background(), server.URL, csvPath, "Research {{company}}.", defaultSchema)
+	jobID, err := submitRemoteCSVJob(
+		context.Background(),
+		server.URL,
+		csvPath,
+		"Use primary sources.",
+		"Research {{company}}.",
+		defaultSchema,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

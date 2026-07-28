@@ -44,14 +44,14 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "GTM outbound research.</p><p class=\"muted\">Upload a CSV or paste JSON rows, then watch every row complete. Job history survives API restarts.</p><form method=\"post\" action=\"/dashboard/jobs\" enctype=\"multipart/form-data\" class=\"card\"><label>Job name</label> <input name=\"name\" placeholder=\"Optional, defaults to the CSV filename\"> <label>Instructions</label> <textarea name=\"instructions\">Research each account using current first-party evidence. Assess whether it looks like a good GTM outbound prospect. Do not guess unsupported facts.</textarea> <label>Template</label> <input name=\"template\" value=\"Research {{company}} ({{domain}}) for GTM outbound. What do they sell, who do they serve, and why might they be a good prospect?\"> <label>Output schema</label> <textarea name=\"schema\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "researching any spreadsheet.</p><p class=\"muted\">Upload a CSV or paste JSON rows, then watch every row complete. Job history survives API restarts.</p><form method=\"post\" action=\"/dashboard/jobs\" enctype=\"multipart/form-data\" class=\"card\"><label>Job name</label> <input name=\"name\" placeholder=\"Optional, defaults to the CSV filename\"> <label>Instructions</label> <textarea name=\"instructions\">Use current reliable evidence. Follow the requested task exactly and do not guess unsupported facts.</textarea> <label>Template</label> <input name=\"template\" value=\"Research {{subject}} using {{url}} when supplied. Return a concise factual answer.\"> <label>Output schema</label> <textarea name=\"schema\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(`{"company":"string","product":"string","targetCustomer":"string","fit":"high|medium|low","rationale":"string","source":"string"}`)
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(`{"answer":"string"}`)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 27, Col: 160}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 27, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -62,7 +62,7 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("{{company}}")
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("{{subject}}")
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 30, Col: 104}
 		}
@@ -75,9 +75,9 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("{{domain}}")
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("{{url}}")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 30, Col: 125}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 30, Col: 122}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -89,19 +89,12 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(`[
-  {"company":"Linear","domain":"linear.app"},
-  {"company":"Notion","domain":"notion.so"},
-  {"company":"Vercel","domain":"vercel.com"},
-  {"company":"Supabase","domain":"supabase.com"},
-  {"company":"Sentry","domain":"sentry.io"},
-  {"company":"Resend","domain":"resend.com"},
-  {"company":"PostHog","domain":"posthog.com"},
-  {"company":"Clerk","domain":"clerk.com"},
-  {"company":"Retool","domain":"retool.com"},
-  {"company":"Figma","domain":"figma.com"}
+  {"subject":"Figma","url":"https://figma.com"},
+  {"subject":"Dario Amodei","url":""},
+  {"subject":"EU AI Act","url":""}
 ]`)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 43, Col: 2}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 36, Col: 2}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -125,7 +118,7 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 				var templ_7745c5c3_Var7 templ.SafeURL
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs("/dashboard/jobs/" + job.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 51, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -138,7 +131,7 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardJobLabel(job))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 51, Col: 88}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 88}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -151,7 +144,7 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(job.Status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 51, Col: 110}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 110}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -164,7 +157,7 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d rows", job.Completed, job.Total))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 51, Col: 169}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 169}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -177,7 +170,7 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardJobTime(job.CreatedAt))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 51, Col: 228}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 228}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -225,7 +218,7 @@ func DashboardJobPage(job DashboardJob) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(job.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 70, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 63, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -280,7 +273,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("/dashboard/jobs/" + job.ID + "/status")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 79, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 72, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -298,7 +291,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(job.Status)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 82, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 75, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -311,7 +304,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(job.LatestEvent)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 82, Col: 84}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 75, Col: 84}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -324,7 +317,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d", job.Completed, job.Total))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 84, Col: 111}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 77, Col: 111}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -337,7 +330,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardTokens(job).Input))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 85, Col: 118}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 78, Col: 118}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -350,7 +343,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardTokens(job).Output))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 86, Col: 120}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 79, Col: 120}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -368,7 +361,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEventTime(event.At))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 91, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 84, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -381,7 +374,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEventLabel(event))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 91, Col: 95}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 84, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -394,7 +387,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEventMessage(event.Message))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 91, Col: 151}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 84, Col: 151}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -417,7 +410,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", row.Index+1))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 97, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 90, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -430,7 +423,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(row.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 97, Col: 118}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 90, Col: 118}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -443,7 +436,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d input · %d output tokens", row.Result.Tokens.Input, row.Result.Tokens.Output))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 97, Col: 244}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 90, Col: 244}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -456,7 +449,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardInput(row.Input))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 98, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 91, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -469,7 +462,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d agent steps", len(row.AgentLog)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 99, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 92, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
@@ -513,7 +506,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 					var templ_7745c5c3_Var29 string
 					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(field.Key)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 113, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 106, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 					if templ_7745c5c3_Err != nil {
@@ -526,7 +519,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 					var templ_7745c5c3_Var30 string
 					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(field.Value)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 113, Col: 77}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 106, Col: 77}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 					if templ_7745c5c3_Err != nil {
@@ -556,7 +549,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 				var templ_7745c5c3_Var31 string
 				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(row.Result.Error)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 121, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 114, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 				if templ_7745c5c3_Err != nil {
@@ -580,7 +573,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var32 templ.SafeURL
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinURLErrs("/jobs/" + job.ID + "/results.csv")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 127, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 120, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
@@ -593,7 +586,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(" · ")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 127, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 120, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -606,7 +599,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			var templ_7745c5c3_Var34 templ.SafeURL
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinURLErrs("/jobs/" + job.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 127, Col: 116}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 120, Col: 116}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
@@ -653,7 +646,7 @@ func DashboardStep(step Step) templ.Component {
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardStepLabel(step))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 134, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 127, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 		if templ_7745c5c3_Err != nil {
@@ -676,7 +669,7 @@ func DashboardStep(step Step) templ.Component {
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(field.Key)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 138, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 131, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {
@@ -689,7 +682,7 @@ func DashboardStep(step Step) templ.Component {
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(field.Value)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 138, Col: 75}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 131, Col: 75}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -746,7 +739,7 @@ func DashboardSources(sources []string) templ.Component {
 			var templ_7745c5c3_Var40 templ.SafeURL
 			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinURLErrs(source)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 149, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 142, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {
@@ -759,7 +752,7 @@ func DashboardSources(sources []string) templ.Component {
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(source)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 149, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 142, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {

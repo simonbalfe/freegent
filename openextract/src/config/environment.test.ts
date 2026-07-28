@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseEnvironment } from "./config.ts";
+import { parseEnvironment } from "./environment.ts";
 
 describe("parseEnvironment", () => {
   test("applies concurrency defaults", () => {

@@ -3,4 +3,4 @@
 /*.log
 /freegent
 /.env
-services/openextract/node_modules/
+openextract/node_modules/

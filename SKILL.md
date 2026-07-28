@@ -1,6 +1,6 @@
 ---
 name: freegent
-description: Use the thin Freegent CLI to submit a CSV or one JSON row to the Freegent API. Use for structured company research, GTM enrichment, source-backed extraction, and batch jobs.
+description: Use the thin Freegent CLI to submit a CSV or one JSON row to the Freegent API for general source-backed research and batch enrichment.
 ---
 
 # Freegent
@@ -21,6 +21,7 @@ The live dashboard runs at [http://localhost:8080/dashboard](http://localhost:80
 ```bash
 freegent \
   --row '{"company":"Figma","domain":"figma.com"}' \
+  --instructions "Use current first-party evidence. Do not guess." \
   --prompt "Research {{company}} at {{domain}} for GTM outbound."
 ```
 
@@ -31,10 +32,12 @@ Use a CSV with headers matching the template fields:
 ```bash
 freegent \
   --csv companies.csv \
+  --instructions "Use current first-party evidence. Do not guess." \
   --prompt "Research {{company}} at {{domain}}." \
   > results.csv
 ```
 
+`--instructions` applies batch-wide research rules. `--prompt` is rendered separately for every row using its fields.
 The default schema is `{"answer":"string"}`. Add `--schema` only when a different structured result is required. Use `--api-url` when the API is on another host.
 Use `--detach` for a large batch when the caller only needs the job ID and dashboard URL immediately.
 
@@ -49,4 +52,4 @@ CSV input is uploaded directly to the API, and the completed enriched CSV is str
 - Durable per-row state, progress, evidence URLs, steps, results, errors, and token usage
 - PostgreSQL/River queueing with global worker concurrency and horizontal worker scaling
 
-Rows should contain truthful company/domain pairs. The API rejects guessed deep URLs that were not supplied in the row or returned by search.
+Rows should contain truthful input values. The API rejects guessed deep URLs that were not supplied in the row or returned by search.

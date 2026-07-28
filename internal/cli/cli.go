@@ -58,6 +58,8 @@ One row:
 Options:
   --csv file       Upload a CSV batch
   --row json       Submit one JSON object
+  --instructions text
+                   Batch-wide research rules
   --prompt text    Prompt using row fields such as {{company}}
   --schema json    Answer schema (default: {"answer":"string"})
   --detach         Return the job ID without waiting
@@ -68,6 +70,7 @@ func Run(args []string) {
 	flags.SetOutput(io.Discard)
 	csvPath := flags.String("csv", "", "CSV file")
 	rowValue := flags.String("row", "", "JSON row")
+	instructions := flags.String("instructions", defaultInstructions, "batch-wide research rules")
 	prompt := flags.String("prompt", "", "research prompt")
 	schemaValue := flags.String("schema", defaultSchema, "answer schema")
 	apiURL := flags.String("api-url", "", "Freegent API")
@@ -98,9 +101,9 @@ func Run(args []string) {
 	var jobID string
 	var err error
 	if *csvPath != "" {
-		jobID, err = submitRemoteCSVJob(ctx, resolvedAPIURL, *csvPath, *prompt, *schemaValue)
+		jobID, err = submitRemoteCSVJob(ctx, resolvedAPIURL, *csvPath, *instructions, *prompt, *schemaValue)
 	} else {
-		request, requestError := buildRowRequest(*rowValue, *prompt, *schemaValue)
+		request, requestError := buildRowRequest(*rowValue, *instructions, *prompt, *schemaValue)
 		if requestError != nil {
 			failCLI(requestError)
 		}
@@ -143,7 +146,7 @@ func Run(args []string) {
 	printJSON(result.Result)
 }
 
-func buildRowRequest(rowValue, prompt, schemaValue string) (APIRequest, error) {
+func buildRowRequest(rowValue, instructions, prompt, schemaValue string) (APIRequest, error) {
 	var row map[string]any
 	if err := json.Unmarshal([]byte(rowValue), &row); err != nil {
 		return APIRequest{}, fmt.Errorf("--row must be a JSON object: %w", err)
@@ -152,14 +155,21 @@ func buildRowRequest(rowValue, prompt, schemaValue string) (APIRequest, error) {
 		return APIRequest{}, errors.New("--row must contain at least one field")
 	}
 	return APIRequest{
-		Instructions: defaultInstructions,
+		Instructions: instructions,
 		Template:     prompt,
 		Schema:       json.RawMessage(schemaValue),
 		Rows:         []map[string]any{row},
 	}, nil
 }
 
-func submitRemoteCSVJob(ctx context.Context, baseURL, path, prompt, schemaValue string) (string, error) {
+func submitRemoteCSVJob(
+	ctx context.Context,
+	baseURL string,
+	path string,
+	instructions string,
+	prompt string,
+	schemaValue string,
+) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
@@ -170,7 +180,7 @@ func submitRemoteCSVJob(ctx context.Context, baseURL, path, prompt, schemaValue 
 	form := multipart.NewWriter(&body)
 	for key, value := range map[string]string{
 		"name":         filepath.Base(path),
-		"instructions": defaultInstructions,
+		"instructions": instructions,
 		"template":     prompt,
 		"schema":       schemaValue,
 	} {

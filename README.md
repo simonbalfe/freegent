@@ -20,6 +20,7 @@ Run:
 ```bash
 freegent \
   --csv research.csv \
+  --instructions "Use current primary sources. Do not guess unsupported facts." \
   --prompt "Research {{subject}}, which is a {{type}}. Use {{url}} when supplied. Return a concise factual brief." \
   > results.csv
 ```
@@ -75,6 +76,7 @@ Open the dashboard:
 ```bash
 freegent \
   --csv research.csv \
+  --instructions "Use current evidence and clearly state uncertainty." \
   --prompt "Research {{subject}} and answer using current evidence." \
   > results.csv
 ```
@@ -82,12 +84,14 @@ freegent \
 Any CSV header can be used in the prompt with `{{field_name}}`.
 
 Each row is a separate research task. Your rows can contain companies, people, products, URLs, markets, topics, or anything else the agent can research.
+`--instructions` applies the same research rules to the whole job. `--prompt` is rendered separately for each row using its CSV values.
 
 ## Research one row
 
 ```bash
 freegent \
   --row '{"subject":"EU AI Act","question":"What changed most recently?"}' \
+  --instructions "Prefer official EU sources and identify the effective date." \
   --prompt "Research {{subject}} and answer: {{question}}"
 ```
 

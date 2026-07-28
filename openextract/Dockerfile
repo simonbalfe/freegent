@@ -5,7 +5,8 @@ WORKDIR /srv
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-COPY tsconfig.json *.ts ./
+COPY tsconfig.json ./
+COPY src ./src
 RUN bun run typecheck
 
 FROM oven/bun:1-slim
@@ -21,7 +22,7 @@ RUN bun install --frozen-lockfile --production --backend=copyfile \
     && find /root/.cache/ms-playwright -maxdepth 1 -type d -name 'ffmpeg-*' -exec rm -rf {} + \
     && rm -rf /root/.bun/install/cache /var/lib/apt/lists/*
 
-COPY --from=typecheck /srv/*.ts ./
+COPY --from=typecheck /srv/src ./src
 
 ENV PORT=8081
 
@@ -30,4 +31,4 @@ EXPOSE 8081
 HEALTHCHECK --interval=5s --timeout=3s --start-period=10s --retries=30 \
   CMD bun -e "const response = await fetch('http://localhost:8081/healthz'); process.exit(response.ok ? 0 : 1)"
 
-CMD ["xvfb-run", "-a", "--server-args=-screen 0 1920x1080x24", "bun", "run", "server.ts"]
+CMD ["xvfb-run", "-a", "--server-args=-screen 0 1920x1080x24", "bun", "run", "src/server.ts"]
