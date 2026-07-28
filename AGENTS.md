@@ -19,6 +19,7 @@
 - `openextract/src/server.ts` owns only HTTP lifecycle and request handling. Browser escalation lives in `openextract/src/browser`, extraction providers in `openextract/src/extraction`, backpressure in `openextract/src/concurrency`, and environment parsing in `openextract/src/config`.
 - OpenExtract bounds all active extraction requests and browser contexts separately. Saturation returns HTTP `429`; River remains the only durable queue and retry owner.
 - `compose.yaml` runs PostgreSQL, API, worker, and OpenExtract services. The API and worker use separate multi-architecture GHCR images built from distinct Dockerfile targets.
+- `install.sh` builds the host CLI through the `cli-artifact` Docker target for the detected macOS or Linux architecture. Never copy the Linux service binary from a running container onto the host.
 - The current deployment target is one Docker Compose stack. Do not add K3s, KEDA, a custom replica scaler, or Hetzner node autoscaling until the roadmap item is explicitly started.
 
 Keep the Go API independent from extraction implementation details. OpenExtract must remain deployable on a separate server, with the Go API configured through `OPENEXTRACT_URL`.

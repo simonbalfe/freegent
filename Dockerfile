@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS build
+FROM golang:1.25-alpine AS source
 
 WORKDIR /src
 
@@ -8,7 +8,23 @@ RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
 
+FROM source AS build
+
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /freegent ./cmd/freegent
+
+FROM source AS cli-build
+
+ARG CLI_GOOS
+ARG CLI_GOARCH
+
+RUN test -n "$CLI_GOOS" \
+    && test -n "$CLI_GOARCH" \
+    && CGO_ENABLED=0 GOOS="$CLI_GOOS" GOARCH="$CLI_GOARCH" \
+       go build -trimpath -ldflags="-s -w" -o /freegent ./cmd/freegent
+
+FROM scratch AS cli-artifact
+
+COPY --from=cli-build /freegent /freegent
 
 FROM alpine:3.22 AS runtime
 

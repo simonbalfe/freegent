@@ -4,6 +4,26 @@ set -euo pipefail
 repo_url="${FREEGENT_REPO_URL:-https://github.com/simonbalfe/freegent.git}"
 install_dir="${FREEGENT_DIR:-$HOME/freegent}"
 
+host_cli_platform() {
+  case "$(uname -s)" in
+    Darwin) cli_goos=darwin ;;
+    Linux) cli_goos=linux ;;
+    *)
+      echo "Unsupported operating system: $(uname -s)"
+      exit 1
+      ;;
+  esac
+
+  case "$(uname -m)" in
+    arm64 | aarch64) cli_goarch=arm64 ;;
+    x86_64 | amd64) cli_goarch=amd64 ;;
+    *)
+      echo "Unsupported CPU architecture: $(uname -m)"
+      exit 1
+      ;;
+  esac
+}
+
 has_env_value() {
   local key="$1"
   awk -v key="$key" '
@@ -104,14 +124,26 @@ if ! docker compose pull; then
 fi
 docker compose up -d --force-recreate
 
+host_cli_platform
 if [ -w /usr/local/bin ]; then
   cli_path=/usr/local/bin/freegent
 else
   mkdir -p "$HOME/.local/bin"
   cli_path="$HOME/.local/bin/freegent"
 fi
-docker compose cp api:/usr/local/bin/freegent "$cli_path"
-chmod 755 "$cli_path"
+cli_build_dir="$(mktemp -d)"
+cleanup_cli_build() {
+  rm -rf "$cli_build_dir"
+}
+trap cleanup_cli_build EXIT
+echo "Building native CLI for $cli_goos/$cli_goarch"
+docker build \
+  --target cli-artifact \
+  --build-arg CLI_GOOS="$cli_goos" \
+  --build-arg CLI_GOARCH="$cli_goarch" \
+  --output "type=local,dest=$cli_build_dir" \
+  .
+install -m 0755 "$cli_build_dir/freegent" "$cli_path"
 
 mkdir -p "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
 cp SKILL.md "$HOME/.codex/skills/freegent/SKILL.md"

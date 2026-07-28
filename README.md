@@ -61,6 +61,7 @@ curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh
 
 Enter your keys when asked. The installer starts Freegent and installs the `freegent` command.
 It stops before starting Docker unless an OpenRouter key and at least one Serper, Exa, or Tavily search key are present.
+The CLI is compiled inside Docker for the host operating system and CPU, so Go does not need to be installed locally.
 
 Check that it worked:
 
