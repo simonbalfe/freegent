@@ -1,10 +1,11 @@
 {
-  "name": "@openclaygent-go/openextract-service",
+  "name": "@freegent/openextract-service",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "bun run server.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@mozilla/readability": "0.6.0",

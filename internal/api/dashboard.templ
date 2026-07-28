@@ -1,0 +1,152 @@
+package api
+
+import "fmt"
+
+templ DashboardPage(jobs []DashboardJob) {
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Freegent</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}h1{margin-bottom:8px}h2{margin-top:32px}.card{background:#fff;border:1px solid #e2e4e8;border-radius:10px;padding:24px;margin:20px 0;box-shadow:0 2px 8px #17202a0a}form.card label{display:block;margin:16px 0 7px;font-weight:600}form.card label:first-child{margin-top:0}textarea,input{width:100%;box-sizing:border-box;margin:0 0 4px;padding:11px 12px;border:1px solid #98a2b3;border-radius:6px;font:14px ui-monospace,monospace;line-height:1.45;background:#fff}textarea{min-height:108px;resize:vertical}button{margin-top:12px;padding:11px 18px;border:0;border-radius:6px;background:#175cd3;color:#fff;font-weight:600;cursor:pointer}.muted{color:#667085}.ok{color:#18794e}.error{color:#b42318}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #eee;padding:8px}</style>
+</head>
+<body>
+  <h1>Freegent</h1>
+  <p class="muted"><strong>Open source Freegent</strong>{ " for " }GTM outbound research.</p>
+  <p class="muted">Upload a CSV or paste JSON rows, then watch every row complete. Job history survives API restarts.</p>
+  <form method="post" action="/dashboard/jobs" enctype="multipart/form-data" class="card">
+    <label>Job name</label>
+    <input name="name" placeholder="Optional, defaults to the CSV filename" />
+    <label>Instructions</label>
+    <textarea name="instructions">Research each account using current first-party evidence. Assess whether it looks like a good GTM outbound prospect. Do not guess unsupported facts.</textarea>
+    <label>Template</label>
+    <input name="template" value="Research {{company}} ({{domain}}) for GTM outbound. What do they sell, who do they serve, and why might they be a good prospect?" />
+    <label>Output schema</label>
+    <textarea name="schema">{ `{"company":"string","product":"string","targetCustomer":"string","fit":"high|medium|low","rationale":"string","source":"string"}` }</textarea>
+    <label>CSV file</label>
+    <input type="file" name="csv" accept=".csv,text/csv" />
+    <p class="muted">The first row must contain headers matching template fields such as { "{{company}}" } and { "{{domain}}" }. A CSV takes precedence over JSON rows.</p>
+    <label>Rows (optional JSON array)</label>
+    <textarea name="rows">{ `[
+  {"company":"Linear","domain":"linear.app"},
+  {"company":"Notion","domain":"notion.so"},
+  {"company":"Vercel","domain":"vercel.com"},
+  {"company":"Supabase","domain":"supabase.com"},
+  {"company":"Sentry","domain":"sentry.io"},
+  {"company":"Resend","domain":"resend.com"},
+  {"company":"PostHog","domain":"posthog.com"},
+  {"company":"Clerk","domain":"clerk.com"},
+  {"company":"Retool","domain":"retool.com"},
+  {"company":"Figma","domain":"figma.com"}
+]` }</textarea>
+    <button type="submit">Start research</button>
+  </form>
+  <h2>Recent jobs</h2>
+  if len(jobs) == 0 {
+    <p class="muted">No jobs yet.</p>
+  } else {
+    for _, job := range jobs {
+      <div class="card"><a href={ "/dashboard/jobs/" + job.ID }>{ dashboardJobLabel(job) }</a> · { job.Status } · { fmt.Sprintf("%d/%d rows", job.Completed, job.Total) } · <span class="muted">{ dashboardJobTime(job.CreatedAt) }</span></div>
+    }
+  }
+</body>
+</html>
+}
+
+templ DashboardJobPage(job DashboardJob) {
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Freegent job</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}.card{background:#fff;border:1px solid #e2e4e8;border-radius:12px;padding:20px;margin:16px 0;box-shadow:0 2px 8px #17202a0a}.muted{color:#667085}.error{color:#b42318}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.metric{background:#f5f7fa;border-radius:8px;padding:12px}.metric strong{display:block;font-size:20px}.flow{background:#101828;color:#e6edf3;border-radius:8px;padding:14px;max-height:280px;overflow:auto;font:13px ui-monospace,monospace}.event{padding:6px 0;border-bottom:1px solid #ffffff1f}.event span{color:#98a2b3;margin-right:12px}.row-card{border:1px solid #e2e4e8;border-radius:10px;padding:16px;margin:12px 0}.row-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.status{color:#18794e;font-weight:600}.tokens{color:#667085;font-size:14px}.answer,.step-input{display:grid;gap:10px}.answer-row,.step-input-row{border-top:1px solid #eaecf0;padding-top:10px}.answer-row dt,.step-input-row dt{font-weight:600}.answer-row dd,.step-input-row dd{margin:4px 0 0;white-space:pre-wrap}.step{margin:14px 0}.step-title{font-weight:600;font-size:17px}pre{white-space:pre-wrap;overflow:auto;background:#f5f7fa;padding:10px;border-radius:6px}details{margin-top:12px}summary{cursor:pointer;font-weight:600}a{color:#175cd3}</style>
+</head>
+<body>
+  <p><a href="/dashboard">← New job</a></p>
+  <h1>Job { job.ID }</h1>
+  <div id="job-status">@DashboardJobStatus(job)</div>
+</body>
+</html>
+}
+
+templ DashboardJobStatus(job DashboardJob) {
+<div class="card"
+  if dashboardActive(job) {
+    hx-get={ "/dashboard/jobs/" + job.ID + "/status" } hx-trigger="every 1s" hx-target="#job-status" hx-swap="innerHTML"
+  }
+>
+  <div class="row-head"><h2>{ job.Status }</h2><span class="muted">{ job.LatestEvent }</span></div>
+  <div class="summary">
+    <div class="metric"><span class="muted">Rows</span><strong>{ fmt.Sprintf("%d/%d", job.Completed, job.Total) }</strong></div>
+    <div class="metric"><span class="muted">Input tokens</span><strong>{ fmt.Sprintf("%d", dashboardTokens(job).Input) }</strong></div>
+    <div class="metric"><span class="muted">Output tokens</span><strong>{ fmt.Sprintf("%d", dashboardTokens(job).Output) }</strong></div>
+  </div>
+  <h3>Live activity</h3>
+  <div class="flow">
+    for _, event := range job.Events {
+      <div class="event"><span>{ dashboardEventTime(event.At) } · { dashboardEventLabel(event) }</span> <strong>{ dashboardEventMessage(event.Message) }</strong></div>
+    }
+  </div>
+  <h3>Rows</h3>
+  for _, row := range job.Rows {
+    <article class="row-card">
+      <div class="row-head"><strong>Row { fmt.Sprintf("%d", row.Index + 1) }</strong><span class="status">{ row.Status }</span><span class="tokens">{ fmt.Sprintf("%d input · %d output tokens", row.Result.Tokens.Input, row.Result.Tokens.Output) }</span></div>
+      <p class="muted">Input</p><pre>{ dashboardInput(row.Input) }</pre>
+      <details><summary>{ fmt.Sprintf("%d agent steps", len(row.AgentLog)) }</summary>
+        if len(row.AgentLog) == 0 {
+          <p class="muted">No completed steps yet. Watch the live activity above.</p>
+        } else {
+          <ol>
+            for _, step := range row.AgentLog {
+              @DashboardStep(step)
+            }
+          </ol>
+        }
+        if row.Result.Result != nil {
+          <p><strong>Answer</strong></p>
+          <dl class="answer">
+            for _, field := range dashboardFields(row.Result.Result) {
+              <div class="answer-row"><dt>{ field.Key }</dt><dd>{ field.Value }</dd></div>
+            }
+          </dl>
+        }
+        if len(row.Result.Sources) > 0 {
+          @DashboardSources(row.Result.Sources)
+        }
+        if row.Result.Error != "" {
+          <p class="error"><strong>Error:</strong> { row.Result.Error }</p>
+        }
+      </details>
+    </article>
+  }
+  if !dashboardActive(job) {
+    <p><a href={ "/jobs/" + job.ID + "/results.csv" }>Download enriched CSV</a>{ " · " }<a href={ "/jobs/" + job.ID }>View JSON status</a></p>
+  }
+</div>
+}
+
+templ DashboardStep(step Step) {
+<li class="step">
+  <div class="step-title">{ dashboardStepLabel(step) }</div>
+  if len(step.Input) > 0 {
+    <dl class="step-input">
+      for _, field := range dashboardFields(step.Input) {
+        <div class="step-input-row"><dt>{ field.Key }</dt><dd>{ field.Value }</dd></div>
+      }
+    </dl>
+  }
+</li>
+}
+
+templ DashboardSources(sources []string) {
+<p><strong>Evidence sources</strong></p>
+<ul>
+  for _, source := range sources {
+    <li><a href={ source } target="_blank" rel="noreferrer">{ source }</a></li>
+  }
+</ul>
+}

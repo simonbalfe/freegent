@@ -1,6 +1,6 @@
 /logs/
 /.playwright-cli/
 /*.log
-/openclaygent-go
+/freegent
 /.env
 services/openextract/node_modules/

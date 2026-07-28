@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@openclaygent-go/openextract-service",
+      "name": "@freegent/openextract-service",
       "dependencies": {
         "@mozilla/readability": "0.6.0",
         "@tavily/core": "0.7.6",

@@ -22,6 +22,18 @@ curl -sS http://localhost:8081/extract \
 
 The response contains `content`, `contentType`, `provider`, `outcome`, discovered `links`, and every extraction `attempt`.
 
+OpenExtract applies bounded in-memory backpressure. `OPENEXTRACT_MAX_CONCURRENCY` limits all active extractions, `OPENEXTRACT_BROWSER_CONCURRENCY` separately limits Chromium contexts, and `OPENEXTRACT_MAX_WAITING` limits requests waiting for an extraction slot. Saturated requests receive HTTP `429` with `Retry-After: 1`; the durable caller should retry them.
+
+Defaults:
+
+```text
+OPENEXTRACT_MAX_CONCURRENCY=20
+OPENEXTRACT_BROWSER_CONCURRENCY=4
+OPENEXTRACT_MAX_WAITING=100
+```
+
+`GET /healthz` reports the configured limits and current active/waiting counts.
+
 The service currently has no authentication or private-network URL filtering. Deploy it on a private network or behind an authenticated gateway rather than exposing it directly to the public internet.
 
 ## Run directly
@@ -43,6 +55,9 @@ docker run --rm -p 8081:8081 \
   -e EVOMI_GATEWAY \
   -e CAPSOLVER_API_KEY \
   -e TWOCAPTCHA_API_KEY \
+  -e OPENEXTRACT_MAX_CONCURRENCY=20 \
+  -e OPENEXTRACT_BROWSER_CONCURRENCY=4 \
+  -e OPENEXTRACT_MAX_WAITING=100 \
   openextract
 ```
 

@@ -1,21 +1,60 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: freegent
+      POSTGRES_USER: freegent
+      POSTGRES_PASSWORD: ${FREEGENT_POSTGRES_PASSWORD:-freegent}
+    volumes:
+      - freegent_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freegent -d freegent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
   api:
     image: ghcr.io/simonbalfe/freegent-api:${FREEGENT_IMAGE_TAG:-latest}
     build:
       context: .
     ports:
-      - "127.0.0.1:${OPENCLAYGENT_PORT:-8080}:8080"
+      - "127.0.0.1:${FREEGENT_PORT:-8080}:8080"
     environment:
+      FREEGENT_DATABASE_URL: postgres://freegent:${FREEGENT_POSTGRES_PASSWORD:-freegent}@postgres:5432/freegent?sslmode=disable
+      FREEGENT_DATABASE_MAX_CONNS: ${FREEGENT_DATABASE_MAX_CONNS:-30}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    image: ghcr.io/simonbalfe/freegent-api:${FREEGENT_IMAGE_TAG:-latest}
+    build:
+      context: .
+    healthcheck:
+      disable: true
+    command:
+      - worker
+      - -concurrency
+      - ${FREEGENT_WORKER_CONCURRENCY:-10}
+      - -timeout
+      - ${FREEGENT_OPERATION_TIMEOUT:-15m}
+    environment:
+      FREEGENT_DATABASE_URL: postgres://freegent:${FREEGENT_POSTGRES_PASSWORD:-freegent}@postgres:5432/freegent?sslmode=disable
+      FREEGENT_DATABASE_MAX_CONNS: ${FREEGENT_DATABASE_MAX_CONNS:-30}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       SERPER_API_KEY: ${SERPER_API_KEY:-}
       EXA_API_KEY: ${EXA_API_KEY:-}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       APIFY_API_TOKEN: ${APIFY_API_TOKEN:-}
       OPENEXTRACT_URL: http://openextract:8081
-      OPENCLAY_LOG_DIR: /data/logs
+      FREEGENT_LOG_DIR: /data/logs
     volumes:
-      - openclaygent_logs:/data/logs
+      - freegent_logs:/data/logs
     depends_on:
+      api:
+        condition: service_healthy
       openextract:
         condition: service_healthy
     restart: unless-stopped
@@ -28,6 +67,9 @@ services:
       - "127.0.0.1:${OPENEXTRACT_PORT:-8081}:8081"
     environment:
       PORT: "8081"
+      OPENEXTRACT_MAX_CONCURRENCY: ${OPENEXTRACT_MAX_CONCURRENCY:-20}
+      OPENEXTRACT_BROWSER_CONCURRENCY: ${OPENEXTRACT_BROWSER_CONCURRENCY:-4}
+      OPENEXTRACT_MAX_WAITING: ${OPENEXTRACT_MAX_WAITING:-100}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       EVOMI_USERNAME: ${EVOMI_USERNAME:-}
       EVOMI_PASSWORD: ${EVOMI_PASSWORD:-}
@@ -41,4 +83,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  openclaygent_logs:
+  freegent_logs:
+  freegent_postgres:

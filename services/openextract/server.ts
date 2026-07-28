@@ -1,5 +1,8 @@
 import { chromium, type Browser, type Page } from "patchright";
+import { z } from "zod";
+import { parseEnvironment } from "./config.ts";
 import { extract } from "./extract.ts";
+import { ConcurrencyLimiter, QueueAbortedError, QueueSaturatedError } from "./limiter.ts";
 
 type TokenVendor = "turnstile" | "hcaptcha" | "recaptcha";
 type SolverName = "capsolver" | "twocaptcha";
@@ -30,11 +33,18 @@ const capsolverKey = process.env.CAPSOLVER_API_KEY ?? "";
 const twoCaptchaKey = process.env.TWOCAPTCHA_API_KEY ?? "";
 const hasProxy = Boolean(proxyConfig.username && proxyConfig.password && proxyConfig.gateway);
 const hasSolver = Boolean(capsolverKey || twoCaptchaKey);
-const port = Number.parseInt(process.env.PORT ?? "8081", 10);
+const environment = parseEnvironment(process.env);
+const port = environment.PORT;
+const maxConcurrency = environment.OPENEXTRACT_MAX_CONCURRENCY;
+const browserConcurrency = environment.OPENEXTRACT_BROWSER_CONCURRENCY;
+const maxWaiting = environment.OPENEXTRACT_MAX_WAITING;
+const extractionLimiter = new ConcurrencyLimiter(maxConcurrency, maxWaiting);
+const browserLimiter = new ConcurrencyLimiter(browserConcurrency, maxWaiting);
 
 const challengePattern =
   /just a moment|checking your browser|cf-browser-verification|verifying you are human|enable javascript|captcha/i;
 const turnstileSitekeyPattern = /(?:data-sitekey|sitekey["'\s:=]+)["']?(0x[0-9A-Za-z_-]{20,})/;
+const extractRequestSchema = z.object({ url: z.string() });
 
 const solvers = {
   capsolver: {
@@ -329,24 +339,49 @@ const server = Bun.serve({
         ok: true,
         proxy: hasProxy,
         solvers: solverOrder(),
+        limits: {
+          extraction: extractionLimiter.stats,
+          browser: browserLimiter.stats,
+        },
       });
     }
     if (requestURL.pathname === "/extract" && request.method === "POST") {
       try {
-        const body = (await request.json()) as { url?: unknown };
-        if (typeof body.url !== "string") {
-          return Response.json({ error: "url is required" }, { status: 400 });
-        }
+        const body = extractRequestSchema.parse(await request.json());
         const started = performance.now();
-        const result = await extract(body.url, (target, options) => render(browser, target, options), {
-            proxy: hasProxy,
-            solver: hasSolver,
-        });
+        const result = await extractionLimiter.run(
+          () =>
+            extract(
+              body.url,
+              (target, options) =>
+                browserLimiter.run(() => render(browser, target, options), request.signal),
+              {
+                proxy: hasProxy,
+                solver: hasSolver,
+              },
+            ),
+          request.signal,
+        );
         console.log(
           `extract outcome=${result.outcome} provider=${result.provider} attempts=${result.attempts.length} durationMs=${Math.round(performance.now() - started)} url=${result.url}`,
         );
         return Response.json(result);
       } catch (error) {
+        if (error instanceof QueueSaturatedError) {
+          return Response.json(
+            {
+              error: error.message,
+              limits: {
+                extraction: extractionLimiter.stats,
+                browser: browserLimiter.stats,
+              },
+            },
+            { status: 429, headers: { "retry-after": "1" } },
+          );
+        }
+        if (error instanceof QueueAbortedError) {
+          return Response.json({ error: error.message }, { status: 408 });
+        }
         console.error(`extract failed error=${firstLine(error)}`);
         return Response.json({ error: firstLine(error) }, { status: 400 });
       }
@@ -365,5 +400,5 @@ process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
 console.log(
-  `openextract service listening port=${server.port} proxy=${hasProxy ? "on" : "off"} solvers=${solverOrder().join(",") || "none"}`,
+  `openextract service listening port=${server.port} proxy=${hasProxy ? "on" : "off"} solvers=${solverOrder().join(",") || "none"} concurrency=${maxConcurrency} browserConcurrency=${browserConcurrency} maxWaiting=${maxWaiting}`,
 );

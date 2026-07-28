@@ -86,7 +86,7 @@ else
   mkdir -p "$HOME/.local/bin"
   cli_path="$HOME/.local/bin/freegent"
 fi
-go build -trimpath -o "$cli_path" ./cmd/openclaygent-go
+go build -trimpath -o "$cli_path" ./cmd/freegent
 
 mkdir -p "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
 cp skills/freegent/SKILL.md "$HOME/.codex/skills/freegent/SKILL.md"
@@ -94,7 +94,7 @@ cp skills/freegent/SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
 
 echo "Waiting for services"
 for attempt in $(seq 1 30); do
-  if curl -fsS http://localhost:8080/health >/dev/null 2>&1 && curl -fsS http://localhost:8081/healthz >/dev/null 2>&1 && docker compose exec -T api sh -c 'test -n "$OPENROUTER_API_KEY"'; then
+  if curl -fsS http://localhost:8080/health >/dev/null 2>&1 && curl -fsS http://localhost:8081/healthz >/dev/null 2>&1 && docker compose exec -T worker sh -c 'test -n "$OPENROUTER_API_KEY"'; then
     echo
     echo "Freegent is ready: http://localhost:8080/dashboard"
     echo "CLI installed at $cli_path"
