@@ -1,46 +1,48 @@
 # Freegent
 
-Freegent researches a list of companies for you.
+Freegent is a general-purpose AI research agent for spreadsheets, similar to a self-hosted Clay research column.
 
-Give it a CSV and a question. It researches every row and returns the same CSV with one new `answer` column.
+Give it any CSV and a prompt. Freegent researches every row and returns the same CSV with one new `answer` column.
 
 ## Example
 
 Start with:
 
 ```csv
-company,domain
-Figma,figma.com
-Linear,linear.app
-Notion,notion.com
+subject,type,url
+Figma,company,https://figma.com
+Dario Amodei,person,
+EU AI Act,topic,
 ```
 
 Run:
 
 ```bash
 freegent \
-  --csv accounts.csv \
-  --prompt "Research {{company}} at {{domain}}. Explain what they sell and who they sell to." \
-  > researched-accounts.csv
+  --csv research.csv \
+  --prompt "Research {{subject}}, which is a {{type}}. Use {{url}} when supplied. Return a concise factual brief." \
+  > results.csv
 ```
 
 You get:
 
 ```csv
-company,domain,answer
-Figma,figma.com,...
-Linear,linear.app,...
-Notion,notion.com,...
+subject,type,url,answer
+Figma,company,https://figma.com,...
+Dario Amodei,person,,...
+EU AI Act,topic,,...
 ```
 
 Use Freegent for:
 
 - account research
-- lead qualification
-- ICP scoring
-- buying signals
-- sales personalization
-- competitor research
+- people and role research
+- market and competitor research
+- product comparisons
+- news and buying signals
+- URL extraction and summarization
+- row classification, scoring, and verification
+- lead qualification and sales personalization
 
 ## Set up Freegent
 
@@ -72,19 +74,21 @@ Open the dashboard:
 
 ```bash
 freegent \
-  --csv accounts.csv \
-  --prompt "Is {{company}} a good sales prospect? Give a clear reason." \
+  --csv research.csv \
+  --prompt "Research {{subject}} and answer using current evidence." \
   > results.csv
 ```
 
 Any CSV header can be used in the prompt with `{{field_name}}`.
 
-## Research one company
+Each row is a separate research task. Your rows can contain companies, people, products, URLs, markets, topics, or anything else the agent can research.
+
+## Research one row
 
 ```bash
 freegent \
-  --row '{"company":"Figma","domain":"figma.com"}' \
-  --prompt "Research {{company}} at {{domain}} and explain what they sell."
+  --row '{"subject":"EU AI Act","question":"What changed most recently?"}' \
+  --prompt "Research {{subject}} and answer: {{question}}"
 ```
 
 ## Request a structured answer
@@ -93,10 +97,10 @@ Freegent returns a text answer by default. Use `--schema` when every answer need
 
 ```bash
 freegent \
-  --csv accounts.csv \
-  --prompt "Assess {{company}} as a sales prospect." \
-  --schema '{"fit":"high|medium|low","reason":"string","source":"string"}' \
-  > scored-accounts.csv
+  --csv research.csv \
+  --prompt "Research {{subject}} and classify the result." \
+  --schema '{"summary":"string","category":"string","source":"string"}' \
+  > structured-results.csv
 ```
 
 The structured result is stored inside the single `answer` column.
@@ -107,8 +111,8 @@ Use `--detach` to let a job continue without keeping the terminal open:
 
 ```bash
 freegent \
-  --csv accounts.csv \
-  --prompt "Research {{company}} at {{domain}}." \
+  --csv research.csv \
+  --prompt "Research {{subject}}." \
   --detach
 ```
 
