@@ -19,13 +19,15 @@ export const worker = {
       return Response.json({ ok: true });
     }
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/dashboard")) {
-      return dashboardResponse();
+      return dashboardResponse(env.PUBLIC_DASHBOARD === "true");
     }
     if (request.method === "GET" && url.pathname === "/favicon.ico") {
       return new Response(null, { status: 204 });
     }
-    const unauthorized = authorize(request, env);
-    if (unauthorized !== null) return unauthorized;
+    if (!isPublicDashboardRead(request, url, env)) {
+      const unauthorized = authorize(request, env);
+      if (unauthorized !== null) return unauthorized;
+    }
     try {
       if (request.method === "GET" && url.pathname === "/jobs") {
         const limit = listLimitSchema.parse(url.searchParams.get("limit") ?? undefined);
@@ -91,4 +93,9 @@ function authorize(request: Request, env: Env): Response | null {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   return null;
+}
+
+function isPublicDashboardRead(request: Request, url: URL, env: Env): boolean {
+  if (env.PUBLIC_DASHBOARD !== "true" || request.method !== "GET") return false;
+  return url.pathname === "/jobs" || /^\/jobs\/[^/]+$/.test(url.pathname);
 }

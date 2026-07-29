@@ -61,6 +61,7 @@ const dashboardHtml = String.raw`<!doctype html>
       margin-bottom: 3px;
     }
     .auth { display: flex; gap: 8px; }
+    .public-dashboard-true .auth { display: none; }
     input {
       width: min(320px, 45vw);
       border: 1px solid var(--line);
@@ -222,7 +223,7 @@ const dashboardHtml = String.raw`<!doctype html>
     }
   </style>
 </head>
-<body>
+<body class="public-dashboard-__PUBLIC_DASHBOARD__">
   <main class="shell">
     <header>
       <div class="brand">
@@ -249,7 +250,7 @@ const dashboardHtml = String.raw`<!doctype html>
           <button class="button" id="refresh" type="button">Refresh</button>
         </div>
         <div class="jobs" id="jobs">
-          <div class="empty"><strong>Connect to load jobs</strong>Enter the Worker API token above.</div>
+          <div class="empty"><strong>__INITIAL_JOB_TITLE__</strong>__INITIAL_JOB_TEXT__</div>
         </div>
       </aside>
       <section class="panel detail" id="detail">
@@ -258,6 +259,7 @@ const dashboardHtml = String.raw`<!doctype html>
     </section>
   </main>
   <script>
+    const publicDashboard = __PUBLIC_DASHBOARD__;
     const state = {
       token: sessionStorage.getItem("freegent-api-token") || "",
       jobs: [],
@@ -304,8 +306,9 @@ const dashboardHtml = String.raw`<!doctype html>
     }
 
     async function api(path) {
+      const headers = state.token ? { Authorization: "Bearer " + state.token } : {};
       const response = await fetch(path, {
-        headers: { Authorization: "Bearer " + state.token }
+        headers: headers
       });
       const payload = await response.json();
       if (!response.ok) {
@@ -411,7 +414,7 @@ const dashboardHtml = String.raw`<!doctype html>
     }
 
     async function loadJobs(showErrors) {
-      if (!state.token || state.refreshing) return;
+      if ((!publicDashboard && !state.token) || state.refreshing) return;
       state.refreshing = true;
       try {
         const payload = await api("/jobs?limit=50");
@@ -447,9 +450,9 @@ const dashboardHtml = String.raw`<!doctype html>
     document.getElementById("refresh").addEventListener("click", function () {
       loadJobs(true);
     });
-    if (state.token) loadJobs(true);
+    if (publicDashboard || state.token) loadJobs(true);
     setInterval(function () {
-      if (state.token && state.jobs.some(function (job) {
+      if ((publicDashboard || state.token) && state.jobs.some(function (job) {
         return job.status === "queued" || job.status === "running";
       })) loadJobs(false);
     }, 3000);
@@ -457,8 +460,18 @@ const dashboardHtml = String.raw`<!doctype html>
 </body>
 </html>`;
 
-export function dashboardResponse(): Response {
-  return new Response(dashboardHtml, {
+export function dashboardResponse(publicDashboard: boolean): Response {
+  const html = dashboardHtml
+    .replaceAll("__PUBLIC_DASHBOARD__", String(publicDashboard))
+    .replace(
+      "__INITIAL_JOB_TITLE__",
+      publicDashboard ? "Loading jobs" : "Connect to load jobs",
+    )
+    .replace(
+      "__INITIAL_JOB_TEXT__",
+      publicDashboard ? "Fetching recent runs." : "Enter the Worker API token above.",
+    );
+  return new Response(html, {
     headers: {
       "Cache-Control": "no-store",
       "Content-Security-Policy":

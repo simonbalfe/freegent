@@ -14,6 +14,7 @@ export type BrowserRunBinding = {
 export type Env = {
   readonly API_TOKEN: string;
   readonly OPENROUTER_API_KEY: string;
+  readonly PUBLIC_DASHBOARD?: string;
   readonly SERPER_API_KEY: string;
   readonly DB: D1Database;
   readonly ARTIFACTS: R2Bucket;

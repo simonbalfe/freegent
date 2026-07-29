@@ -57,7 +57,7 @@ D1 contains only indexed control-plane data and compact result summaries. R2 con
 }
 ```
 
-Jobs currently accept up to 1,000 rows per request. Every route except `/health` requires `Authorization: Bearer <API_TOKEN>`.
+Jobs currently accept up to 1,000 rows per request. Job creation requires `Authorization: Bearer <API_TOKEN>`.
 
 `GET /jobs?limit=50` returns recent job summaries.
 
@@ -65,9 +65,9 @@ Jobs currently accept up to 1,000 rows per request. Every route except `/health`
 
 ## Dashboard
 
-`GET /` serves a same-origin job dashboard. Enter the Worker API token to list recent jobs, inspect individual row results and errors, and automatically refresh active runs. The token is kept in browser session storage and all job data endpoints remain authenticated.
+`GET /` serves a same-origin job dashboard for recent jobs, individual row results and errors, and automatic active-run refreshes.
 
-For the current test deployment, run `bun run dashboard:token` from a shell with `CLOUDFLARE_API_KEY` loaded, then paste the result into the dashboard. Production deployments should use an independently generated `API_TOKEN`.
+The test deployment sets `PUBLIC_DASHBOARD=true`, so its read-only job endpoints do not require a token. Job creation remains authenticated. Production deployments should omit this setting and protect research data with `API_TOKEN` or Cloudflare Access.
 
 ## Local verification
 

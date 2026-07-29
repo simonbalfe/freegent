@@ -7,6 +7,9 @@
   "observability": {
     "enabled": true
   },
+  "vars": {
+    "PUBLIC_DASHBOARD": "true"
+  },
   "limits": {
     "cpu_ms": 300000,
     "subrequests": 100000
