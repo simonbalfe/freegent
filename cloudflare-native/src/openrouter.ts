@@ -84,7 +84,6 @@ async function chat(
   if (enableTools) {
     body["tools"] = toolDefinitions(config.outputSchema);
     body["tool_choice"] = "required";
-    body["parallel_tool_calls"] = true;
   } else {
     body["response_format"] = {
       type: "json_schema",
@@ -153,7 +152,7 @@ function parseToolCall(raw: z.infer<typeof responseSchema>["choices"][number]["m
   return {
     id: raw.id,
     name: raw.function.name,
-      input: jsonObjectSchema.parse(input),
+    input: jsonObjectSchema.parse(input),
   };
 }
 

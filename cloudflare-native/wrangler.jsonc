@@ -19,7 +19,7 @@
     {
       "binding": "DB",
       "database_name": "freegent-native",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "4532b6ca-fccc-4726-a31e-ef2f7dc9f137",
       "migrations_dir": "migrations"
     }
   ],

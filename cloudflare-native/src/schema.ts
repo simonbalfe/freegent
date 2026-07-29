@@ -1,5 +1,4 @@
-import Ajv2020 from "ajv/dist/2020";
-import addFormats from "ajv-formats";
+import { Validator, type OutputUnit, type Schema } from "@cfworker/json-schema";
 import type { JsonObject } from "./contracts";
 
 type JsonSchema = Readonly<JsonObject>;
@@ -12,13 +11,18 @@ export type CompiledOutputSchema = {
 
 export function compileOutputSchema(input: Readonly<JsonObject>): CompiledOutputSchema {
   rejectRemoteReferences(input);
-  const ajv = new Ajv2020({ allErrors: true, strict: true });
-  addFormats(ajv);
-  const validator = ajv.compile(input);
+  const document = structuredClone(input);
+  const validator = new Validator(document as Schema, "2020-12", false);
+  let lastErrors: readonly OutputUnit[] = [];
   return {
-    document: input,
-    validate: (value: unknown): boolean => validator(value),
-    errors: (): string => ajv.errorsText(validator.errors),
+    document,
+    validate: (value: unknown): boolean => {
+      const result = validator.validate(value);
+      lastErrors = result.errors;
+      return result.valid;
+    },
+    errors: (): string =>
+      lastErrors.map((error) => `${error.instanceLocation || "/"} ${error.error}`).join("; "),
   };
 }
 

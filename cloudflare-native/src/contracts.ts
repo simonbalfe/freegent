@@ -22,7 +22,7 @@ export const jobRequestSchema = z.object({
   template: z.string().min(1),
   schema: jsonObjectSchema,
   rows: z.array(jsonObjectSchema).min(1).max(1_000),
-  model: z.string().trim().min(1).default("google/gemini-3.1-flash-lite"),
+  model: z.string().trim().min(1).default("google/gemini-3.5-flash-lite"),
   maxSteps: z.number().int().min(1).max(20).default(5),
   maxOutputTokens: z.number().int().min(128).max(16_384).default(1_500),
 });

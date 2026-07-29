@@ -1,6 +1,6 @@
 # Freegent Cloudflare-native prototype
 
-This is a clean-slate Cloudflare implementation of scalable agentic research. It is isolated from the existing Go deployment and is not deployed.
+This is a clean-slate Cloudflare implementation of scalable agentic research. It is isolated from the existing Go deployment and deployed only as a test Worker.
 
 ## Architecture
 
@@ -70,14 +70,18 @@ bun run check
 
 Quick Actions are remote-only during local development. Pure tests and deployment bundling do not call Cloudflare services.
 
-## Provisioning
+## Test deployment
 
-Before deployment:
+The test Worker is available at `https://freegent-native.sbmain17.workers.dev`. It uses test resources named `freegent-native`, `freegent-native-artifacts`, `freegent-runs` and `freegent-browser`, plus separate dead-letter Queues.
+
+The first completed browser smoke test ran one row through the API, Queue, Workflow, Browser Run, R2 and D1 in 13 seconds. Browser Run extracted 17,661 characters and 116 links from the requested page in 2.137 seconds.
+
+To reproduce the deployment in another account:
 
 1. Create the D1 database, R2 bucket, run Queue, browser Queue and both dead-letter Queues.
-2. Replace the placeholder D1 identifier in `wrangler.jsonc`.
+2. Update the D1 identifier in `wrangler.jsonc`.
 3. Apply `migrations/0001_initial.sql`.
 4. Set `API_TOKEN`, `OPENROUTER_API_KEY` and `SERPER_API_KEY` as Worker secrets.
 5. Deploy with Wrangler.
 
-No production resources are created by this prototype.
+No production resources are used by this prototype.
