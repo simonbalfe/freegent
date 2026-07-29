@@ -59,7 +59,15 @@ D1 contains only indexed control-plane data and compact result summaries. R2 con
 
 Jobs currently accept up to 1,000 rows per request. Every route except `/health` requires `Authorization: Bearer <API_TOKEN>`.
 
+`GET /jobs?limit=50` returns recent job summaries.
+
 `GET /jobs/:id` returns aggregate status and compact row results.
+
+## Dashboard
+
+`GET /` serves a same-origin job dashboard. Enter the Worker API token to list recent jobs, inspect individual row results and errors, and automatically refresh active runs. The token is kept in browser session storage and all job data endpoints remain authenticated.
+
+For the current test deployment, run `bun run dashboard:token` from a shell with `CLOUDFLARE_API_KEY` loaded, then paste the result into the dashboard. Production deployments should use an independently generated `API_TOKEN`.
 
 ## Local verification
 

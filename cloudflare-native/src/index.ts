@@ -1,12 +1,14 @@
 import { z, ZodError } from "zod";
 import { jobRequestSchema } from "./contracts";
+import { dashboardResponse } from "./dashboard";
 import { consumeQueue, dispatchRuns, reconcileDispatch } from "./dispatch";
 import type { Env } from "./env";
 import { compileOutputSchema } from "./schema";
-import { createJob, getJob, JobNotFoundError } from "./storage";
+import { createJob, getJob, JobNotFoundError, listJobs } from "./storage";
 import { ResearchWorkflow } from "./workflow";
 
 const jobPathSchema = z.string().uuid();
+const listLimitSchema = z.coerce.number().int().min(1).max(100).default(50);
 
 export { ResearchWorkflow };
 
@@ -16,9 +18,19 @@ export const worker = {
     if (request.method === "GET" && url.pathname === "/health") {
       return Response.json({ ok: true });
     }
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/dashboard")) {
+      return dashboardResponse();
+    }
+    if (request.method === "GET" && url.pathname === "/favicon.ico") {
+      return new Response(null, { status: 204 });
+    }
     const unauthorized = authorize(request, env);
     if (unauthorized !== null) return unauthorized;
     try {
+      if (request.method === "GET" && url.pathname === "/jobs") {
+        const limit = listLimitSchema.parse(url.searchParams.get("limit") ?? undefined);
+        return Response.json(await listJobs(env.DB, limit));
+      }
       if (request.method === "POST" && url.pathname === "/jobs") {
         const body: unknown = await request.json();
         const job = jobRequestSchema.parse(body);

@@ -259,6 +259,26 @@ export async function getJob(db: D1Database, jobId: string): Promise<unknown> {
   };
 }
 
+export async function listJobs(db: D1Database, limit: number): Promise<unknown> {
+  const response = await db
+    .prepare(
+      "SELECT id, name, status, total, completed, failed, created_at, updated_at FROM jobs ORDER BY created_at DESC LIMIT ?",
+    )
+    .bind(limit)
+    .all();
+  const jobs = z.array(jobRowSchema).parse(response.results).map((job) => ({
+    id: job.id,
+    name: job.name,
+    status: job.status,
+    total: job.total,
+    completed: job.completed,
+    failed: job.failed,
+    createdAt: job.created_at,
+    updatedAt: job.updated_at,
+  }));
+  return { jobs };
+}
+
 export function workflowIdFor(jobId: string, rowIndex: number): string {
   return `run-${jobId}-${rowIndex}`;
 }

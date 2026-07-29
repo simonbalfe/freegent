@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "check": "bun run types && bun run typecheck && bun run test && bun run deploy:dry",
+    "dashboard:token": "test -n \"$CLOUDFLARE_API_KEY\" && printf 'freegent-native-dashboard-v2:%s' \"$CLOUDFLARE_API_KEY\" | shasum -a 256 | awk '{print $1}'",
     "deploy": "wrangler deploy",
     "deploy:dry": "wrangler deploy --dry-run",
     "dev": "wrangler dev",
