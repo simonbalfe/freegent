@@ -1,0 +1,72 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "freegent-native",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "limits": {
+    "cpu_ms": 300000,
+    "subrequests": 100000
+  },
+  "browser": {
+    "binding": "BROWSER",
+    "remote": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "freegent-native",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ARTIFACTS",
+      "bucket_name": "freegent-native-artifacts"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "RUN_QUEUE",
+        "queue": "freegent-runs"
+      },
+      {
+        "binding": "BROWSER_QUEUE",
+        "queue": "freegent-browser"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "freegent-runs",
+        "max_batch_size": 100,
+        "max_batch_timeout": 1,
+        "max_retries": 5,
+        "max_concurrency": 1,
+        "dead_letter_queue": "freegent-runs-dlq"
+      },
+      {
+        "queue": "freegent-browser",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 5,
+        "max_concurrency": 10,
+        "dead_letter_queue": "freegent-browser-dlq"
+      }
+    ]
+  },
+  "workflows": [
+    {
+      "binding": "RESEARCH_WORKFLOW",
+      "name": "freegent-research",
+      "class_name": "ResearchWorkflow"
+    }
+  ],
+  "triggers": {
+    "crons": ["* * * * *"]
+  }
+}
