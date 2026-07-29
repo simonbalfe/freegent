@@ -73,6 +73,10 @@ Open the dashboard:
 
 [http://localhost:8080/dashboard](http://localhost:8080/dashboard)
 
+The Jobs view tracks recent runs and row progress. Each job shows its instructions, prompt template, full generated system prompt, schema, run settings, and the exact rendered prompt for every row. Row results show compact input and output data followed by the recorded agent steps, tool arguments, reasoning, sources, and errors. Use the separate Run view to submit a CSV or JSON rows.
+
+Each job also shows a USD cost total with an expandable provider breakdown. New OpenRouter and Apify calls use provider-reported charges. Historical model usage is estimated from the recorded tokens at the Gemini 3.1 Flash Lite list price of $0.25 per million input tokens and $1.50 per million output tokens. Historical Serper usage uses the Starter rate of $0.001 per successful query. Historical Apify usage uses the actor and returned-item counts recorded in evidence. Pricing was checked on 28 July 2026. Set `SERPER_COST_PER_QUERY_USD` when the account uses a different Serper tier.
+
 ## Research a CSV
 
 ```bash
@@ -87,6 +91,8 @@ Any CSV header can be used in the prompt with `{{field_name}}`.
 
 Each row is a separate research task. Your rows can contain companies, people, products, URLs, markets, topics, or anything else the agent can research.
 `--instructions` applies the same research rules to the whole job. `--prompt` is rendered separately for each row using its CSV values.
+
+Freegent researches adaptively. On each decision round, the model requests only the tools useful for the evidence it currently has. Independent calls from that round run concurrently. The next decision can request missing research or submit the final answer through the requested JSON schema. Each job exposes web search and page fetching plus only the enrichment tools relevant to its prompt and schema.
 
 ## Research one row
 

@@ -46,7 +46,8 @@ CSV input is uploaded directly to the API, and the completed enriched CSV is str
 ## What Freegent handles
 
 - Serper first, then Exa and Tavily search fallbacks
-- Agent tool calls and bounded turns
+- Adaptive agent decisions with concurrent independent tool calls and bounded rounds
+- Task-relevant tool exposure and schema-backed final answer submission
 - Direct extraction, PDFs, and Patchright browser fallback through OpenExtract
 - Schema validation and final-answer recovery
 - Durable per-row state, progress, evidence URLs, steps, results, errors, and token usage

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -80,7 +81,11 @@ func runSearchLadder(ctx context.Context, providers []searchProvider, query stri
 			urls = append(urls, result.URL)
 		}
 		encoded, err := json.Marshal(results)
-		return agent.ToolResult{Text: string(encoded), URLs: urls, SeenURLs: urls, Provider: provider.name, Attempts: attempts}, err
+		costUSD := 0.0
+		if provider.name == "serper" {
+			costUSD = serperCostPerQuery()
+		}
+		return agent.ToolResult{Text: string(encoded), URLs: urls, SeenURLs: urls, Provider: provider.name, Attempts: attempts, CostUSD: costUSD, CostKnown: provider.name == "serper"}, err
 	}
 	if sawEmpty {
 		return agent.ToolResult{Text: "[]", Attempts: attempts}, nil
@@ -89,6 +94,13 @@ func runSearchLadder(ctx context.Context, providers []searchProvider, query stri
 		return agent.ToolResult{}, lastError
 	}
 	return agent.ToolResult{}, errors.New("no search provider configured: set SERPER_API_KEY, EXA_API_KEY, or TAVILY_API_KEY")
+}
+
+func serperCostPerQuery() float64 {
+	if value, err := strconv.ParseFloat(strings.TrimSpace(os.Getenv("SERPER_COST_PER_QUERY_USD")), 64); err == nil && value >= 0 {
+		return value
+	}
+	return 0.001
 }
 
 func serperSearch(ctx context.Context, apiKey, query string, limit int) ([]SearchHit, error) {

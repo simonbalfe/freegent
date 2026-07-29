@@ -20,6 +20,7 @@ import (
 
 type Step = agent.Step
 type Evidence = agent.Evidence
+type FetchAttempt = agent.FetchAttempt
 type TokenUsage = agent.TokenUsage
 type AgentEvent = agent.AgentEvent
 
@@ -31,6 +32,7 @@ type APIRequest struct {
 	Rows              []map[string]any `json:"rows"`
 	Input             map[string]any   `json:"input"`
 	Model             string           `json:"model"`
+	Tools             []string         `json:"tools,omitempty"`
 	MaxSteps          int              `json:"maxSteps"`
 	MaxOutputTokens   int              `json:"maxOutputTokens"`
 	LegacyConcurrency int              `json:"concurrency,omitempty"`
@@ -90,6 +92,12 @@ func Serve(args []string) {
 	mux.HandleFunc("GET /dashboard", func(writer http.ResponseWriter, request *http.Request) {
 		handleDashboard(writer, request, store)
 	})
+	mux.HandleFunc("GET /dashboard/run", func(writer http.ResponseWriter, request *http.Request) {
+		handleDashboardRun(writer)
+	})
+	mux.HandleFunc("GET /dashboard/jobs/status", func(writer http.ResponseWriter, request *http.Request) {
+		handleDashboardJobsStatus(writer, request, store)
+	})
 	mux.HandleFunc("POST /dashboard/jobs", func(writer http.ResponseWriter, request *http.Request) {
 		handleDashboardJob(writer, request, store)
 	})
@@ -98,6 +106,9 @@ func Serve(args []string) {
 	})
 	mux.HandleFunc("GET /dashboard/jobs/{id}/status", func(writer http.ResponseWriter, request *http.Request) {
 		handleDashboardJobStatus(writer, request, store)
+	})
+	mux.HandleFunc("GET /dashboard/jobs/{id}/sheet", func(writer http.ResponseWriter, request *http.Request) {
+		handleDashboardJobSheet(writer, request, store)
 	})
 	fmt.Fprintf(os.Stderr, "freegent listening on http://localhost:%d\n", *port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), mux); err != nil {
@@ -173,7 +184,17 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 	if maxSteps < 1 {
 		maxSteps = 5
 	}
-	tools := toolset.Default()
+	tools, err := toolset.Select(
+		toolset.Default(),
+		request.Tools,
+		request.Instructions+"\n"+request.Template+"\n"+string(compiledSchema.Canonical),
+	)
+	if err != nil {
+		result.Error = err.Error()
+		result.DurationMS = time.Since(started).Milliseconds()
+		writeRunLog(request, values, result)
+		return result
+	}
 	runner := agent.Agent{Model: openrouter.OpenRouterModel{APIKey: key, Model: modelName, Client: &http.Client{Timeout: 90 * time.Second}, Tools: toolset.List(tools), MaxOutputTokens: request.MaxOutputTokens}, Tools: tools, MaxSteps: maxSteps, Verbose: request.Verbose, Event: event}
 	run, err := runner.Run(ctx, action, row)
 	result.DurationMS = time.Since(started).Milliseconds()

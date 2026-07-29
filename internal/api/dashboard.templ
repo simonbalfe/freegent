@@ -2,48 +2,1438 @@ package api
 
 import "fmt"
 
-templ DashboardPage(jobs []DashboardJob) {
-<!doctype html>
-<html lang="en">
+templ DashboardHead(title string) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Freegent</title>
+  <title>{ title } · Freegent</title>
+  <link rel="icon" href="data:," />
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}h1{margin-bottom:8px}h2{margin-top:32px}.card{background:#fff;border:1px solid #e2e4e8;border-radius:10px;padding:24px;margin:20px 0;box-shadow:0 2px 8px #17202a0a}form.card label{display:block;margin:16px 0 7px;font-weight:600}form.card label:first-child{margin-top:0}textarea,input{width:100%;box-sizing:border-box;margin:0 0 4px;padding:11px 12px;border:1px solid #98a2b3;border-radius:6px;font:14px ui-monospace,monospace;line-height:1.45;background:#fff}textarea{min-height:108px;resize:vertical}button{margin-top:12px;padding:11px 18px;border:0;border-radius:6px;background:#175cd3;color:#fff;font-weight:600;cursor:pointer}.muted{color:#667085}.ok{color:#18794e}.error{color:#b42318}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #eee;padding:8px}</style>
+  <style>
+    :root {
+      color-scheme: light;
+      --canvas: #f5f6f2;
+      --surface: #ffffff;
+      --surface-soft: #f8f9f6;
+      --ink: #17211b;
+      --muted: #69736d;
+      --line: #dfe4de;
+      --line-strong: #cdd4cd;
+      --accent: #1d5f45;
+      --accent-hover: #164a36;
+      --accent-soft: #e8f2ec;
+      --warning: #a15c16;
+      --warning-soft: #fff3df;
+      --danger: #ad3328;
+      --danger-soft: #fcebea;
+      --shadow: 0 14px 34px rgba(25, 42, 32, .07);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { color: inherit; }
+    button, input, textarea { font: inherit; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 232px minmax(0, 1fr);
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 20px;
+      border-right: 1px solid var(--line);
+      background: rgba(250, 251, 248, .92);
+      display: flex;
+      flex-direction: column;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin: 0 8px 34px;
+      color: var(--ink);
+      font-size: 20px;
+      font-weight: 760;
+      letter-spacing: -.03em;
+      text-decoration: none;
+    }
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: var(--ink);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      letter-spacing: -.02em;
+    }
+    .nav-label {
+      margin: 0 10px 8px;
+      color: #8a938d;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+    .nav {
+      display: grid;
+      gap: 5px;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 10px 12px;
+      border-radius: 9px;
+      color: #56615a;
+      font-weight: 650;
+      text-decoration: none;
+    }
+    .nav-link:hover { background: #eef1ec; color: var(--ink); }
+    .nav-link.active { background: var(--ink); color: #fff; }
+    .nav-icon {
+      width: 18px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .service-state {
+      margin-top: auto;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .service-state strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .state-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: 7px;
+      border-radius: 50%;
+      background: #2d9b68;
+      box-shadow: 0 0 0 3px #e4f3ea;
+    }
+    .main {
+      min-width: 0;
+      padding: 44px clamp(28px, 5vw, 72px) 72px;
+    }
+    .job-main { padding: 24px; }
+    .content {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    .job-content { max-width: 1180px; }
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    .eyebrow {
+      margin: 0 0 5px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: 7px;
+      font-size: clamp(30px, 4vw, 42px);
+      line-height: 1.08;
+      letter-spacing: -.045em;
+    }
+    h2 { letter-spacing: -.025em; }
+    .page-subtitle {
+      max-width: 660px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 16px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .button:hover { background: var(--accent-hover); }
+    .button.secondary {
+      border-color: var(--line-strong);
+      background: var(--surface);
+      color: var(--ink);
+    }
+    .button.secondary:hover { background: var(--surface-soft); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .stat {
+      min-width: 0;
+      padding: 18px 19px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface);
+      box-shadow: 0 5px 18px rgba(25, 42, 32, .035);
+    }
+    .stat-label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 680;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .stat-value {
+      display: block;
+      font-size: 25px;
+      font-weight: 760;
+      line-height: 1.15;
+      letter-spacing: -.035em;
+    }
+    .panel {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 19px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-header h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+    .panel-count {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .jobs-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .jobs-table th {
+      padding: 11px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-soft);
+      color: #7c857f;
+      font-size: 11px;
+      font-weight: 760;
+      letter-spacing: .07em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    .jobs-table td {
+      padding: 16px 18px;
+      border-bottom: 1px solid #edf0ec;
+      vertical-align: middle;
+    }
+    .jobs-table tbody tr:last-child td { border-bottom: 0; }
+    .jobs-table tbody tr:hover { background: #fbfcfa; }
+    .job-name {
+      display: block;
+      color: var(--ink);
+      font-weight: 720;
+      text-decoration: none;
+    }
+    .job-name:hover { color: var(--accent); }
+    .job-id {
+      display: block;
+      max-width: 220px;
+      margin-top: 2px;
+      overflow: hidden;
+      color: #8a938d;
+      font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #eef1ed;
+      color: #59635c;
+      font-size: 12px;
+      font-weight: 720;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .status-pill::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+    .status-running, .status-queued { background: #e9f1ff; color: #2c62a7; }
+    .status-completed { background: var(--accent-soft); color: var(--accent); }
+    .status-warning { background: var(--warning-soft); color: var(--warning); }
+    .status-failed { background: var(--danger-soft); color: var(--danger); }
+    .progress-cell { min-width: 165px; }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    progress {
+      display: block;
+      width: 100%;
+      height: 6px;
+      overflow: hidden;
+      border: 0;
+      border-radius: 999px;
+      background: #e9ece8;
+    }
+    progress::-webkit-progress-bar { background: #e9ece8; }
+    progress::-webkit-progress-value { border-radius: 999px; background: var(--accent); }
+    progress::-moz-progress-bar { border-radius: 999px; background: var(--accent); }
+    .event-copy {
+      display: block;
+      max-width: 270px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .time {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .row-arrow {
+      color: #9da59f;
+      font-size: 18px;
+      text-decoration: none;
+    }
+    .empty-state {
+      padding: 72px 24px;
+      text-align: center;
+    }
+    .empty-mark {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 16px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+    .empty-state h2 { margin-bottom: 7px; font-size: 18px; }
+    .empty-state p { margin-bottom: 20px; color: var(--muted); }
+    .run-panel {
+      padding: clamp(22px, 4vw, 34px);
+    }
+    .run-form {
+      display: grid;
+      gap: 28px;
+    }
+    .form-section {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 30px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--line);
+    }
+    .form-section:last-of-type { border-bottom: 0; padding-bottom: 0; }
+    .form-intro h2 { margin-bottom: 5px; font-size: 16px; }
+    .form-intro p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
+    .form-fields { display: grid; gap: 17px; }
+    .field { display: grid; gap: 7px; }
+    .field label { font-weight: 690; }
+    .field-help { color: var(--muted); font-size: 12px; }
+    input, textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      outline: none;
+      background: var(--surface);
+      color: var(--ink);
+    }
+    input:focus, textarea:focus {
+      border-color: #5b8f77;
+      box-shadow: 0 0 0 3px rgba(29, 95, 69, .11);
+    }
+    textarea {
+      min-height: 112px;
+      resize: vertical;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .compact-textarea { min-height: 88px; }
+    input[type="file"] {
+      padding: 8px;
+      background: var(--surface-soft);
+    }
+    input[type="file"]::file-selector-button {
+      margin-right: 12px;
+      padding: 7px 11px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .or-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #939c96;
+      font-size: 11px;
+      font-weight: 760;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .or-divider::before, .or-divider::after {
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+      content: "";
+    }
+    .form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: var(--muted);
+      font-weight: 650;
+      text-decoration: none;
+    }
+    .back-link:hover { color: var(--accent); }
+    .detail-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .detail-title h1 { margin-bottom: 0; }
+    .job-main .back-link { margin-bottom: 8px; }
+    .job-main .detail-title h1 {
+      font-size: 24px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+    .detail-id {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 26px 0 20px;
+    }
+    .job-summary {
+      gap: 0;
+      margin: 14px 0 10px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+    .job-summary .stat {
+      padding: 11px 15px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .job-summary .stat:last-child { border-right: 0; }
+    .job-summary .stat-label { margin-bottom: 2px; font-size: 10px; }
+    .job-summary .stat-value { font-size: 18px; }
+    .job-cost {
+      margin-top: 14px;
+      overflow: hidden;
+      border: 1px solid #b9d1c3;
+      border-radius: 10px;
+      background: var(--surface);
+    }
+    .job-cost summary {
+      display: grid;
+      grid-template-columns: auto auto 1fr;
+      align-items: baseline;
+      gap: 9px;
+      padding: 10px 14px;
+      cursor: pointer;
+      list-style: none;
+    }
+    .job-cost summary::-webkit-details-marker { display: none; }
+    .job-cost-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 760;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .job-cost summary > strong {
+      color: var(--accent);
+      font-size: 20px;
+      letter-spacing: -.025em;
+    }
+    .job-cost-action {
+      justify-self: end;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 720;
+    }
+    .job-cost[open] .job-cost-action::before { content: "Hide breakdown"; }
+    .job-cost[open] .job-cost-action { font-size: 0; }
+    .job-cost[open] .job-cost-action::before { font-size: 11px; }
+    .cost-breakdown {
+      padding: 0 14px 11px;
+      border-top: 1px solid var(--line);
+    }
+    .cost-line {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 20px;
+      padding: 9px 0;
+      border-bottom: 1px solid #edf0ec;
+    }
+    .cost-line > strong { font-size: 13px; }
+    .cost-line div > strong { font-size: 12px; }
+    .cost-line p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .cost-total {
+      display: flex;
+      justify-content: space-between;
+      padding: 9px 0 3px;
+      font-size: 13px;
+      font-weight: 760;
+    }
+    .cost-note {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .detail-section {
+      margin-top: 10px;
+      padding: 0;
+    }
+    .detail-section h2 { margin-bottom: 16px; font-size: 17px; }
+    summary.panel-header {
+      cursor: pointer;
+      list-style: none;
+    }
+    summary.panel-header::-webkit-details-marker { display: none; }
+    summary.panel-header::after {
+      color: var(--muted);
+      content: "Show";
+      font-size: 11px;
+      font-weight: 720;
+    }
+    .activity-panel[open] summary.panel-header::after { content: "Hide"; }
+    .activity {
+      max-height: 300px;
+      overflow: auto;
+      border-radius: 10px;
+      background: #18221c;
+      color: #e9f0eb;
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .detail-section > .activity { margin: 18px 20px 20px; }
+    .activity-event {
+      display: grid;
+      grid-template-columns: 70px 66px minmax(0, 1fr);
+      gap: 12px;
+      padding: 9px 13px;
+      border-bottom: 1px solid rgba(255, 255, 255, .07);
+    }
+    .activity-event:last-child { border-bottom: 0; }
+    .activity-time, .activity-row { color: #91a098; }
+    .sheet-panel { overflow: hidden; }
+    .sheet-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-soft);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .sheet-legend {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .sheet-refresh {
+      padding: 5px 9px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 720;
+      cursor: pointer;
+    }
+    .sheet-refresh:hover { background: var(--accent-soft); }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 3px;
+      background: #e6eae6;
+    }
+    .legend-dot.output { background: #cce4d5; }
+    .sheet-scroll {
+      width: 100%;
+      overflow: auto;
+    }
+    .sheet-table {
+      width: max-content;
+      min-width: 100%;
+      border-spacing: 0;
+      border-collapse: separate;
+      table-layout: fixed;
+    }
+    .sheet-table.fitted { width: 100%; }
+    .sheet-table.fitted th.input-heading {
+      width: 18%;
+      min-width: 135px;
+      max-width: none;
+    }
+    .sheet-table.fitted th.output-heading {
+      width: 32%;
+      min-width: 190px;
+      max-width: none;
+    }
+    .sheet-table.fitted .sheet-cell {
+      max-width: none;
+      max-height: none;
+    }
+    .sheet-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      width: 155px;
+      min-width: 155px;
+      max-width: 155px;
+      height: 44px;
+      padding: 8px 12px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line-strong);
+      background: #f3f5f1;
+      color: #58625c;
+      font-size: 12px;
+      font-weight: 720;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .sheet-table th.output-heading {
+      width: 220px;
+      min-width: 220px;
+      max-width: 220px;
+      background: #edf5f0;
+    }
+    .sheet-table td {
+      height: 56px;
+      padding: 7px 11px;
+      border-right: 1px solid #e7ebe6;
+      border-bottom: 1px solid #e7ebe6;
+      background: var(--surface);
+      vertical-align: top;
+    }
+    .sheet-table tbody tr:hover > td { background: #fbfcfa; }
+    .sheet-table tbody tr:hover > td.output-cell { background: #f8fcf9; }
+    .sheet-table tbody tr.row-open > td { background: #f1f7f3; }
+    .sheet-table th:last-child, .sheet-table td:last-child { border-right: 0; }
+    .sheet-table .row-control {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      width: 118px;
+      min-width: 118px;
+      max-width: 118px;
+      background: #fafbf9;
+      box-shadow: 1px 0 0 var(--line);
+      vertical-align: middle;
+    }
+    .sheet-table th.row-control {
+      z-index: 3;
+      color: #7b857e;
+      font-weight: 720;
+    }
+    .row-control-inner {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .sheet-toggle {
+      width: 27px;
+      height: 27px;
+      padding: 0;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-size: 17px;
+      font-weight: 720;
+      cursor: pointer;
+    }
+    .sheet-toggle:hover { border-color: #8da697; background: var(--accent-soft); }
+    .sheet-toggle .chevron {
+      display: block;
+      line-height: 1;
+      transform: translateY(-1px);
+      transition: transform .14s ease;
+    }
+    .sheet-toggle.expanded .chevron { transform: rotate(90deg); }
+    .row-label {
+      min-width: 34px;
+      color: var(--ink);
+      font-weight: 740;
+    }
+    .row-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #8c9690;
+    }
+    .row-status.completed { background: #2d8a61; }
+    .row-status.running, .row-status.queued { background: #3b75bd; }
+    .row-status.failed, .row-status.completed-with-errors { background: #c34a3d; }
+    .row-status.skipped { background: #b47529; }
+    .column-heading {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .column-kind {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #e3e7e2;
+      color: #7c857f;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .output-heading .column-kind {
+      background: #d8eadf;
+      color: var(--accent);
+    }
+    .output-cell { background: #fbfdfb !important; }
+    .sheet-cell {
+      max-width: 300px;
+      max-height: 46px;
+      overflow: hidden;
+      color: #3a443e;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .sheet-empty { color: #a1aaa4; }
+    .sheet-expansion[hidden] { display: none; }
+    .sheet-expansion > td {
+      height: auto;
+      padding: 0;
+      border-bottom: 1px solid var(--line-strong);
+      background: #f7f9f6 !important;
+    }
+    .expansion {
+      position: sticky;
+      left: 0;
+      width: clamp(680px, calc(100vw - 320px), 1080px);
+      max-width: calc(100vw - 280px);
+      padding: 22px;
+      box-shadow: inset 4px 0 0 var(--accent);
+    }
+    .expansion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 17px;
+    }
+    .expansion-header h3 { margin: 0; font-size: 16px; }
+    .run-meta {
+      display: flex;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+    .expansion-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(280px, .75fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .expansion-stack { display: grid; gap: 14px; }
+    .expansion-card {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+    .expansion-card h4 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .reasoning-copy {
+      max-height: 360px;
+      overflow: auto;
+      color: #354039;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .answer, .step-input { display: grid; gap: 10px; }
+    .answer-row, .step-input-row { padding-top: 10px; border-top: 1px solid var(--line); }
+    .answer-row:first-child, .step-input-row:first-child { padding-top: 0; border-top: 0; }
+    .answer-row dt, .step-input-row dt { font-weight: 680; }
+    .answer-row dd, .step-input-row dd { margin: 4px 0 0; white-space: pre-wrap; }
+    .step-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+    .step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 10px;
+      margin: 0;
+      padding: 0 0 13px;
+    }
+    .step:last-child { padding-bottom: 0; }
+    .step-rail {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+    .step-rail::after {
+      position: absolute;
+      top: 26px;
+      bottom: -13px;
+      width: 1px;
+      background: var(--line-strong);
+      content: "";
+    }
+    .step:last-child .step-rail::after { display: none; }
+    .step-number {
+      position: relative;
+      z-index: 1;
+      width: 25px;
+      height: 25px;
+      border: 1px solid #b9c9bf;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .step-body {
+      min-width: 0;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+    }
+    .step-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+      flex-wrap: wrap;
+    }
+    .step-kind {
+      color: var(--accent);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    .step-input { margin-top: 9px; font-size: 12px; }
+    .step-error {
+      margin: 8px 0 0;
+      color: var(--danger);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .tool-result {
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px solid var(--line);
+    }
+    .tool-result summary {
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 740;
+      cursor: pointer;
+    }
+    .evidence-list { display: grid; gap: 8px; }
+    .evidence-item {
+      margin: 0;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface-soft);
+    }
+    .evidence-item summary {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .evidence-text {
+      max-height: 260px;
+      overflow: auto;
+      margin: 10px 0 0;
+      color: #465149;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .sources a { color: var(--accent); word-break: break-all; }
+    .sources {
+      max-height: 210px;
+      margin: 0;
+      padding-left: 18px;
+      overflow: auto;
+      font-size: 12px;
+    }
+    .setup-panel > .panel-header { padding: 12px 15px; }
+    .setup-panel > .panel-header h2 { margin: 0; }
+    .setup-body { padding: 13px 15px; }
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .setup-field {
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface-soft);
+    }
+    .setup-field h3 {
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .setup-field pre,
+    .setup-detail pre,
+    .rendered-prompt pre {
+      margin: 0;
+      color: #354039;
+      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .setup-field pre {
+      max-height: 150px;
+      overflow: auto;
+    }
+    .setup-settings {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 10px 0 0;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+    }
+    .setup-settings > div {
+      min-width: 0;
+      padding: 7px 9px;
+      border-right: 1px solid var(--line);
+    }
+    .setup-settings > div:last-child { border-right: 0; }
+    .setup-settings dt {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 760;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .setup-settings dd {
+      margin: 2px 0 0;
+      overflow-wrap: anywhere;
+      font-size: 11px;
+      font-weight: 680;
+    }
+    .setup-detail {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+    }
+    .setup-detail summary {
+      padding: 7px 9px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 720;
+      cursor: pointer;
+    }
+    .setup-detail pre {
+      max-height: 360px;
+      padding: 9px;
+      overflow: auto;
+      border-top: 1px solid var(--line);
+      background: var(--surface-soft);
+    }
+    .rendered-prompt { background: #fbfcfa; }
+    .rendered-prompt pre {
+      padding-left: 9px;
+      border-left: 3px solid var(--line-strong);
+    }
+    .rows-panel > .panel-header { padding: 12px 15px; }
+    .rows-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .rows-heading h2 { margin: 0; }
+    .rows-refresh {
+      padding: 5px 9px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 720;
+      cursor: pointer;
+    }
+    .rows-refresh:hover { background: var(--accent-soft); }
+    .rows-list { display: grid; }
+    .result-row {
+      min-width: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .result-row:last-child { border-bottom: 0; }
+    .result-row-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 15px;
+      background: var(--surface-soft);
+    }
+    .result-row-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .result-row-title h3 { margin: 0; font-size: 15px; }
+    .result-row-header .run-meta {
+      gap: 10px;
+      font-size: 11px;
+    }
+    .row-section {
+      padding: 11px 15px;
+      border-top: 1px solid #edf0ec;
+    }
+    .row-section h4 {
+      margin: 0 0 7px;
+      font-size: 12px;
+    }
+    .row-data-table {
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      border-spacing: 0;
+      border-collapse: separate;
+      table-layout: fixed;
+    }
+    .row-data-table th {
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-soft);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 760;
+      letter-spacing: .05em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    .row-data-table th:first-child { width: 210px; }
+    .row-data-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #edf0ec;
+      color: #354039;
+      font-size: 13px;
+      vertical-align: top;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .row-data-table tr:last-child td { border-bottom: 0; }
+    .data-field {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 680;
+    }
+    .field-kind {
+      min-width: 45px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #e3e7e2;
+      color: #7c857f;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .field-kind.output {
+      background: #d8eadf;
+      color: var(--accent);
+    }
+    .result-row .reasoning-copy {
+      max-height: none;
+      overflow: visible;
+      line-height: 1.55;
+    }
+    .result-row .step {
+      grid-template-columns: 25px minmax(0, 1fr);
+      gap: 9px;
+      padding-bottom: 8px;
+    }
+    .result-row .step-number {
+      width: 23px;
+      height: 23px;
+    }
+    .result-row .step-body {
+      padding: 8px 10px;
+      border-radius: 6px;
+    }
+    .result-row .step-input {
+      gap: 7px;
+      margin-top: 7px;
+    }
+    .result-row .step-input-row {
+      padding-top: 7px;
+      overflow-wrap: anywhere;
+    }
+    .result-row .sources {
+      max-height: none;
+      overflow: visible;
+    }
+    .error { color: var(--danger); }
+    .download-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 980px) {
+      .stats, .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .setup-settings { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .setup-settings > div { border-bottom: 1px solid var(--line); }
+      .setup-settings > div:nth-child(3) { border-right: 0; }
+      .setup-settings > div:nth-last-child(-n+2) { border-bottom: 0; }
+      .jobs-table th:nth-child(4), .jobs-table td:nth-child(4) { display: none; }
+    }
+    @media (max-width: 760px) {
+      .app-shell { display: block; }
+      .sidebar {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 14px 18px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        flex-direction: row;
+        align-items: center;
+      }
+      .brand { margin: 0 22px 0 0; }
+      .brand-mark { width: 30px; height: 30px; }
+      .nav-label, .service-state { display: none; }
+      .nav { display: flex; }
+      .nav-link { padding: 8px 10px; }
+      .main { padding: 30px 18px 52px; }
+      .page-header { align-items: flex-start; }
+      .form-section { grid-template-columns: 1fr; gap: 14px; }
+      .jobs-table th:nth-child(3), .jobs-table td:nth-child(3) { display: none; }
+    }
+    @media (max-width: 540px) {
+      .page-header { display: grid; }
+      .page-header .button { width: 100%; }
+      .stats, .detail-grid { grid-template-columns: 1fr 1fr; }
+      .setup-grid { grid-template-columns: 1fr; }
+      .setup-settings { grid-template-columns: 1fr 1fr; }
+      .setup-settings > div:nth-child(odd) { border-right: 1px solid var(--line); }
+      .setup-settings > div:nth-child(even) { border-right: 0; }
+      .setup-settings > div:nth-last-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .setup-settings > div:last-child { border-bottom: 0; }
+      .stat { padding: 14px; }
+      .jobs-table th:nth-child(5), .jobs-table td:nth-child(5) { display: none; }
+      .jobs-table th, .jobs-table td { padding: 13px 12px; }
+      .activity-event { grid-template-columns: 58px minmax(0, 1fr); }
+      .activity-row { display: none; }
+      .job-summary .stat:nth-child(2) { border-right: 0; }
+      .job-summary .stat:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .row-data-table th:first-child { width: 145px; }
+      .result-row-header { align-items: flex-start; }
+      .form-actions { display: grid; }
+      .form-actions .button { width: 100%; }
+    }
+  </style>
 </head>
+}
+
+templ DashboardSidebar(active string) {
+<aside class="sidebar">
+  <a class="brand" href="/dashboard">
+    <span class="brand-mark">F</span>
+    <span>Freegent</span>
+  </a>
+  <p class="nav-label">Workspace</p>
+  <nav class="nav" aria-label="Dashboard">
+    <a class={ dashboardNavClass(active, "jobs") } href="/dashboard">
+      <span class="nav-icon">≡</span>
+      <span>Jobs</span>
+    </a>
+    <a class={ dashboardNavClass(active, "run") } href="/dashboard/run">
+      <span class="nav-icon">＋</span>
+      <span>Run</span>
+    </a>
+  </nav>
+  <div class="service-state">
+    <strong><span class="state-dot"></span>Service online</strong>
+    API and job history connected
+  </div>
+</aside>
+}
+
+templ DashboardPage(jobs []DashboardJob) {
+<!doctype html>
+<html lang="en">
+@DashboardHead("Jobs")
 <body>
-  <h1>Freegent</h1>
-  <p class="muted"><strong>Open source Freegent</strong>{ " for " }researching any spreadsheet.</p>
-  <p class="muted">Upload a CSV or paste JSON rows, then watch every row complete. Job history survives API restarts.</p>
-  <form method="post" action="/dashboard/jobs" enctype="multipart/form-data" class="card">
-    <label>Job name</label>
-    <input name="name" placeholder="Optional, defaults to the CSV filename" />
-    <label>Instructions</label>
-    <textarea name="instructions">Use current reliable evidence. Follow the requested task exactly and do not guess unsupported facts.</textarea>
-    <label>Template</label>
-    <input name="template" value="Research {{subject}} using {{url}} when supplied. Return a concise factual answer." />
-    <label>Output schema</label>
-    <textarea name="schema">{ `{"answer":"string"}` }</textarea>
-    <label>CSV file</label>
-    <input type="file" name="csv" accept=".csv,text/csv" />
-    <p class="muted">The first row must contain headers matching template fields such as { "{{subject}}" } and { "{{url}}" }. A CSV takes precedence over JSON rows.</p>
-    <label>Rows (optional JSON array)</label>
-    <textarea name="rows">{ `[
+  <div class="app-shell">
+    @DashboardSidebar("jobs")
+    <main class="main">
+      <div class="content">
+        <header class="page-header">
+          <div>
+            <p class="eyebrow">Research workspace</p>
+            <h1>Jobs</h1>
+            <p class="page-subtitle">Track every research run, row, and result from one place.</p>
+          </div>
+          <a class="button" href="/dashboard/run"><span>＋</span> New run</a>
+        </header>
+        @DashboardJobsOverview(jobs)
+      </div>
+    </main>
+  </div>
+</body>
+</html>
+}
+
+templ DashboardJobsOverview(jobs []DashboardJob) {
+<div id="jobs-overview"
+  if dashboardHasActiveJobs(jobs) {
+    hx-get="/dashboard/jobs/status" hx-trigger="every 3s" hx-target="#jobs-overview" hx-swap="outerHTML"
+  }
+>
+  <section class="stats" aria-label="Job summary">
+    <div class="stat"><span class="stat-label">Total jobs</span><strong class="stat-value">{ fmt.Sprintf("%d", len(jobs)) }</strong></div>
+    <div class="stat"><span class="stat-label">Active</span><strong class="stat-value">{ fmt.Sprintf("%d", dashboardActiveJobCount(jobs)) }</strong></div>
+    <div class="stat"><span class="stat-label">Rows processed</span><strong class="stat-value">{ fmt.Sprintf("%d", dashboardCompletedRowCount(jobs)) }</strong></div>
+    <div class="stat"><span class="stat-label">Needs attention</span><strong class="stat-value">{ fmt.Sprintf("%d", dashboardAttentionJobCount(jobs)) }</strong></div>
+  </section>
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Recent jobs</h2>
+      <span class="panel-count">{ fmt.Sprintf("%d shown", len(jobs)) }</span>
+    </div>
+    if len(jobs) == 0 {
+      <div class="empty-state">
+        <div class="empty-mark">＋</div>
+        <h2>No research jobs yet</h2>
+        <p>Start a run with a CSV or a set of JSON rows.</p>
+        <a class="button" href="/dashboard/run">Create first run</a>
+      </div>
+    } else {
+      <div style="overflow-x:auto">
+        <table class="jobs-table">
+          <thead>
+            <tr>
+              <th>Job</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Latest activity</th>
+              <th>Created</th>
+              <th><span class="sr-only">Open</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            for _, job := range jobs {
+              <tr>
+                <td>
+                  <a class="job-name" href={ "/dashboard/jobs/" + job.ID }>{ dashboardJobLabel(job) }</a>
+                  <span class="job-id">{ job.ID }</span>
+                </td>
+                <td><span class={ dashboardStatusClass(job.Status) }>{ dashboardStatusLabel(job.Status) }</span></td>
+                <td class="progress-cell">
+                  <div class="progress-meta"><span>{ fmt.Sprintf("%d of %d rows", job.Completed, job.Total) }</span><strong>{ fmt.Sprintf("%d%%", dashboardJobProgress(job)) }</strong></div>
+                  <progress value={ fmt.Sprintf("%d", job.Completed) } max={ fmt.Sprintf("%d", dashboardProgressMax(job)) }></progress>
+                </td>
+                <td><span class="event-copy">{ job.LatestEvent }</span></td>
+                <td><span class="time">{ dashboardJobTime(job.CreatedAt) }</span></td>
+                <td><a class="row-arrow" href={ "/dashboard/jobs/" + job.ID } aria-label={ "Open " + dashboardJobLabel(job) }>→</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+}
+
+templ DashboardRunPage() {
+<!doctype html>
+<html lang="en">
+@DashboardHead("Run")
+<body>
+  <div class="app-shell">
+    @DashboardSidebar("run")
+    <main class="main">
+      <div class="content">
+        <header class="page-header">
+          <div>
+            <p class="eyebrow">New research</p>
+            <h1>Start a run</h1>
+            <p class="page-subtitle">Upload a spreadsheet or paste JSON rows. Each row is researched and tracked independently.</p>
+          </div>
+        </header>
+        <section class="panel run-panel">
+          <form method="post" action="/dashboard/jobs" enctype="multipart/form-data" class="run-form">
+            <div class="form-section">
+              <div class="form-intro">
+                <h2>Research brief</h2>
+                <p>Define what Freegent should find and how the answer should be returned.</p>
+              </div>
+              <div class="form-fields">
+                <div class="field">
+                  <label for="name">Job name</label>
+                  <input id="name" name="name" placeholder="e.g. July prospect research" />
+                  <span class="field-help">Optional. CSV uploads default to the filename.</span>
+                </div>
+                <div class="field">
+                  <label for="instructions">Instructions</label>
+                  <textarea id="instructions" name="instructions">Use current reliable evidence. Follow the requested task exactly and do not guess unsupported facts.</textarea>
+                </div>
+                <div class="field">
+                  <label for="template">Prompt template</label>
+                  <input id="template" name="template" value="Research {{subject}} using {{url}} when supplied. Return a concise factual answer." />
+                  <span class="field-help">Template fields must match your CSV headers or JSON keys.</span>
+                </div>
+                <div class="field">
+                  <label for="schema">Output schema</label>
+                  <textarea class="compact-textarea" id="schema" name="schema">{ `{"answer":"string"}` }</textarea>
+                </div>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-intro">
+                <h2>Input rows</h2>
+                <p>Choose a CSV for batch enrichment or paste a JSON array for a quick run.</p>
+              </div>
+              <div class="form-fields">
+                <div class="field">
+                  <label for="csv">CSV file</label>
+                  <input id="csv" type="file" name="csv" accept=".csv,text/csv" />
+                  <span class="field-help">The first row must contain headers matching the prompt fields.</span>
+                </div>
+                <div class="or-divider">or paste rows</div>
+                <div class="field">
+                  <label for="rows">JSON rows</label>
+                  <textarea id="rows" name="rows">{ `[
   {"subject":"Figma","url":"https://figma.com"},
   {"subject":"Dario Amodei","url":""},
   {"subject":"EU AI Act","url":""}
 ]` }</textarea>
-    <button type="submit">Start research</button>
-  </form>
-  <h2>Recent jobs</h2>
-  if len(jobs) == 0 {
-    <p class="muted">No jobs yet.</p>
-  } else {
-    for _, job := range jobs {
-      <div class="card"><a href={ "/dashboard/jobs/" + job.ID }>{ dashboardJobLabel(job) }</a> · { job.Status } · { fmt.Sprintf("%d/%d rows", job.Completed, job.Total) } · <span class="muted">{ dashboardJobTime(job.CreatedAt) }</span></div>
-    }
-  }
+                  <span class="field-help">A selected CSV takes precedence over JSON rows.</span>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <a class="button secondary" href="/dashboard">Cancel</a>
+              <button class="button" type="submit">Start research</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
 </body>
 </html>
 }
@@ -51,93 +1441,261 @@ templ DashboardPage(jobs []DashboardJob) {
 templ DashboardJobPage(job DashboardJob) {
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Freegent job</title>
-  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}.card{background:#fff;border:1px solid #e2e4e8;border-radius:12px;padding:20px;margin:16px 0;box-shadow:0 2px 8px #17202a0a}.muted{color:#667085}.error{color:#b42318}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.metric{background:#f5f7fa;border-radius:8px;padding:12px}.metric strong{display:block;font-size:20px}.flow{background:#101828;color:#e6edf3;border-radius:8px;padding:14px;max-height:280px;overflow:auto;font:13px ui-monospace,monospace}.event{padding:6px 0;border-bottom:1px solid #ffffff1f}.event span{color:#98a2b3;margin-right:12px}.row-card{border:1px solid #e2e4e8;border-radius:10px;padding:16px;margin:12px 0}.row-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.status{color:#18794e;font-weight:600}.tokens{color:#667085;font-size:14px}.answer,.step-input{display:grid;gap:10px}.answer-row,.step-input-row{border-top:1px solid #eaecf0;padding-top:10px}.answer-row dt,.step-input-row dt{font-weight:600}.answer-row dd,.step-input-row dd{margin:4px 0 0;white-space:pre-wrap}.step{margin:14px 0}.step-title{font-weight:600;font-size:17px}pre{white-space:pre-wrap;overflow:auto;background:#f5f7fa;padding:10px;border-radius:6px}details{margin-top:12px}summary{cursor:pointer;font-weight:600}a{color:#175cd3}</style>
-</head>
+@DashboardHead("Job")
 <body>
-  <p><a href="/dashboard">← New job</a></p>
-  <h1>Job { job.ID }</h1>
-  <div id="job-status">@DashboardJobStatus(job)</div>
+  <div class="app-shell">
+    @DashboardSidebar("jobs")
+    <main class="main job-main">
+      <div class="content job-content">
+        <a class="back-link" href="/dashboard">← Back to jobs</a>
+        <div class="detail-title">
+          <h1>{ dashboardJobLabel(job) }</h1>
+        </div>
+        if job.Name != "" {
+          <p class="detail-id">{ job.ID }</p>
+        }
+        <div id="job-status">@DashboardJobStatus(job)</div>
+      </div>
+    </main>
+  </div>
 </body>
 </html>
 }
 
 templ DashboardJobStatus(job DashboardJob) {
-<div class="card"
-  if dashboardActive(job) {
-    hx-get={ "/dashboard/jobs/" + job.ID + "/status" } hx-trigger="every 1s" hx-target="#job-status" hx-swap="innerHTML"
-  }
->
-  <div class="row-head"><h2>{ job.Status }</h2><span class="muted">{ job.LatestEvent }</span></div>
-  <div class="summary">
-    <div class="metric"><span class="muted">Rows</span><strong>{ fmt.Sprintf("%d/%d", job.Completed, job.Total) }</strong></div>
-    <div class="metric"><span class="muted">Input tokens</span><strong>{ fmt.Sprintf("%d", dashboardTokens(job).Input) }</strong></div>
-    <div class="metric"><span class="muted">Output tokens</span><strong>{ fmt.Sprintf("%d", dashboardTokens(job).Output) }</strong></div>
-  </div>
-  <h3>Live activity</h3>
-  <div class="flow">
-    for _, event := range job.Events {
-      <div class="event"><span>{ dashboardEventTime(event.At) } · { dashboardEventLabel(event) }</span> <strong>{ dashboardEventMessage(event.Message) }</strong></div>
-    }
-  </div>
-  <h3>Rows</h3>
-  for _, row := range job.Rows {
-    <article class="row-card">
-      <div class="row-head"><strong>Row { fmt.Sprintf("%d", row.Index + 1) }</strong><span class="status">{ row.Status }</span><span class="tokens">{ fmt.Sprintf("%d input · %d output tokens", row.Result.Tokens.Input, row.Result.Tokens.Output) }</span></div>
-      <p class="muted">Input</p><pre>{ dashboardInput(row.Input) }</pre>
-      <details><summary>{ fmt.Sprintf("%d agent steps", len(row.AgentLog)) }</summary>
-        if len(row.AgentLog) == 0 {
-          <p class="muted">No completed steps yet. Watch the live activity above.</p>
-        } else {
-          <ol>
-            for _, step := range row.AgentLog {
-              @DashboardStep(step)
-            }
-          </ol>
-        }
-        if row.Result.Result != nil {
-          <p><strong>Answer</strong></p>
-          <dl class="answer">
-            for _, field := range dashboardFields(row.Result.Result) {
-              <div class="answer-row"><dt>{ field.Key }</dt><dd>{ field.Value }</dd></div>
-            }
-          </dl>
-        }
-        if len(row.Result.Sources) > 0 {
-          @DashboardSources(row.Result.Sources)
-        }
-        if row.Result.Error != "" {
-          <p class="error"><strong>Error:</strong> { row.Result.Error }</p>
-        }
-      </details>
-    </article>
-  }
+<div class="job-live">
+  @DashboardJobOverview(job)
+  @DashboardJobSetup(job)
+  @DashboardJobSheet(job)
   if !dashboardActive(job) {
-    <p><a href={ "/jobs/" + job.ID + "/results.csv" }>Download enriched CSV</a>{ " · " }<a href={ "/jobs/" + job.ID }>View JSON status</a></p>
+    <div class="download-actions">
+      <a class="button" href={ "/jobs/" + job.ID + "/results.csv" }>Download CSV</a>
+      <a class="button secondary" href={ "/jobs/" + job.ID }>View JSON</a>
+    </div>
   }
 </div>
 }
 
-templ DashboardStep(step Step) {
-<li class="step">
-  <div class="step-title">{ dashboardStepLabel(step) }</div>
-  if len(step.Input) > 0 {
-    <dl class="step-input">
-      for _, field := range dashboardFields(step.Input) {
-        <div class="step-input-row"><dt>{ field.Key }</dt><dd>{ field.Value }</dd></div>
-      }
+templ DashboardJobSetup(job DashboardJob) {
+<section class="panel detail-section setup-panel">
+  <div class="panel-header">
+    <h2>Job setup</h2>
+    <span class="panel-count">Prompt, template, schema, and run settings</span>
+  </div>
+  <div class="setup-body">
+    <div class="setup-grid">
+      <section class="setup-field">
+        <h3>Instructions</h3>
+        <pre>{ job.Request.Instructions }</pre>
+      </section>
+      <section class="setup-field">
+        <h3>Prompt template</h3>
+        <pre>{ job.Request.Template }</pre>
+      </section>
+    </div>
+    <dl class="setup-settings">
+      <div><dt>Model</dt><dd>{ dashboardRequestModel(job.Request) }</dd></div>
+      <div><dt>Max steps</dt><dd>{ fmt.Sprintf("%d", dashboardRequestMaxSteps(job.Request)) }</dd></div>
+      <div><dt>Max output tokens</dt><dd>{ fmt.Sprintf("%d", dashboardRequestMaxOutputTokens(job.Request)) }</dd></div>
+      <div><dt>Required field</dt><dd>{ dashboardRequiredField(job.Request) }</dd></div>
+      <div><dt>Verbose trace</dt><dd>{ fmt.Sprintf("%t", job.Request.Verbose) }</dd></div>
     </dl>
+    <details class="setup-detail">
+      <summary>Full agent system prompt</summary>
+      <pre>{ dashboardSystemPrompt(job.Request) }</pre>
+    </details>
+    <details class="setup-detail">
+      <summary>Output schema</summary>
+      <pre>{ dashboardSchema(job.Request.Schema) }</pre>
+    </details>
+  </div>
+</section>
+}
+
+templ DashboardJobOverview(job DashboardJob) {
+<div id="job-overview"
+  if dashboardActive(job) {
+    hx-get={ "/dashboard/jobs/" + job.ID + "/status" } hx-trigger="every 1s" hx-target="#job-overview" hx-swap="outerHTML"
   }
+>
+  @DashboardJobCost(dashboardJobCost(job))
+  <section class="detail-grid job-summary" aria-label="Job summary">
+    <div class="stat"><span class="stat-label">Status</span><strong class="stat-value">{ dashboardStatusLabel(job.Status) }</strong></div>
+    <div class="stat"><span class="stat-label">Rows</span><strong class="stat-value">{ fmt.Sprintf("%d/%d", job.Completed, job.Total) }</strong></div>
+    <div class="stat"><span class="stat-label">Input tokens</span><strong class="stat-value">{ fmt.Sprintf("%d", dashboardTokens(job).Input) }</strong></div>
+    <div class="stat"><span class="stat-label">Output tokens</span><strong class="stat-value">{ fmt.Sprintf("%d", dashboardTokens(job).Output) }</strong></div>
+  </section>
+  <details class="panel detail-section activity-panel">
+    <summary class="panel-header">
+      <h2>Activity</h2>
+      <span class="panel-count">{ job.LatestEvent }</span>
+    </summary>
+    <div class="activity">
+      for _, event := range job.Events {
+        <div class="activity-event">
+          <span class="activity-time">{ dashboardEventTime(event.At) }</span>
+          <span class="activity-row">{ dashboardEventLabel(event) }</span>
+          <strong>{ dashboardEventMessage(event.Message) }</strong>
+        </div>
+      }
+    </div>
+  </details>
+</div>
+}
+
+templ DashboardJobCost(cost DashboardCost) {
+<details class="job-cost">
+  <summary>
+    <span class="job-cost-label">{ dashboardCostLabel(cost) }</span>
+    <strong>{ dashboardMoney(cost.TotalUSD) }</strong>
+    <span class="job-cost-action">View breakdown</span>
+  </summary>
+  <div class="cost-breakdown">
+    <div class="cost-line">
+      <div><strong>AI model</strong><p>{ dashboardModelCostReason(cost) }</p></div>
+      <strong>{ dashboardMoney(cost.ModelUSD) }</strong>
+    </div>
+    <div class="cost-line">
+      <div><strong>Serper</strong><p>{ dashboardSerperCostReason(cost) }</p></div>
+      <strong>{ dashboardMoney(cost.SerperUSD) }</strong>
+    </div>
+    <div class="cost-line">
+      <div><strong>Apify</strong><p>{ dashboardApifyCostReason(cost) }</p></div>
+      <strong>{ dashboardMoney(cost.ApifyUSD) }</strong>
+    </div>
+    <div class="cost-total"><span>Total</span><strong>{ dashboardMoney(cost.TotalUSD) }</strong></div>
+    <p class="cost-note">{ dashboardCostNote(cost) }</p>
+  </div>
+</details>
+}
+
+templ DashboardJobSheet(job DashboardJob) {
+<section class="panel detail-section rows-panel" id="job-sheet">
+  <div class="panel-header">
+    <div class="rows-heading">
+      <h2>Rows</h2>
+      <span class="panel-count">{ fmt.Sprintf("%d total", job.Total) }</span>
+    </div>
+    <button class="rows-refresh" type="button" hx-get={ "/dashboard/jobs/" + job.ID + "/sheet" } hx-target="#job-sheet" hx-swap="outerHTML">Refresh</button>
+  </div>
+  <div class="rows-list">
+    for _, row := range job.Rows {
+      @DashboardResultRow(row, job.Request.Template)
+    }
+  </div>
+</section>
+}
+
+templ DashboardResultRow(row DashboardRow, promptTemplate string) {
+<article class="result-row">
+  <header class="result-row-header">
+    <div class="result-row-title">
+      <h3>Row { fmt.Sprintf("%d", row.Index + 1) }</h3>
+      <span class={ dashboardStatusClass(row.Status) }>{ dashboardStatusLabel(row.Status) }</span>
+    </div>
+    <div class="run-meta">
+      if row.Result.Model != "" {
+        <span>{ row.Result.Model }</span>
+      }
+      if row.Result.DurationMS > 0 {
+        <span>{ dashboardRunDuration(row.Result.DurationMS) }</span>
+      }
+      if row.Result.Tokens.Input > 0 || row.Result.Tokens.Output > 0 {
+        <span>{ fmt.Sprintf("%d in · %d out", row.Result.Tokens.Input, row.Result.Tokens.Output) }</span>
+      }
+    </div>
+  </header>
+  <section class="row-section rendered-prompt">
+    <h4>Rendered prompt</h4>
+    <pre>{ dashboardRenderedTemplate(promptTemplate, row.Input) }</pre>
+  </section>
+  <section class="row-section">
+    <h4>Row data</h4>
+    <table class="row-data-table">
+      <thead>
+        <tr><th>Field</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        for _, field := range dashboardFields(row.Input) {
+          <tr>
+            <td><span class="data-field"><span class="field-kind">Input</span>{ dashboardColumnLabel(field.Key) }</span></td>
+            <td>{ field.Value }</td>
+          </tr>
+        }
+        if row.Result.Result != nil {
+          for _, field := range dashboardFields(row.Result.Result) {
+            <tr>
+              <td><span class="data-field"><span class="field-kind output">Output</span>{ dashboardColumnLabel(field.Key) }</span></td>
+              <td>{ field.Value }</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </section>
+  <section class="row-section">
+    <h4>{ fmt.Sprintf("Agent steps (%d)", len(row.AgentLog)) }</h4>
+    if len(row.AgentLog) == 0 {
+      <p class="page-subtitle">No agent steps recorded yet.</p>
+    } else {
+      <ol class="step-list">
+        for index, step := range row.AgentLog {
+          @DashboardTraceStep(index, step, dashboardStepEvidence(row, index))
+        }
+      </ol>
+    }
+  </section>
+  if row.Result.Reasoning != "" {
+    <section class="row-section">
+      <h4>Final reasoning</h4>
+      <div class="reasoning-copy">{ row.Result.Reasoning }</div>
+    </section>
+  }
+  if row.Result.Error != "" {
+    <section class="row-section">
+      <h4>Error</h4>
+      <p class="error">{ row.Result.Error }</p>
+    </section>
+  }
+  if len(row.Result.Sources) > 0 {
+    <section class="row-section">
+      <h4>{ fmt.Sprintf("Sources (%d)", len(row.Result.Sources)) }</h4>
+      @DashboardSources(row.Result.Sources)
+    </section>
+  }
+</article>
+}
+
+templ DashboardTraceStep(index int, step Step, evidence *Evidence) {
+<li class="step">
+  <span class="step-number">{ fmt.Sprintf("%d", index + 1) }</span>
+  <div class="step-body">
+    <div class="step-title"><span class="step-kind">{ dashboardStepKindLabel(step) }</span><span>{ dashboardStepName(step) }</span></div>
+    if len(step.Input) > 0 {
+      <dl class="step-input">
+        for _, field := range dashboardFields(step.Input) {
+          <div class="step-input-row"><dt>{ dashboardColumnLabel(field.Key) }</dt><dd>{ field.Value }</dd></div>
+        }
+      </dl>
+    }
+    if step.Error != "" {
+      <p class="step-error">{ step.Error }</p>
+    }
+    if evidence != nil {
+      <details class="tool-result">
+        <summary>{ dashboardEvidenceLabel(*evidence) } result</summary>
+        <div class="evidence-text">{ evidence.Text }</div>
+        if len(evidence.URLs) > 0 {
+          @DashboardSources(evidence.URLs)
+        }
+      </details>
+    }
+  </div>
 </li>
 }
 
 templ DashboardSources(sources []string) {
-<p><strong>Evidence sources</strong></p>
-<ul>
+<ul class="sources">
   for _, source := range sources {
     <li><a href={ source } target="_blank" rel="noreferrer">{ source }</a></li>
   }

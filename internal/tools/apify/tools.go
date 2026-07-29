@@ -43,11 +43,13 @@ func (t apifyTool) Run(ctx context.Context, input map[string]any) (ToolResult, e
 		return ToolResult{}, err
 	}
 	return ToolResult{
-		Text:     bounded(string(encoded)),
-		URLs:     urls,
-		SeenURLs: urls,
-		Provider: "apify:" + actor,
-		Attempts: []FetchAttempt{{Provider: "apify:" + actor, Outcome: strings.ToLower(result.Status), DurationMS: result.DurationMS, Detail: fmt.Sprintf("run %s, dataset %s, %d items", result.RunID, result.DatasetID, len(result.Items))}},
+		Text:      bounded(string(encoded)),
+		URLs:      urls,
+		SeenURLs:  urls,
+		Provider:  "apify:" + actor,
+		Attempts:  []FetchAttempt{{Provider: "apify:" + actor, Outcome: strings.ToLower(result.Status), DurationMS: result.DurationMS, Detail: fmt.Sprintf("run %s, dataset %s, %d items", result.RunID, result.DatasetID, len(result.Items))}},
+		CostUSD:   result.CostUSD,
+		CostKnown: true,
 	}, nil
 }
 

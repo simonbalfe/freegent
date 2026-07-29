@@ -7,10 +7,10 @@
 - `internal/app` routes the executable to the CLI, HTTP API, or River worker.
 - `internal/cli` is a thin remote API client. It uploads CSV files through multipart `POST /jobs`, submits JSON rows through the same endpoint, polls job state, and streams the CSV download or JSON answer.
 - `internal/api` owns the HTTP API, PostgreSQL job history and state, River workers, run logs, and HTMX dashboard.
-- `internal/agent` owns the agent loop, shared model and tool contracts, output schemas, prompts, and URL provenance.
+- `internal/agent` owns the adaptive agent loop, concurrent tool rounds, schema-backed answer submission, shared model and tool contracts, output schemas, prompts, and URL provenance.
 - `internal/openrouter` is the OpenRouter model adapter.
 - `internal/tools` contains the search, OpenExtract fetch, and Apify enrichment tools.
-- `internal/toolset` registers the tools enabled by the current environment.
+- `internal/toolset` registers tools enabled by the current environment and narrows the definitions exposed to each job from its task and output schema.
 - `internal/openextract` is only a typed HTTP client for the standalone OpenExtract service.
 - `internal/api/postgres_store.go` owns the PostgreSQL schema, durable batch and row state, and transactional River enqueue.
 - `internal/api/river_worker.go` owns queued operation execution, retry policy, and worker lifecycle.
@@ -29,6 +29,9 @@ The CLI and dashboard submit through `POST /jobs`. The compatibility `POST /run`
 One submitted batch contains one operation per input row. Each operation is one River job whose arguments contain only the batch ID and row index.
 The API validates, persists, and enqueues work. It must not execute the agent loop.
 Workers claim operations from the shared `research` queue and run the complete agent loop, including search, fetch, extraction, schema validation, and final answer generation.
+One model decision may request multiple independent research tools. Execute those calls concurrently, return every result to the same conversation, and let the next decision choose more research or call `submit_answer`. Never replace this evidence-driven loop with a fixed enrichment workflow.
+`submit_answer` is a synthetic model tool backed by the requested output schema. The separate schema finalizer is only a recovery path for exhausted or malformed model turns.
+Automatic tool selection always exposes web search and page fetching, then adds only task-relevant enrichment definitions. An explicit API tool allowlist takes precedence.
 River provides at-least-once delivery. Application completion is idempotent, so completed rows are not rerun after a worker acknowledgement failure.
 Worker concurrency is deployment-wide capacity configured per replica. Do not restore per-batch concurrency controls.
 

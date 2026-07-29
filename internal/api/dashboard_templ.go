@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "fmt"
 
-func DashboardPage(jobs []DashboardJob) templ.Component {
+func DashboardHead(title string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -31,158 +31,528 @@ func DashboardPage(jobs []DashboardJob) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Freegent</title><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}h1{margin-bottom:8px}h2{margin-top:32px}.card{background:#fff;border:1px solid #e2e4e8;border-radius:10px;padding:24px;margin:20px 0;box-shadow:0 2px 8px #17202a0a}form.card label{display:block;margin:16px 0 7px;font-weight:600}form.card label:first-child{margin-top:0}textarea,input{width:100%;box-sizing:border-box;margin:0 0 4px;padding:11px 12px;border:1px solid #98a2b3;border-radius:6px;font:14px ui-monospace,monospace;line-height:1.45;background:#fff}textarea{min-height:108px;resize:vertical}button{margin-top:12px;padding:11px 18px;border:0;border-radius:6px;background:#175cd3;color:#fff;font-weight:600;cursor:pointer}.muted{color:#667085}.ok{color:#18794e}.error{color:#b42318}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #eee;padding:8px}</style></head><body><h1>Freegent</h1><p class=\"muted\"><strong>Open source Freegent</strong>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(" for ")
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 17, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 9, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "researching any spreadsheet.</p><p class=\"muted\">Upload a CSV or paste JSON rows, then watch every row complete. Job history survives API restarts.</p><form method=\"post\" action=\"/dashboard/jobs\" enctype=\"multipart/form-data\" class=\"card\"><label>Job name</label> <input name=\"name\" placeholder=\"Optional, defaults to the CSV filename\"> <label>Instructions</label> <textarea name=\"instructions\">Use current reliable evidence. Follow the requested task exactly and do not guess unsupported facts.</textarea> <label>Template</label> <input name=\"template\" value=\"Research {{subject}} using {{url}} when supplied. Return a concise factual answer.\"> <label>Output schema</label> <textarea name=\"schema\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " · Freegent</title><link rel=\"icon\" href=\"data:,\"><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><style>\n    :root {\n      color-scheme: light;\n      --canvas: #f5f6f2;\n      --surface: #ffffff;\n      --surface-soft: #f8f9f6;\n      --ink: #17211b;\n      --muted: #69736d;\n      --line: #dfe4de;\n      --line-strong: #cdd4cd;\n      --accent: #1d5f45;\n      --accent-hover: #164a36;\n      --accent-soft: #e8f2ec;\n      --warning: #a15c16;\n      --warning-soft: #fff3df;\n      --danger: #ad3328;\n      --danger-soft: #fcebea;\n      --shadow: 0 14px 34px rgba(25, 42, 32, .07);\n    }\n    * { box-sizing: border-box; }\n    body {\n      margin: 0;\n      background: var(--canvas);\n      color: var(--ink);\n      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n    }\n    a { color: inherit; }\n    button, input, textarea { font: inherit; }\n    .sr-only {\n      position: absolute;\n      width: 1px;\n      height: 1px;\n      padding: 0;\n      margin: -1px;\n      overflow: hidden;\n      clip: rect(0, 0, 0, 0);\n      white-space: nowrap;\n      border: 0;\n    }\n    .app-shell {\n      min-height: 100vh;\n      display: grid;\n      grid-template-columns: 232px minmax(0, 1fr);\n    }\n    .sidebar {\n      position: sticky;\n      top: 0;\n      height: 100vh;\n      padding: 28px 20px;\n      border-right: 1px solid var(--line);\n      background: rgba(250, 251, 248, .92);\n      display: flex;\n      flex-direction: column;\n    }\n    .brand {\n      display: flex;\n      align-items: center;\n      gap: 11px;\n      margin: 0 8px 34px;\n      color: var(--ink);\n      font-size: 20px;\n      font-weight: 760;\n      letter-spacing: -.03em;\n      text-decoration: none;\n    }\n    .brand-mark {\n      width: 32px;\n      height: 32px;\n      border-radius: 9px;\n      background: var(--ink);\n      color: #fff;\n      display: grid;\n      place-items: center;\n      font-size: 14px;\n      letter-spacing: -.02em;\n    }\n    .nav-label {\n      margin: 0 10px 8px;\n      color: #8a938d;\n      font-size: 11px;\n      font-weight: 750;\n      letter-spacing: .11em;\n      text-transform: uppercase;\n    }\n    .nav {\n      display: grid;\n      gap: 5px;\n    }\n    .nav-link {\n      display: flex;\n      align-items: center;\n      gap: 11px;\n      padding: 10px 12px;\n      border-radius: 9px;\n      color: #56615a;\n      font-weight: 650;\n      text-decoration: none;\n    }\n    .nav-link:hover { background: #eef1ec; color: var(--ink); }\n    .nav-link.active { background: var(--ink); color: #fff; }\n    .nav-icon {\n      width: 18px;\n      text-align: center;\n      font-size: 13px;\n      font-weight: 800;\n    }\n    .service-state {\n      margin-top: auto;\n      padding: 12px;\n      border: 1px solid var(--line);\n      border-radius: 10px;\n      background: var(--surface);\n      color: var(--muted);\n      font-size: 12px;\n    }\n    .service-state strong {\n      display: block;\n      margin-bottom: 2px;\n      color: var(--ink);\n      font-size: 13px;\n    }\n    .state-dot {\n      display: inline-block;\n      width: 7px;\n      height: 7px;\n      margin-right: 7px;\n      border-radius: 50%;\n      background: #2d9b68;\n      box-shadow: 0 0 0 3px #e4f3ea;\n    }\n    .main {\n      min-width: 0;\n      padding: 44px clamp(28px, 5vw, 72px) 72px;\n    }\n    .job-main { padding: 24px; }\n    .content {\n      width: 100%;\n      max-width: 1180px;\n      margin: 0 auto;\n    }\n    .job-content { max-width: 1180px; }\n    .page-header {\n      display: flex;\n      align-items: flex-end;\n      justify-content: space-between;\n      gap: 24px;\n      margin-bottom: 30px;\n    }\n    .eyebrow {\n      margin: 0 0 5px;\n      color: var(--accent);\n      font-size: 12px;\n      font-weight: 760;\n      letter-spacing: .09em;\n      text-transform: uppercase;\n    }\n    h1, h2, h3, p { margin-top: 0; }\n    h1 {\n      margin-bottom: 7px;\n      font-size: clamp(30px, 4vw, 42px);\n      line-height: 1.08;\n      letter-spacing: -.045em;\n    }\n    h2 { letter-spacing: -.025em; }\n    .page-subtitle {\n      max-width: 660px;\n      margin-bottom: 0;\n      color: var(--muted);\n      font-size: 16px;\n    }\n    .button {\n      display: inline-flex;\n      align-items: center;\n      justify-content: center;\n      gap: 8px;\n      min-height: 42px;\n      padding: 10px 16px;\n      border: 1px solid transparent;\n      border-radius: 9px;\n      background: var(--accent);\n      color: #fff;\n      font-weight: 700;\n      text-decoration: none;\n      cursor: pointer;\n    }\n    .button:hover { background: var(--accent-hover); }\n    .button.secondary {\n      border-color: var(--line-strong);\n      background: var(--surface);\n      color: var(--ink);\n    }\n    .button.secondary:hover { background: var(--surface-soft); }\n    .stats {\n      display: grid;\n      grid-template-columns: repeat(4, minmax(0, 1fr));\n      gap: 14px;\n      margin-bottom: 22px;\n    }\n    .stat {\n      min-width: 0;\n      padding: 18px 19px;\n      border: 1px solid var(--line);\n      border-radius: 13px;\n      background: var(--surface);\n      box-shadow: 0 5px 18px rgba(25, 42, 32, .035);\n    }\n    .stat-label {\n      display: block;\n      margin-bottom: 7px;\n      color: var(--muted);\n      font-size: 12px;\n      font-weight: 680;\n      text-transform: uppercase;\n      letter-spacing: .06em;\n    }\n    .stat-value {\n      display: block;\n      font-size: 25px;\n      font-weight: 760;\n      line-height: 1.15;\n      letter-spacing: -.035em;\n    }\n    .panel {\n      overflow: hidden;\n      border: 1px solid var(--line);\n      border-radius: 14px;\n      background: var(--surface);\n      box-shadow: var(--shadow);\n    }\n    .panel-header {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      gap: 20px;\n      padding: 19px 22px;\n      border-bottom: 1px solid var(--line);\n    }\n    .panel-header h2 {\n      margin: 0;\n      font-size: 17px;\n    }\n    .panel-count {\n      color: var(--muted);\n      font-size: 13px;\n    }\n    .jobs-table {\n      width: 100%;\n      border-collapse: collapse;\n    }\n    .jobs-table th {\n      padding: 11px 18px;\n      border-bottom: 1px solid var(--line);\n      background: var(--surface-soft);\n      color: #7c857f;\n      font-size: 11px;\n      font-weight: 760;\n      letter-spacing: .07em;\n      text-align: left;\n      text-transform: uppercase;\n    }\n    .jobs-table td {\n      padding: 16px 18px;\n      border-bottom: 1px solid #edf0ec;\n      vertical-align: middle;\n    }\n    .jobs-table tbody tr:last-child td { border-bottom: 0; }\n    .jobs-table tbody tr:hover { background: #fbfcfa; }\n    .job-name {\n      display: block;\n      color: var(--ink);\n      font-weight: 720;\n      text-decoration: none;\n    }\n    .job-name:hover { color: var(--accent); }\n    .job-id {\n      display: block;\n      max-width: 220px;\n      margin-top: 2px;\n      overflow: hidden;\n      color: #8a938d;\n      font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;\n      text-overflow: ellipsis;\n      white-space: nowrap;\n    }\n    .status-pill {\n      display: inline-flex;\n      align-items: center;\n      gap: 6px;\n      padding: 5px 9px;\n      border-radius: 999px;\n      background: #eef1ed;\n      color: #59635c;\n      font-size: 12px;\n      font-weight: 720;\n      line-height: 1;\n      white-space: nowrap;\n    }\n    .status-pill::before {\n      width: 6px;\n      height: 6px;\n      border-radius: 50%;\n      background: currentColor;\n      content: \"\";\n    }\n    .status-running, .status-queued { background: #e9f1ff; color: #2c62a7; }\n    .status-completed { background: var(--accent-soft); color: var(--accent); }\n    .status-warning { background: var(--warning-soft); color: var(--warning); }\n    .status-failed { background: var(--danger-soft); color: var(--danger); }\n    .progress-cell { min-width: 165px; }\n    .progress-meta {\n      display: flex;\n      justify-content: space-between;\n      gap: 10px;\n      margin-bottom: 6px;\n      color: var(--muted);\n      font-size: 12px;\n    }\n    progress {\n      display: block;\n      width: 100%;\n      height: 6px;\n      overflow: hidden;\n      border: 0;\n      border-radius: 999px;\n      background: #e9ece8;\n    }\n    progress::-webkit-progress-bar { background: #e9ece8; }\n    progress::-webkit-progress-value { border-radius: 999px; background: var(--accent); }\n    progress::-moz-progress-bar { border-radius: 999px; background: var(--accent); }\n    .event-copy {\n      display: block;\n      max-width: 270px;\n      overflow: hidden;\n      color: var(--muted);\n      font-size: 13px;\n      text-overflow: ellipsis;\n      white-space: nowrap;\n    }\n    .time {\n      color: var(--muted);\n      font-size: 13px;\n      white-space: nowrap;\n    }\n    .row-arrow {\n      color: #9da59f;\n      font-size: 18px;\n      text-decoration: none;\n    }\n    .empty-state {\n      padding: 72px 24px;\n      text-align: center;\n    }\n    .empty-mark {\n      width: 44px;\n      height: 44px;\n      margin: 0 auto 16px;\n      border-radius: 12px;\n      background: var(--accent-soft);\n      color: var(--accent);\n      display: grid;\n      place-items: center;\n      font-weight: 800;\n    }\n    .empty-state h2 { margin-bottom: 7px; font-size: 18px; }\n    .empty-state p { margin-bottom: 20px; color: var(--muted); }\n    .run-panel {\n      padding: clamp(22px, 4vw, 34px);\n    }\n    .run-form {\n      display: grid;\n      gap: 28px;\n    }\n    .form-section {\n      display: grid;\n      grid-template-columns: 180px minmax(0, 1fr);\n      gap: 30px;\n      padding-bottom: 28px;\n      border-bottom: 1px solid var(--line);\n    }\n    .form-section:last-of-type { border-bottom: 0; padding-bottom: 0; }\n    .form-intro h2 { margin-bottom: 5px; font-size: 16px; }\n    .form-intro p { margin-bottom: 0; color: var(--muted); font-size: 13px; }\n    .form-fields { display: grid; gap: 17px; }\n    .field { display: grid; gap: 7px; }\n    .field label { font-weight: 690; }\n    .field-help { color: var(--muted); font-size: 12px; }\n    input, textarea {\n      width: 100%;\n      padding: 11px 12px;\n      border: 1px solid var(--line-strong);\n      border-radius: 8px;\n      outline: none;\n      background: var(--surface);\n      color: var(--ink);\n    }\n    input:focus, textarea:focus {\n      border-color: #5b8f77;\n      box-shadow: 0 0 0 3px rgba(29, 95, 69, .11);\n    }\n    textarea {\n      min-height: 112px;\n      resize: vertical;\n      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;\n    }\n    .compact-textarea { min-height: 88px; }\n    input[type=\"file\"] {\n      padding: 8px;\n      background: var(--surface-soft);\n    }\n    input[type=\"file\"]::file-selector-button {\n      margin-right: 12px;\n      padding: 7px 11px;\n      border: 1px solid var(--line-strong);\n      border-radius: 6px;\n      background: var(--surface);\n      color: var(--ink);\n      font-weight: 650;\n      cursor: pointer;\n    }\n    .or-divider {\n      display: flex;\n      align-items: center;\n      gap: 12px;\n      color: #939c96;\n      font-size: 11px;\n      font-weight: 760;\n      letter-spacing: .08em;\n      text-transform: uppercase;\n    }\n    .or-divider::before, .or-divider::after {\n      height: 1px;\n      flex: 1;\n      background: var(--line);\n      content: \"\";\n    }\n    .form-actions {\n      display: flex;\n      align-items: center;\n      justify-content: flex-end;\n      gap: 12px;\n    }\n    .back-link {\n      display: inline-block;\n      margin-bottom: 18px;\n      color: var(--muted);\n      font-weight: 650;\n      text-decoration: none;\n    }\n    .back-link:hover { color: var(--accent); }\n    .detail-title {\n      display: flex;\n      align-items: center;\n      gap: 12px;\n      flex-wrap: wrap;\n    }\n    .detail-title h1 { margin-bottom: 0; }\n    .job-main .back-link { margin-bottom: 8px; }\n    .job-main .detail-title h1 {\n      font-size: 24px;\n      line-height: 1.2;\n      overflow-wrap: anywhere;\n    }\n    .detail-id {\n      margin: 4px 0 0;\n      color: var(--muted);\n      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;\n    }\n    .detail-grid {\n      display: grid;\n      grid-template-columns: repeat(4, minmax(0, 1fr));\n      gap: 12px;\n      margin: 26px 0 20px;\n    }\n    .job-summary {\n      gap: 0;\n      margin: 14px 0 10px;\n      overflow: hidden;\n      border: 1px solid var(--line);\n      border-radius: 10px;\n      background: var(--surface);\n    }\n    .job-summary .stat {\n      padding: 11px 15px;\n      border: 0;\n      border-right: 1px solid var(--line);\n      border-radius: 0;\n      box-shadow: none;\n    }\n    .job-summary .stat:last-child { border-right: 0; }\n    .job-summary .stat-label { margin-bottom: 2px; font-size: 10px; }\n    .job-summary .stat-value { font-size: 18px; }\n    .job-cost {\n      margin-top: 14px;\n      overflow: hidden;\n      border: 1px solid #b9d1c3;\n      border-radius: 10px;\n      background: var(--surface);\n    }\n    .job-cost summary {\n      display: grid;\n      grid-template-columns: auto auto 1fr;\n      align-items: baseline;\n      gap: 9px;\n      padding: 10px 14px;\n      cursor: pointer;\n      list-style: none;\n    }\n    .job-cost summary::-webkit-details-marker { display: none; }\n    .job-cost-label {\n      color: var(--muted);\n      font-size: 10px;\n      font-weight: 760;\n      letter-spacing: .05em;\n      text-transform: uppercase;\n    }\n    .job-cost summary > strong {\n      color: var(--accent);\n      font-size: 20px;\n      letter-spacing: -.025em;\n    }\n    .job-cost-action {\n      justify-self: end;\n      color: var(--accent);\n      font-size: 11px;\n      font-weight: 720;\n    }\n    .job-cost[open] .job-cost-action::before { content: \"Hide breakdown\"; }\n    .job-cost[open] .job-cost-action { font-size: 0; }\n    .job-cost[open] .job-cost-action::before { font-size: 11px; }\n    .cost-breakdown {\n      padding: 0 14px 11px;\n      border-top: 1px solid var(--line);\n    }\n    .cost-line {\n      display: grid;\n      grid-template-columns: minmax(0, 1fr) auto;\n      gap: 20px;\n      padding: 9px 0;\n      border-bottom: 1px solid #edf0ec;\n    }\n    .cost-line > strong { font-size: 13px; }\n    .cost-line div > strong { font-size: 12px; }\n    .cost-line p {\n      margin: 2px 0 0;\n      color: var(--muted);\n      font-size: 11px;\n    }\n    .cost-total {\n      display: flex;\n      justify-content: space-between;\n      padding: 9px 0 3px;\n      font-size: 13px;\n      font-weight: 760;\n    }\n    .cost-note {\n      margin: 3px 0 0;\n      color: var(--muted);\n      font-size: 10px;\n    }\n    .detail-section {\n      margin-top: 10px;\n      padding: 0;\n    }\n    .detail-section h2 { margin-bottom: 16px; font-size: 17px; }\n    summary.panel-header {\n      cursor: pointer;\n      list-style: none;\n    }\n    summary.panel-header::-webkit-details-marker { display: none; }\n    summary.panel-header::after {\n      color: var(--muted);\n      content: \"Show\";\n      font-size: 11px;\n      font-weight: 720;\n    }\n    .activity-panel[open] summary.panel-header::after { content: \"Hide\"; }\n    .activity {\n      max-height: 300px;\n      overflow: auto;\n      border-radius: 10px;\n      background: #18221c;\n      color: #e9f0eb;\n      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;\n    }\n    .detail-section > .activity { margin: 18px 20px 20px; }\n    .activity-event {\n      display: grid;\n      grid-template-columns: 70px 66px minmax(0, 1fr);\n      gap: 12px;\n      padding: 9px 13px;\n      border-bottom: 1px solid rgba(255, 255, 255, .07);\n    }\n    .activity-event:last-child { border-bottom: 0; }\n    .activity-time, .activity-row { color: #91a098; }\n    .sheet-panel { overflow: hidden; }\n    .sheet-toolbar {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      gap: 16px;\n      padding: 10px 16px;\n      border-bottom: 1px solid var(--line);\n      background: var(--surface-soft);\n      color: var(--muted);\n      font-size: 12px;\n    }\n    .sheet-legend {\n      display: flex;\n      align-items: center;\n      gap: 14px;\n      flex-wrap: wrap;\n    }\n    .sheet-refresh {\n      padding: 5px 9px;\n      border: 1px solid var(--line-strong);\n      border-radius: 6px;\n      background: var(--surface);\n      color: var(--accent);\n      font-size: 11px;\n      font-weight: 720;\n      cursor: pointer;\n    }\n    .sheet-refresh:hover { background: var(--accent-soft); }\n    .legend-item {\n      display: inline-flex;\n      align-items: center;\n      gap: 6px;\n    }\n    .legend-dot {\n      width: 8px;\n      height: 8px;\n      border-radius: 3px;\n      background: #e6eae6;\n    }\n    .legend-dot.output { background: #cce4d5; }\n    .sheet-scroll {\n      width: 100%;\n      overflow: auto;\n    }\n    .sheet-table {\n      width: max-content;\n      min-width: 100%;\n      border-spacing: 0;\n      border-collapse: separate;\n      table-layout: fixed;\n    }\n    .sheet-table.fitted { width: 100%; }\n    .sheet-table.fitted th.input-heading {\n      width: 18%;\n      min-width: 135px;\n      max-width: none;\n    }\n    .sheet-table.fitted th.output-heading {\n      width: 32%;\n      min-width: 190px;\n      max-width: none;\n    }\n    .sheet-table.fitted .sheet-cell {\n      max-width: none;\n      max-height: none;\n    }\n    .sheet-table th {\n      position: sticky;\n      top: 0;\n      z-index: 2;\n      width: 155px;\n      min-width: 155px;\n      max-width: 155px;\n      height: 44px;\n      padding: 8px 12px;\n      border-right: 1px solid var(--line);\n      border-bottom: 1px solid var(--line-strong);\n      background: #f3f5f1;\n      color: #58625c;\n      font-size: 12px;\n      font-weight: 720;\n      text-align: left;\n      vertical-align: middle;\n    }\n    .sheet-table th.output-heading {\n      width: 220px;\n      min-width: 220px;\n      max-width: 220px;\n      background: #edf5f0;\n    }\n    .sheet-table td {\n      height: 56px;\n      padding: 7px 11px;\n      border-right: 1px solid #e7ebe6;\n      border-bottom: 1px solid #e7ebe6;\n      background: var(--surface);\n      vertical-align: top;\n    }\n    .sheet-table tbody tr:hover > td { background: #fbfcfa; }\n    .sheet-table tbody tr:hover > td.output-cell { background: #f8fcf9; }\n    .sheet-table tbody tr.row-open > td { background: #f1f7f3; }\n    .sheet-table th:last-child, .sheet-table td:last-child { border-right: 0; }\n    .sheet-table .row-control {\n      position: sticky;\n      left: 0;\n      z-index: 1;\n      width: 118px;\n      min-width: 118px;\n      max-width: 118px;\n      background: #fafbf9;\n      box-shadow: 1px 0 0 var(--line);\n      vertical-align: middle;\n    }\n    .sheet-table th.row-control {\n      z-index: 3;\n      color: #7b857e;\n      font-weight: 720;\n    }\n    .row-control-inner {\n      display: flex;\n      align-items: center;\n      gap: 9px;\n    }\n    .sheet-toggle {\n      width: 27px;\n      height: 27px;\n      padding: 0;\n      border: 1px solid var(--line-strong);\n      border-radius: 6px;\n      background: var(--surface);\n      color: var(--accent);\n      display: grid;\n      place-items: center;\n      font-size: 17px;\n      font-weight: 720;\n      cursor: pointer;\n    }\n    .sheet-toggle:hover { border-color: #8da697; background: var(--accent-soft); }\n    .sheet-toggle .chevron {\n      display: block;\n      line-height: 1;\n      transform: translateY(-1px);\n      transition: transform .14s ease;\n    }\n    .sheet-toggle.expanded .chevron { transform: rotate(90deg); }\n    .row-label {\n      min-width: 34px;\n      color: var(--ink);\n      font-weight: 740;\n    }\n    .row-status {\n      width: 8px;\n      height: 8px;\n      border-radius: 50%;\n      background: #8c9690;\n    }\n    .row-status.completed { background: #2d8a61; }\n    .row-status.running, .row-status.queued { background: #3b75bd; }\n    .row-status.failed, .row-status.completed-with-errors { background: #c34a3d; }\n    .row-status.skipped { background: #b47529; }\n    .column-heading {\n      display: flex;\n      align-items: center;\n      gap: 7px;\n    }\n    .column-kind {\n      padding: 2px 5px;\n      border-radius: 4px;\n      background: #e3e7e2;\n      color: #7c857f;\n      font-size: 9px;\n      font-weight: 800;\n      letter-spacing: .06em;\n      text-transform: uppercase;\n    }\n    .output-heading .column-kind {\n      background: #d8eadf;\n      color: var(--accent);\n    }\n    .output-cell { background: #fbfdfb !important; }\n    .sheet-cell {\n      max-width: 300px;\n      max-height: 46px;\n      overflow: hidden;\n      color: #3a443e;\n      font-size: 13px;\n      line-height: 1.4;\n      white-space: pre-wrap;\n      word-break: break-word;\n    }\n    .sheet-empty { color: #a1aaa4; }\n    .sheet-expansion[hidden] { display: none; }\n    .sheet-expansion > td {\n      height: auto;\n      padding: 0;\n      border-bottom: 1px solid var(--line-strong);\n      background: #f7f9f6 !important;\n    }\n    .expansion {\n      position: sticky;\n      left: 0;\n      width: clamp(680px, calc(100vw - 320px), 1080px);\n      max-width: calc(100vw - 280px);\n      padding: 22px;\n      box-shadow: inset 4px 0 0 var(--accent);\n    }\n    .expansion-header {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      gap: 16px;\n      margin-bottom: 17px;\n    }\n    .expansion-header h3 { margin: 0; font-size: 16px; }\n    .run-meta {\n      display: flex;\n      gap: 12px;\n      color: var(--muted);\n      font-size: 12px;\n      flex-wrap: wrap;\n    }\n    .expansion-grid {\n      display: grid;\n      grid-template-columns: minmax(0, 1.3fr) minmax(280px, .75fr);\n      gap: 16px;\n      align-items: start;\n    }\n    .expansion-stack { display: grid; gap: 14px; }\n    .expansion-card {\n      min-width: 0;\n      padding: 16px;\n      border: 1px solid var(--line);\n      border-radius: 10px;\n      background: var(--surface);\n    }\n    .expansion-card h4 {\n      margin: 0 0 10px;\n      font-size: 12px;\n      letter-spacing: .06em;\n      text-transform: uppercase;\n    }\n    .reasoning-copy {\n      max-height: 360px;\n      overflow: auto;\n      color: #354039;\n      font-size: 13px;\n      line-height: 1.6;\n      white-space: pre-wrap;\n    }\n    .answer, .step-input { display: grid; gap: 10px; }\n    .answer-row, .step-input-row { padding-top: 10px; border-top: 1px solid var(--line); }\n    .answer-row:first-child, .step-input-row:first-child { padding-top: 0; border-top: 0; }\n    .answer-row dt, .step-input-row dt { font-weight: 680; }\n    .answer-row dd, .step-input-row dd { margin: 4px 0 0; white-space: pre-wrap; }\n    .step-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }\n    .step {\n      position: relative;\n      display: grid;\n      grid-template-columns: 34px minmax(0, 1fr);\n      gap: 10px;\n      margin: 0;\n      padding: 0 0 13px;\n    }\n    .step:last-child { padding-bottom: 0; }\n    .step-rail {\n      position: relative;\n      display: flex;\n      justify-content: center;\n    }\n    .step-rail::after {\n      position: absolute;\n      top: 26px;\n      bottom: -13px;\n      width: 1px;\n      background: var(--line-strong);\n      content: \"\";\n    }\n    .step:last-child .step-rail::after { display: none; }\n    .step-number {\n      position: relative;\n      z-index: 1;\n      width: 25px;\n      height: 25px;\n      border: 1px solid #b9c9bf;\n      border-radius: 50%;\n      background: var(--accent-soft);\n      color: var(--accent);\n      display: grid;\n      place-items: center;\n      font-size: 10px;\n      font-weight: 800;\n    }\n    .step-body {\n      min-width: 0;\n      padding: 11px 12px;\n      border: 1px solid var(--line);\n      border-radius: 8px;\n      background: var(--surface-soft);\n    }\n    .step-title {\n      display: flex;\n      align-items: center;\n      gap: 7px;\n      font-weight: 700;\n      flex-wrap: wrap;\n    }\n    .step-kind {\n      color: var(--accent);\n      font-size: 9px;\n      font-weight: 800;\n      letter-spacing: .07em;\n      text-transform: uppercase;\n    }\n    .step-input { margin-top: 9px; font-size: 12px; }\n    .step-error {\n      margin: 8px 0 0;\n      color: var(--danger);\n      font-size: 12px;\n      line-height: 1.5;\n    }\n    .tool-result {\n      margin-top: 10px;\n      padding-top: 9px;\n      border-top: 1px solid var(--line);\n    }\n    .tool-result summary {\n      color: var(--accent);\n      font-size: 11px;\n      font-weight: 740;\n      cursor: pointer;\n    }\n    .evidence-list { display: grid; gap: 8px; }\n    .evidence-item {\n      margin: 0;\n      padding: 9px 10px;\n      border: 1px solid var(--line);\n      border-radius: 7px;\n      background: var(--surface-soft);\n    }\n    .evidence-item summary {\n      color: var(--accent);\n      font-size: 12px;\n      font-weight: 700;\n      cursor: pointer;\n    }\n    .evidence-text {\n      max-height: 260px;\n      overflow: auto;\n      margin: 10px 0 0;\n      color: #465149;\n      font-size: 12px;\n      line-height: 1.55;\n      white-space: pre-wrap;\n    }\n    .sources a { color: var(--accent); word-break: break-all; }\n    .sources {\n      max-height: 210px;\n      margin: 0;\n      padding-left: 18px;\n      overflow: auto;\n      font-size: 12px;\n    }\n    .setup-panel > .panel-header { padding: 12px 15px; }\n    .setup-panel > .panel-header h2 { margin: 0; }\n    .setup-body { padding: 13px 15px; }\n    .setup-grid {\n      display: grid;\n      grid-template-columns: 1fr 1fr;\n      gap: 10px;\n    }\n    .setup-field {\n      min-width: 0;\n      padding: 10px;\n      border: 1px solid var(--line);\n      border-radius: 7px;\n      background: var(--surface-soft);\n    }\n    .setup-field h3 {\n      margin: 0 0 5px;\n      color: var(--muted);\n      font-size: 10px;\n      letter-spacing: .05em;\n      text-transform: uppercase;\n    }\n    .setup-field pre,\n    .setup-detail pre,\n    .rendered-prompt pre {\n      margin: 0;\n      color: #354039;\n      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;\n      white-space: pre-wrap;\n      overflow-wrap: anywhere;\n    }\n    .setup-field pre {\n      max-height: 150px;\n      overflow: auto;\n    }\n    .setup-settings {\n      display: grid;\n      grid-template-columns: repeat(5, minmax(0, 1fr));\n      margin: 10px 0 0;\n      border: 1px solid var(--line);\n      border-radius: 7px;\n    }\n    .setup-settings > div {\n      min-width: 0;\n      padding: 7px 9px;\n      border-right: 1px solid var(--line);\n    }\n    .setup-settings > div:last-child { border-right: 0; }\n    .setup-settings dt {\n      color: var(--muted);\n      font-size: 9px;\n      font-weight: 760;\n      letter-spacing: .05em;\n      text-transform: uppercase;\n    }\n    .setup-settings dd {\n      margin: 2px 0 0;\n      overflow-wrap: anywhere;\n      font-size: 11px;\n      font-weight: 680;\n    }\n    .setup-detail {\n      margin-top: 8px;\n      border: 1px solid var(--line);\n      border-radius: 7px;\n    }\n    .setup-detail summary {\n      padding: 7px 9px;\n      color: var(--accent);\n      font-size: 11px;\n      font-weight: 720;\n      cursor: pointer;\n    }\n    .setup-detail pre {\n      max-height: 360px;\n      padding: 9px;\n      overflow: auto;\n      border-top: 1px solid var(--line);\n      background: var(--surface-soft);\n    }\n    .rendered-prompt { background: #fbfcfa; }\n    .rendered-prompt pre {\n      padding-left: 9px;\n      border-left: 3px solid var(--line-strong);\n    }\n    .rows-panel > .panel-header { padding: 12px 15px; }\n    .rows-heading {\n      display: flex;\n      align-items: center;\n      gap: 10px;\n    }\n    .rows-heading h2 { margin: 0; }\n    .rows-refresh {\n      padding: 5px 9px;\n      border: 1px solid var(--line-strong);\n      border-radius: 6px;\n      background: var(--surface);\n      color: var(--accent);\n      font-size: 11px;\n      font-weight: 720;\n      cursor: pointer;\n    }\n    .rows-refresh:hover { background: var(--accent-soft); }\n    .rows-list { display: grid; }\n    .result-row {\n      min-width: 0;\n      border-bottom: 1px solid var(--line);\n    }\n    .result-row:last-child { border-bottom: 0; }\n    .result-row-header {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      gap: 16px;\n      padding: 10px 15px;\n      background: var(--surface-soft);\n    }\n    .result-row-title {\n      display: flex;\n      align-items: center;\n      gap: 9px;\n    }\n    .result-row-title h3 { margin: 0; font-size: 15px; }\n    .result-row-header .run-meta {\n      gap: 10px;\n      font-size: 11px;\n    }\n    .row-section {\n      padding: 11px 15px;\n      border-top: 1px solid #edf0ec;\n    }\n    .row-section h4 {\n      margin: 0 0 7px;\n      font-size: 12px;\n    }\n    .row-data-table {\n      width: 100%;\n      overflow: hidden;\n      border: 1px solid var(--line);\n      border-radius: 7px;\n      border-spacing: 0;\n      border-collapse: separate;\n      table-layout: fixed;\n    }\n    .row-data-table th {\n      padding: 5px 8px;\n      border-bottom: 1px solid var(--line);\n      background: var(--surface-soft);\n      color: var(--muted);\n      font-size: 10px;\n      font-weight: 760;\n      letter-spacing: .05em;\n      text-align: left;\n      text-transform: uppercase;\n    }\n    .row-data-table th:first-child { width: 210px; }\n    .row-data-table td {\n      padding: 6px 8px;\n      border-bottom: 1px solid #edf0ec;\n      color: #354039;\n      font-size: 13px;\n      vertical-align: top;\n      white-space: pre-wrap;\n      overflow-wrap: anywhere;\n    }\n    .row-data-table tr:last-child td { border-bottom: 0; }\n    .data-field {\n      display: flex;\n      align-items: center;\n      gap: 7px;\n      font-weight: 680;\n    }\n    .field-kind {\n      min-width: 45px;\n      padding: 2px 5px;\n      border-radius: 4px;\n      background: #e3e7e2;\n      color: #7c857f;\n      font-size: 9px;\n      font-weight: 800;\n      letter-spacing: .06em;\n      text-align: center;\n      text-transform: uppercase;\n    }\n    .field-kind.output {\n      background: #d8eadf;\n      color: var(--accent);\n    }\n    .result-row .reasoning-copy {\n      max-height: none;\n      overflow: visible;\n      line-height: 1.55;\n    }\n    .result-row .step {\n      grid-template-columns: 25px minmax(0, 1fr);\n      gap: 9px;\n      padding-bottom: 8px;\n    }\n    .result-row .step-number {\n      width: 23px;\n      height: 23px;\n    }\n    .result-row .step-body {\n      padding: 8px 10px;\n      border-radius: 6px;\n    }\n    .result-row .step-input {\n      gap: 7px;\n      margin-top: 7px;\n    }\n    .result-row .step-input-row {\n      padding-top: 7px;\n      overflow-wrap: anywhere;\n    }\n    .result-row .sources {\n      max-height: none;\n      overflow: visible;\n    }\n    .error { color: var(--danger); }\n    .download-actions {\n      display: flex;\n      gap: 10px;\n      margin-top: 20px;\n      flex-wrap: wrap;\n    }\n    @media (max-width: 980px) {\n      .stats, .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n      .setup-settings { grid-template-columns: repeat(3, minmax(0, 1fr)); }\n      .setup-settings > div { border-bottom: 1px solid var(--line); }\n      .setup-settings > div:nth-child(3) { border-right: 0; }\n      .setup-settings > div:nth-last-child(-n+2) { border-bottom: 0; }\n      .jobs-table th:nth-child(4), .jobs-table td:nth-child(4) { display: none; }\n    }\n    @media (max-width: 760px) {\n      .app-shell { display: block; }\n      .sidebar {\n        position: static;\n        width: auto;\n        height: auto;\n        padding: 14px 18px;\n        border-right: 0;\n        border-bottom: 1px solid var(--line);\n        flex-direction: row;\n        align-items: center;\n      }\n      .brand { margin: 0 22px 0 0; }\n      .brand-mark { width: 30px; height: 30px; }\n      .nav-label, .service-state { display: none; }\n      .nav { display: flex; }\n      .nav-link { padding: 8px 10px; }\n      .main { padding: 30px 18px 52px; }\n      .page-header { align-items: flex-start; }\n      .form-section { grid-template-columns: 1fr; gap: 14px; }\n      .jobs-table th:nth-child(3), .jobs-table td:nth-child(3) { display: none; }\n    }\n    @media (max-width: 540px) {\n      .page-header { display: grid; }\n      .page-header .button { width: 100%; }\n      .stats, .detail-grid { grid-template-columns: 1fr 1fr; }\n      .setup-grid { grid-template-columns: 1fr; }\n      .setup-settings { grid-template-columns: 1fr 1fr; }\n      .setup-settings > div:nth-child(odd) { border-right: 1px solid var(--line); }\n      .setup-settings > div:nth-child(even) { border-right: 0; }\n      .setup-settings > div:nth-last-child(-n+2) { border-bottom: 1px solid var(--line); }\n      .setup-settings > div:last-child { border-bottom: 0; }\n      .stat { padding: 14px; }\n      .jobs-table th:nth-child(5), .jobs-table td:nth-child(5) { display: none; }\n      .jobs-table th, .jobs-table td { padding: 13px 12px; }\n      .activity-event { grid-template-columns: 58px minmax(0, 1fr); }\n      .activity-row { display: none; }\n      .job-summary .stat:nth-child(2) { border-right: 0; }\n      .job-summary .stat:nth-child(-n+2) { border-bottom: 1px solid var(--line); }\n      .row-data-table th:first-child { width: 145px; }\n      .result-row-header { align-items: flex-start; }\n      .form-actions { display: grid; }\n      .form-actions .button { width: 100%; }\n    }\n  </style></head>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(`{"answer":"string"}`)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 27, Col: 51}
+		return nil
+	})
+}
+
+func DashboardSidebar(active string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var3 == nil {
+			templ_7745c5c3_Var3 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<aside class=\"sidebar\"><a class=\"brand\" href=\"/dashboard\"><span class=\"brand-mark\">F</span> <span>Freegent</span></a><p class=\"nav-label\">Workspace</p><nav class=\"nav\" aria-label=\"Dashboard\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</textarea> <label>CSV file</label> <input type=\"file\" name=\"csv\" accept=\".csv,text/csv\"><p class=\"muted\">The first row must contain headers matching template fields such as ")
+		var templ_7745c5c3_Var4 = []any{dashboardNavClass(active, "jobs")}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var4...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("{{subject}}")
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 30, Col: 104}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " and ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<a class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("{{url}}")
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var4).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 30, Col: 122}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, ". A CSV takes precedence over JSON rows.</p><label>Rows (optional JSON array)</label> <textarea name=\"rows\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" href=\"/dashboard\"><span class=\"nav-icon\">≡</span> <span>Jobs</span></a> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(`[
+		var templ_7745c5c3_Var6 = []any{dashboardNavClass(active, "run")}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<a class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var6).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" href=\"/dashboard/run\"><span class=\"nav-icon\">＋</span> <span>Run</span></a></nav><div class=\"service-state\"><strong><span class=\"state-dot\"></span>Service online</strong> API and job history connected</div></aside>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func DashboardPage(jobs []DashboardJob) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var8 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var8 == nil {
+			templ_7745c5c3_Var8 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<!doctype html><html lang=\"en\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DashboardHead("Jobs").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<body><div class=\"app-shell\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DashboardSidebar("jobs").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<main class=\"main\"><div class=\"content\"><header class=\"page-header\"><div><p class=\"eyebrow\">Research workspace</p><h1>Jobs</h1><p class=\"page-subtitle\">Track every research run, row, and result from one place.</p></div><a class=\"button\" href=\"/dashboard/run\"><span>＋</span> New run</a></header>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DashboardJobsOverview(jobs).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></main></div></body></html>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func DashboardJobsOverview(jobs []DashboardJob) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var9 == nil {
+			templ_7745c5c3_Var9 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div id=\"jobs-overview\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if dashboardHasActiveJobs(jobs) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " hx-get=\"/dashboard/jobs/status\" hx-trigger=\"every 3s\" hx-target=\"#jobs-overview\" hx-swap=\"outerHTML\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "><section class=\"stats\" aria-label=\"Job summary\"><div class=\"stat\"><span class=\"stat-label\">Total jobs</span><strong class=\"stat-value\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(jobs)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1306, Col: 121}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</strong></div><div class=\"stat\"><span class=\"stat-label\">Active</span><strong class=\"stat-value\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var11 string
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardActiveJobCount(jobs)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1307, Col: 137}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</strong></div><div class=\"stat\"><span class=\"stat-label\">Rows processed</span><strong class=\"stat-value\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var12 string
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardCompletedRowCount(jobs)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1308, Col: 148}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</strong></div><div class=\"stat\"><span class=\"stat-label\">Needs attention</span><strong class=\"stat-value\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardAttentionJobCount(jobs)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1309, Col: 149}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</strong></div></section><section class=\"panel\"><div class=\"panel-header\"><h2>Recent jobs</h2><span class=\"panel-count\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var14 string
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d shown", len(jobs)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1314, Col: 68}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if len(jobs) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"empty-state\"><div class=\"empty-mark\">＋</div><h2>No research jobs yet</h2><p>Start a run with a CSV or a set of JSON rows.</p><a class=\"button\" href=\"/dashboard/run\">Create first run</a></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<div style=\"overflow-x:auto\"><table class=\"jobs-table\"><thead><tr><th>Job</th><th>Status</th><th>Progress</th><th>Latest activity</th><th>Created</th><th><span class=\"sr-only\">Open</span></th></tr></thead> <tbody>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, job := range jobs {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<tr><td><a class=\"job-name\" href=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var15 templ.SafeURL
+				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs("/dashboard/jobs/" + job.ID)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1340, Col: 72}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var16 string
+				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardJobLabel(job))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1340, Col: 99}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</a> <span class=\"job-id\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var17 string
+				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(job.ID)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1341, Col: 47}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</span></td><td>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var18 = []any{dashboardStatusClass(job.Status)}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var18...)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var19 string
+				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var18).String())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1, Col: 0}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var20 string
+				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardStatusLabel(job.Status))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1343, Col: 103}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</span></td><td class=\"progress-cell\"><div class=\"progress-meta\"><span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var21 string
+				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d of %d rows", job.Completed, job.Total))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1345, Col: 107}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</span><strong>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var22 string
+				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d%%", dashboardJobProgress(job)))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1345, Col: 172}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</strong></div><progress value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var23 string
+				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", job.Completed))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1346, Col: 68}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" max=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var24 string
+				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardProgressMax(job)))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1346, Col: 121}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"></progress></td><td><span class=\"event-copy\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var25 string
+				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(job.LatestEvent)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1348, Col: 62}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</span></td><td><span class=\"time\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var26 string
+				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardJobTime(job.CreatedAt))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1349, Col: 72}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</span></td><td><a class=\"row-arrow\" href=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var27 templ.SafeURL
+				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinURLErrs("/dashboard/jobs/" + job.ID)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1350, Col: 75}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" aria-label=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var28 string
+				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs("Open " + dashboardJobLabel(job))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1350, Col: 123}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\">→</a></td></tr>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</tbody></table></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</section></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func DashboardRunPage() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var29 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var29 == nil {
+			templ_7745c5c3_Var29 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<!doctype html><html lang=\"en\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DashboardHead("Run").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<body><div class=\"app-shell\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DashboardSidebar("run").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<main class=\"main\"><div class=\"content\"><header class=\"page-header\"><div><p class=\"eyebrow\">New research</p><h1>Start a run</h1><p class=\"page-subtitle\">Upload a spreadsheet or paste JSON rows. Each row is researched and tracked independently.</p></div></header><section class=\"panel run-panel\"><form method=\"post\" action=\"/dashboard/jobs\" enctype=\"multipart/form-data\" class=\"run-form\"><div class=\"form-section\"><div class=\"form-intro\"><h2>Research brief</h2><p>Define what Freegent should find and how the answer should be returned.</p></div><div class=\"form-fields\"><div class=\"field\"><label for=\"name\">Job name</label> <input id=\"name\" name=\"name\" placeholder=\"e.g. July prospect research\"> <span class=\"field-help\">Optional. CSV uploads default to the filename.</span></div><div class=\"field\"><label for=\"instructions\">Instructions</label> <textarea id=\"instructions\" name=\"instructions\">Use current reliable evidence. Follow the requested task exactly and do not guess unsupported facts.</textarea></div><div class=\"field\"><label for=\"template\">Prompt template</label> <input id=\"template\" name=\"template\" value=\"Research {{subject}} using {{url}} when supplied. Return a concise factual answer.\"> <span class=\"field-help\">Template fields must match your CSV headers or JSON keys.</span></div><div class=\"field\"><label for=\"schema\">Output schema</label> <textarea class=\"compact-textarea\" id=\"schema\" name=\"schema\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var30 string
+		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(`{"answer":"string"}`)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1401, Col: 102}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</textarea></div></div></div><div class=\"form-section\"><div class=\"form-intro\"><h2>Input rows</h2><p>Choose a CSV for batch enrichment or paste a JSON array for a quick run.</p></div><div class=\"form-fields\"><div class=\"field\"><label for=\"csv\">CSV file</label> <input id=\"csv\" type=\"file\" name=\"csv\" accept=\".csv,text/csv\"> <span class=\"field-help\">The first row must contain headers matching the prompt fields.</span></div><div class=\"or-divider\">or paste rows</div><div class=\"field\"><label for=\"rows\">JSON rows</label> <textarea id=\"rows\" name=\"rows\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var31 string
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(`[
   {"subject":"Figma","url":"https://figma.com"},
   {"subject":"Dario Amodei","url":""},
   {"subject":"EU AI Act","url":""}
 ]`)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 36, Col: 2}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1423, Col: 2}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</textarea> <button type=\"submit\">Start research</button></form><h2>Recent jobs</h2>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if len(jobs) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<p class=\"muted\">No jobs yet.</p>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			for _, job := range jobs {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"card\"><a href=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var7 templ.SafeURL
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs("/dashboard/jobs/" + job.ID)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 61}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardJobLabel(job))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 88}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</a> · ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(job.Status)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 110}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " · ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var10 string
-				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d rows", job.Completed, job.Total))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 169}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " · <span class=\"muted\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var11 string
-				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardJobTime(job.CreatedAt))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 44, Col: 228}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span></div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</textarea> <span class=\"field-help\">A selected CSV takes precedence over JSON rows.</span></div></div></div><div class=\"form-actions\"><a class=\"button secondary\" href=\"/dashboard\">Cancel</a> <button class=\"button\" type=\"submit\">Start research</button></div></form></section></div></main></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -206,25 +576,64 @@ func DashboardJobPage(job DashboardJob) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var12 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var12 == nil {
-			templ_7745c5c3_Var12 = templ.NopComponent
+		templ_7745c5c3_Var32 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var32 == nil {
+			templ_7745c5c3_Var32 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Freegent job</title><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}.card{background:#fff;border:1px solid #e2e4e8;border-radius:12px;padding:20px;margin:16px 0;box-shadow:0 2px 8px #17202a0a}.muted{color:#667085}.error{color:#b42318}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.metric{background:#f5f7fa;border-radius:8px;padding:12px}.metric strong{display:block;font-size:20px}.flow{background:#101828;color:#e6edf3;border-radius:8px;padding:14px;max-height:280px;overflow:auto;font:13px ui-monospace,monospace}.event{padding:6px 0;border-bottom:1px solid #ffffff1f}.event span{color:#98a2b3;margin-right:12px}.row-card{border:1px solid #e2e4e8;border-radius:10px;padding:16px;margin:12px 0}.row-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.status{color:#18794e;font-weight:600}.tokens{color:#667085;font-size:14px}.answer,.step-input{display:grid;gap:10px}.answer-row,.step-input-row{border-top:1px solid #eaecf0;padding-top:10px}.answer-row dt,.step-input-row dt{font-weight:600}.answer-row dd,.step-input-row dd{margin:4px 0 0;white-space:pre-wrap}.step{margin:14px 0}.step-title{font-weight:600;font-size:17px}pre{white-space:pre-wrap;overflow:auto;background:#f5f7fa;padding:10px;border-radius:6px}details{margin-top:12px}summary{cursor:pointer;font-weight:600}a{color:#175cd3}</style></head><body><p><a href=\"/dashboard\">← New job</a></p><h1>Job ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<!doctype html><html lang=\"en\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(job.ID)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 63, Col: 18}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+		templ_7745c5c3_Err = DashboardHead("Job").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</h1><div id=\"job-status\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<body><div class=\"app-shell\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DashboardSidebar("jobs").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<main class=\"main job-main\"><div class=\"content job-content\"><a class=\"back-link\" href=\"/dashboard\">← Back to jobs</a><div class=\"detail-title\"><h1>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var33 string
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardJobLabel(job))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1452, Col: 38}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</h1></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if job.Name != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<p class=\"detail-id\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var34 string
+			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(job.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1455, Col: 39}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div id=\"job-status\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -232,7 +641,7 @@ func DashboardJobPage(job DashboardJob) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</div></div></main></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -256,361 +665,60 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var14 == nil {
-			templ_7745c5c3_Var14 = templ.NopComponent
+		templ_7745c5c3_Var35 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var35 == nil {
+			templ_7745c5c3_Var35 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"card\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"job-live\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if dashboardActive(job) {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " hx-get=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("/dashboard/jobs/" + job.ID + "/status")
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 72, Col: 52}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" hx-trigger=\"every 1s\" hx-target=\"#job-status\" hx-swap=\"innerHTML\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "><div class=\"row-head\"><h2>")
+		templ_7745c5c3_Err = DashboardJobOverview(job).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(job.Status)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 75, Col: 40}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+		templ_7745c5c3_Err = DashboardJobSetup(job).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</h2><span class=\"muted\">")
+		templ_7745c5c3_Err = DashboardJobSheet(job).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(job.LatestEvent)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 75, Col: 84}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</span></div><div class=\"summary\"><div class=\"metric\"><span class=\"muted\">Rows</span><strong>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d", job.Completed, job.Total))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 77, Col: 111}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</strong></div><div class=\"metric\"><span class=\"muted\">Input tokens</span><strong>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardTokens(job).Input))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 78, Col: 118}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</strong></div><div class=\"metric\"><span class=\"muted\">Output tokens</span><strong>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardTokens(job).Output))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 79, Col: 120}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</strong></div></div><h3>Live activity</h3><div class=\"flow\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for _, event := range job.Events {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div class=\"event\"><span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var21 string
-			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEventTime(event.At))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 84, Col: 61}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, " · ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var22 string
-			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEventLabel(event))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 84, Col: 95}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</span> <strong>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var23 string
-			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEventMessage(event.Message))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 84, Col: 151}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</strong></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</div><h3>Rows</h3>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for _, row := range job.Rows {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<article class=\"row-card\"><div class=\"row-head\"><strong>Row ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var24 string
-			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", row.Index+1))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 90, Col: 74}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</strong><span class=\"status\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var25 string
-			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(row.Status)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 90, Col: 118}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</span><span class=\"tokens\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var26 string
-			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d input · %d output tokens", row.Result.Tokens.Input, row.Result.Tokens.Output))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 90, Col: 244}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</span></div><p class=\"muted\">Input</p><pre>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var27 string
-			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardInput(row.Input))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 91, Col: 64}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</pre><details><summary>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var28 string
-			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d agent steps", len(row.AgentLog)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 92, Col: 74}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</summary> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if len(row.AgentLog) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<p class=\"muted\">No completed steps yet. Watch the live activity above.</p>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<ol>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				for _, step := range row.AgentLog {
-					templ_7745c5c3_Err = DashboardStep(step).Render(ctx, templ_7745c5c3_Buffer)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</ol>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if row.Result.Result != nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<p><strong>Answer</strong></p><dl class=\"answer\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				for _, field := range dashboardFields(row.Result.Result) {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<div class=\"answer-row\"><dt>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var29 string
-					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(field.Key)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 106, Col: 53}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</dt><dd>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var30 string
-					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(field.Value)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 106, Col: 77}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</dd></div>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</dl>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if len(row.Result.Sources) > 0 {
-				templ_7745c5c3_Err = DashboardSources(row.Result.Sources).Render(ctx, templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if row.Result.Error != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<p class=\"error\"><strong>Error:</strong> ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var31 string
-				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(row.Result.Error)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 114, Col: 69}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</p>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</details></article>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
 		}
 		if !dashboardActive(job) {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<p><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<div class=\"download-actions\"><a class=\"button\" href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var32 templ.SafeURL
-			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinURLErrs("/jobs/" + job.ID + "/results.csv")
+			var templ_7745c5c3_Var36 templ.SafeURL
+			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinURLErrs("/jobs/" + job.ID + "/results.csv")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 120, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1472, Col: 65}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\">Download enriched CSV</a>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var33 string
-			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(" · ")
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 120, Col: 87}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\">Download CSV</a> <a class=\"button secondary\" href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<a href=\"")
+			var templ_7745c5c3_Var37 templ.SafeURL
+			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinURLErrs("/jobs/" + job.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1473, Col: 58}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var34 templ.SafeURL
-			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinURLErrs("/jobs/" + job.ID)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 120, Col: 116}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\">View JSON status</a></p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "\">View JSON</a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -618,7 +726,7 @@ func DashboardJobStatus(job DashboardJob) templ.Component {
 	})
 }
 
-func DashboardStep(step Step) templ.Component {
+func DashboardJobSetup(job DashboardJob) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -634,71 +742,1030 @@ func DashboardStep(step Step) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var35 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var35 == nil {
-			templ_7745c5c3_Var35 = templ.NopComponent
+		templ_7745c5c3_Var38 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var38 == nil {
+			templ_7745c5c3_Var38 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<li class=\"step\"><div class=\"step-title\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<section class=\"panel detail-section setup-panel\"><div class=\"panel-header\"><h2>Job setup</h2><span class=\"panel-count\">Prompt, template, schema, and run settings</span></div><div class=\"setup-body\"><div class=\"setup-grid\"><section class=\"setup-field\"><h3>Instructions</h3><pre>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var36 string
-		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardStepLabel(step))
+		var templ_7745c5c3_Var39 string
+		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(job.Request.Instructions)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 127, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1489, Col: 39}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</pre></section><section class=\"setup-field\"><h3>Prompt template</h3><pre>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var40 string
+		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(job.Request.Template)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1493, Col: 35}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</pre></section></div><dl class=\"setup-settings\"><div><dt>Model</dt><dd>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var41 string
+		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardRequestModel(job.Request))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1497, Col: 65}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</dd></div><div><dt>Max steps</dt><dd>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var42 string
+		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardRequestMaxSteps(job.Request)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1498, Col: 91}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</dd></div><div><dt>Max output tokens</dt><dd>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var43 string
+		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardRequestMaxOutputTokens(job.Request)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1499, Col: 106}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</dd></div><div><dt>Required field</dt><dd>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var44 string
+		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardRequiredField(job.Request))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1500, Col: 75}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</dd></div><div><dt>Verbose trace</dt><dd>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var45 string
+		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", job.Request.Verbose))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1501, Col: 77}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</dd></div></dl><details class=\"setup-detail\"><summary>Full agent system prompt</summary><pre>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var46 string
+		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardSystemPrompt(job.Request))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1505, Col: 47}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</pre></details> <details class=\"setup-detail\"><summary>Output schema</summary><pre>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var47 string
+		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardSchema(job.Request.Schema))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1509, Col: 48}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</pre></details></div></section>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func DashboardJobOverview(job DashboardJob) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var48 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var48 == nil {
+			templ_7745c5c3_Var48 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<div id=\"job-overview\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if dashboardActive(job) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, " hx-get=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var49 string
+			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs("/dashboard/jobs/" + job.ID + "/status")
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1518, Col: 52}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "\" hx-trigger=\"every 1s\" hx-target=\"#job-overview\" hx-swap=\"outerHTML\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, ">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DashboardJobCost(dashboardJobCost(job)).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "<section class=\"detail-grid job-summary\" aria-label=\"Job summary\"><div class=\"stat\"><span class=\"stat-label\">Status</span><strong class=\"stat-value\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var50 string
+		templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardStatusLabel(job.Status))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1523, Col: 121}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</strong></div><div class=\"stat\"><span class=\"stat-label\">Rows</span><strong class=\"stat-value\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var51 string
+		templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d", job.Completed, job.Total))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1524, Col: 133}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</strong></div><div class=\"stat\"><span class=\"stat-label\">Input tokens</span><strong class=\"stat-value\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var52 string
+		templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardTokens(job).Input))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1525, Col: 140}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</strong></div><div class=\"stat\"><span class=\"stat-label\">Output tokens</span><strong class=\"stat-value\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var53 string
+		templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", dashboardTokens(job).Output))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1526, Col: 142}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "</strong></div></section><details class=\"panel detail-section activity-panel\"><summary class=\"panel-header\"><h2>Activity</h2><span class=\"panel-count\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var54 string
+		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(job.LatestEvent)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1531, Col: 49}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</span></summary><div class=\"activity\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, event := range job.Events {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<div class=\"activity-event\"><span class=\"activity-time\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var55 string
+			templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEventTime(event.At))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1536, Col: 68}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "</span> <span class=\"activity-row\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var56 string
+			templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEventLabel(event))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1537, Col: 65}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</span> <strong>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var57 string
+			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEventMessage(event.Message))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1538, Col: 56}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</strong></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "</div></details></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func DashboardJobCost(cost DashboardCost) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var58 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var58 == nil {
+			templ_7745c5c3_Var58 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<details class=\"job-cost\"><summary><span class=\"job-cost-label\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var59 string
+		templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardCostLabel(cost))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1549, Col: 59}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "</span> <strong>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var60 string
+		templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardMoney(cost.TotalUSD))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1550, Col: 43}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "</strong> <span class=\"job-cost-action\">View breakdown</span></summary><div class=\"cost-breakdown\"><div class=\"cost-line\"><div><strong>AI model</strong><p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var61 string
+		templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardModelCostReason(cost))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1555, Col: 71}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "</p></div><strong>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var62 string
+		templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardMoney(cost.ModelUSD))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1556, Col: 45}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</strong></div><div class=\"cost-line\"><div><strong>Serper</strong><p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var63 string
+		templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardSerperCostReason(cost))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1559, Col: 70}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "</p></div><strong>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var64 string
+		templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardMoney(cost.SerperUSD))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1560, Col: 46}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</strong></div><div class=\"cost-line\"><div><strong>Apify</strong><p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var65 string
+		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardApifyCostReason(cost))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1563, Col: 68}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</p></div><strong>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var66 string
+		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardMoney(cost.ApifyUSD))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1564, Col: 45}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</strong></div><div class=\"cost-total\"><span>Total</span><strong>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var67 string
+		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardMoney(cost.TotalUSD))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1566, Col: 85}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "</strong></div><p class=\"cost-note\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var68 string
+		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardCostNote(cost))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1567, Col: 50}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "</p></div></details>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func DashboardJobSheet(job DashboardJob) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var69 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var69 == nil {
+			templ_7745c5c3_Var69 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<section class=\"panel detail-section rows-panel\" id=\"job-sheet\"><div class=\"panel-header\"><div class=\"rows-heading\"><h2>Rows</h2><span class=\"panel-count\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var70 string
+		templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d total", job.Total))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1577, Col: 68}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var70))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</span></div><button class=\"rows-refresh\" type=\"button\" hx-get=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var71 string
+		templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.JoinStringErrs("/dashboard/jobs/" + job.ID + "/sheet")
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1579, Col: 94}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var71))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "\" hx-target=\"#job-sheet\" hx-swap=\"outerHTML\">Refresh</button></div><div class=\"rows-list\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, row := range job.Rows {
+			templ_7745c5c3_Err = DashboardResultRow(row, job.Request.Template).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</div></section>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func DashboardResultRow(row DashboardRow, promptTemplate string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var72 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var72 == nil {
+			templ_7745c5c3_Var72 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<article class=\"result-row\"><header class=\"result-row-header\"><div class=\"result-row-title\"><h3>Row ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var73 string
+		templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", row.Index+1))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1593, Col: 48}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var73))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</h3>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var74 = []any{dashboardStatusClass(row.Status)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var74...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<span class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var75 string
+		templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var74).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var76 string
+		templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardStatusLabel(row.Status))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1594, Col: 89}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "</span></div><div class=\"run-meta\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if row.Result.Model != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "<span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var77 string
+			templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.JoinStringErrs(row.Result.Model)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1598, Col: 32}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var77))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</span> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if row.Result.DurationMS > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var78 string
+			templ_7745c5c3_Var78, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardRunDuration(row.Result.DurationMS))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1601, Col: 59}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var78))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</span> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if row.Result.Tokens.Input > 0 || row.Result.Tokens.Output > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var79 string
+			templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d in · %d out", row.Result.Tokens.Input, row.Result.Tokens.Output))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1604, Col: 97}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var79))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</div></header><section class=\"row-section rendered-prompt\"><h4>Rendered prompt</h4><pre>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var80 string
+		templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardRenderedTemplate(promptTemplate, row.Input))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1610, Col: 63}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "</pre></section><section class=\"row-section\"><h4>Row data</h4><table class=\"row-data-table\"><thead><tr><th>Field</th><th>Value</th></tr></thead> <tbody>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, field := range dashboardFields(row.Input) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "<tr><td><span class=\"data-field\"><span class=\"field-kind\">Input</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var81 string
+			templ_7745c5c3_Var81, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardColumnLabel(field.Key))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1621, Col: 111}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var81))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "</span></td><td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var82 string
+			templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs(field.Value)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1622, Col: 29}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "</td></tr>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if row.Result.Result != nil {
+			for _, field := range dashboardFields(row.Result.Result) {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "<tr><td><span class=\"data-field\"><span class=\"field-kind output\">Output</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var83 string
+				templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardColumnLabel(field.Key))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1628, Col: 121}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "</span></td><td>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var84 string
+				templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(field.Value)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1629, Col: 31}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var84))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "</td></tr>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "</tbody></table></section><section class=\"row-section\"><h4>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var85 string
+		templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Agent steps (%d)", len(row.AgentLog)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1637, Col: 60}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var85))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "</h4>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if len(row.AgentLog) == 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "<p class=\"page-subtitle\">No agent steps recorded yet.</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "<ol class=\"step-list\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for index, step := range row.AgentLog {
+				templ_7745c5c3_Err = DashboardTraceStep(index, step, dashboardStepEvidence(row, index)).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "</ol>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "</section>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if row.Result.Reasoning != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "<section class=\"row-section\"><h4>Final reasoning</h4><div class=\"reasoning-copy\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var86 string
+			templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(row.Result.Reasoning)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1651, Col: 56}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "</div></section>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if row.Result.Error != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "<section class=\"row-section\"><h4>Error</h4><p class=\"error\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var87 string
+			templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.JoinStringErrs(row.Result.Error)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1657, Col: 41}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var87))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</p></section>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if len(row.Result.Sources) > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "<section class=\"row-section\"><h4>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var88 string
+			templ_7745c5c3_Var88, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Sources (%d)", len(row.Result.Sources)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1662, Col: 64}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var88))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "</h4>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = DashboardSources(row.Result.Sources).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "</section>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "</article>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func DashboardTraceStep(index int, step Step, evidence *Evidence) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var89 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var89 == nil {
+			templ_7745c5c3_Var89 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "<li class=\"step\"><span class=\"step-number\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var90 string
+		templ_7745c5c3_Var90, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", index+1))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1671, Col: 58}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var90))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, "</span><div class=\"step-body\"><div class=\"step-title\"><span class=\"step-kind\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var91 string
+		templ_7745c5c3_Var91, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardStepKindLabel(step))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1673, Col: 82}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var91))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "</span><span>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var92 string
+		templ_7745c5c3_Var92, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardStepName(step))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1673, Col: 122}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var92))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "</span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(step.Input) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<dl class=\"step-input\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, "<dl class=\"step-input\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, field := range dashboardFields(step.Input) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<div class=\"step-input-row\"><dt>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "<div class=\"step-input-row\"><dt>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var37 string
-				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(field.Key)
+				var templ_7745c5c3_Var93 string
+				templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardColumnLabel(field.Key))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 131, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1677, Col: 75}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</dt><dd>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var93))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var38 string
-				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(field.Value)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 131, Col: 75}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 136, "</dt><dd>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</dd></div>")
+				var templ_7745c5c3_Var94 string
+				templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.JoinStringErrs(field.Value)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1677, Col: 99}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var94))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "</dd></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</dl>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "</dl>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</li>")
+		if step.Error != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 139, "<p class=\"step-error\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var95 string
+			templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.JoinStringErrs(step.Error)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1682, Col: 40}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var95))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 140, "</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if evidence != nil {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 141, "<details class=\"tool-result\"><summary>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var96 string
+			templ_7745c5c3_Var96, templ_7745c5c3_Err = templ.JoinStringErrs(dashboardEvidenceLabel(*evidence))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1686, Col: 52}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var96))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 142, " result</summary><div class=\"evidence-text\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var97 string
+			templ_7745c5c3_Var97, templ_7745c5c3_Err = templ.JoinStringErrs(evidence.Text)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1687, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var97))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 143, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if len(evidence.URLs) > 0 {
+				templ_7745c5c3_Err = DashboardSources(evidence.URLs).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 144, "</details>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 145, "</div></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -722,48 +1789,48 @@ func DashboardSources(sources []string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var39 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var39 == nil {
-			templ_7745c5c3_Var39 = templ.NopComponent
+		templ_7745c5c3_Var98 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var98 == nil {
+			templ_7745c5c3_Var98 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<p><strong>Evidence sources</strong></p><ul>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 146, "<ul class=\"sources\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, source := range sources {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<li><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 147, "<li><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var40 templ.SafeURL
-			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinURLErrs(source)
+			var templ_7745c5c3_Var99 templ.SafeURL
+			templ_7745c5c3_Var99, templ_7745c5c3_Err = templ.JoinURLErrs(source)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 142, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1700, Col: 24}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\" target=\"_blank\" rel=\"noreferrer\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var99))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var41 string
-			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(source)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 142, Col: 68}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 148, "\" target=\"_blank\" rel=\"noreferrer\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</a></li>")
+			var templ_7745c5c3_Var100 string
+			templ_7745c5c3_Var100, templ_7745c5c3_Err = templ.JoinStringErrs(source)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/api/dashboard.templ`, Line: 1700, Col: 68}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var100))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 149, "</a></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</ul>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 150, "</ul>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

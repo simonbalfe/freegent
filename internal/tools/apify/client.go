@@ -17,9 +17,10 @@ import (
 const defaultApifyBaseURL = "https://api.apify.com/v2"
 
 type apifyRun struct {
-	ID               string `json:"id"`
-	Status           string `json:"status"`
-	DefaultDatasetID string `json:"defaultDatasetId"`
+	ID               string  `json:"id"`
+	Status           string  `json:"status"`
+	DefaultDatasetID string  `json:"defaultDatasetId"`
+	UsageTotalUSD    float64 `json:"usageTotalUsd"`
 }
 
 type apifyRunResult struct {
@@ -28,6 +29,7 @@ type apifyRunResult struct {
 	DatasetID  string
 	Status     string
 	DurationMS int64
+	CostUSD    float64
 }
 
 func runApifyActor(ctx context.Context, actor string, input map[string]any) (apifyRunResult, error) {
@@ -55,7 +57,7 @@ func runApifyActor(ctx context.Context, actor string, input map[string]any) (api
 	if err != nil {
 		return apifyRunResult{}, err
 	}
-	return apifyRunResult{Items: items, RunID: run.ID, DatasetID: run.DefaultDatasetID, Status: run.Status, DurationMS: time.Since(started).Milliseconds()}, nil
+	return apifyRunResult{Items: items, RunID: run.ID, DatasetID: run.DefaultDatasetID, Status: run.Status, DurationMS: time.Since(started).Milliseconds(), CostUSD: run.UsageTotalUSD}, nil
 }
 
 func startApifyRun(ctx context.Context, baseURL, token, actor string, input map[string]any) (apifyRun, error) {

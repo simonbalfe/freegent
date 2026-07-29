@@ -57,9 +57,9 @@ func (m OpenRouterModel) chat(ctx context.Context, messages []Message, action Ac
 		"max_tokens":  m.outputTokenLimit(enableTools),
 	}
 	if enableTools {
-		body["tools"] = toolDefinitions(m.Tools)
-		body["tool_choice"] = "auto"
-		body["parallel_tool_calls"] = false
+		body["tools"] = toolDefinitions(m.Tools, action)
+		body["tool_choice"] = "required"
+		body["parallel_tool_calls"] = true
 	} else {
 		body["response_format"] = map[string]any{
 			"type": "json_schema",
@@ -96,13 +96,10 @@ func (m OpenRouterModel) chat(ctx context.Context, messages []Message, action Ac
 	return parseOpenRouterResponse(data)
 }
 
-func (m OpenRouterModel) outputTokenLimit(enableTools bool) int {
+func (m OpenRouterModel) outputTokenLimit(_ bool) int {
 	limit := m.MaxOutputTokens
 	if limit < 1 {
 		limit = 1500
-	}
-	if !enableTools && limit < 4000 {
-		return 4000
 	}
 	return limit
 }
@@ -149,8 +146,9 @@ func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 			} `json:"message"`
 		} `json:"choices"`
 		Usage struct {
-			PromptTokens     int `json:"prompt_tokens"`
-			CompletionTokens int `json:"completion_tokens"`
+			PromptTokens     int      `json:"prompt_tokens"`
+			CompletionTokens int      `json:"completion_tokens"`
+			CostUSD          *float64 `json:"cost"`
 		} `json:"usage"`
 	}
 	if err := json.Unmarshal(data, &payload); err != nil {
@@ -161,6 +159,10 @@ func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 	}
 	message := payload.Choices[0].Message
 	usage := TokenUsage{Input: payload.Usage.PromptTokens, Output: payload.Usage.CompletionTokens}
+	if payload.Usage.CostUSD != nil {
+		usage.CostUSD = *payload.Usage.CostUSD
+		usage.CostKnown = true
+	}
 	if len(message.ToolCalls) > 0 {
 		calls := make([]ToolCall, 0, len(message.ToolCalls))
 		for _, raw := range message.ToolCalls {
@@ -195,11 +197,19 @@ func answerEnvelopeSchema(answer map[string]any) map[string]any {
 	}
 }
 
-func toolDefinitions(tools []Tool) []map[string]any {
-	definitions := make([]map[string]any, 0, len(tools))
+func toolDefinitions(tools []Tool, action Action) []map[string]any {
+	definitions := make([]map[string]any, 0, len(tools)+1)
 	for _, tool := range tools {
 		definitions = append(definitions, map[string]any{"type": "function", "function": map[string]any{"name": tool.Name(), "description": tool.Description(), "parameters": tool.Schema()}})
 	}
+	definitions = append(definitions, map[string]any{
+		"type": "function",
+		"function": map[string]any{
+			"name":        "submit_answer",
+			"description": "Submit the final schema-valid answer when the gathered evidence is sufficient. Call this by itself, without research tools.",
+			"parameters":  answerEnvelopeSchema(action.Validator.Document),
+		},
+	})
 	return definitions
 }
 

@@ -87,6 +87,19 @@ func handleDashboard(writer http.ResponseWriter, request *http.Request, store Jo
 	renderDashboard(writer, DashboardPage(jobs))
 }
 
+func handleDashboardRun(writer http.ResponseWriter) {
+	renderDashboard(writer, DashboardRunPage())
+}
+
+func handleDashboardJobsStatus(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+	jobs, err := store.List(50)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	renderDashboard(writer, DashboardJobsOverview(jobs))
+}
+
 func handleDashboardJob(writer http.ResponseWriter, request *http.Request, store JobBackend) {
 	request.Body = http.MaxBytesReader(writer, request.Body, 32<<20)
 	input, rows, err := decodeDashboardForm(request)
@@ -125,7 +138,20 @@ func handleDashboardJobStatus(writer http.ResponseWriter, request *http.Request,
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderDashboard(writer, DashboardJobStatus(job))
+	renderDashboard(writer, DashboardJobOverview(job))
+}
+
+func handleDashboardJobSheet(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+	job, err := store.GetPage(request.PathValue("id"), 200, 0)
+	if errors.Is(err, sql.ErrNoRows) {
+		http.NotFound(writer, request)
+		return
+	}
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	renderDashboard(writer, DashboardJobSheet(job))
 }
 
 func decodeJobRequest(writer http.ResponseWriter, request *http.Request) (APIRequest, []map[string]any, error) {
@@ -281,6 +307,123 @@ func dashboardFields(value map[string]any) []DashboardField {
 	return fields
 }
 
+func dashboardColumnLabel(key string) string {
+	label := strings.ReplaceAll(strings.ReplaceAll(key, "_", " "), "-", " ")
+	if label == "" {
+		return "Column"
+	}
+	return strings.ToUpper(label[:1]) + label[1:]
+}
+
+func dashboardRenderedTemplate(template string, input map[string]any) string {
+	row := agent.Row{}
+	for key, value := range input {
+		row[key] = fmt.Sprint(value)
+	}
+	return agent.RenderTemplate(template, row)
+}
+
+func dashboardSystemPrompt(request APIRequest) string {
+	schema := string(request.Schema)
+	if compiled, err := agent.CompileOutputSchema(request.Schema); err == nil {
+		schema = string(compiled.Canonical)
+	}
+	return agent.ResearchInstructions(request.Instructions, schema)
+}
+
+func dashboardSchema(schema json.RawMessage) string {
+	var value any
+	if json.Unmarshal(schema, &value) != nil {
+		return string(schema)
+	}
+	return dashboardPretty(value)
+}
+
+func dashboardRequestModel(request APIRequest) string {
+	if request.Model != "" {
+		return request.Model
+	}
+	return "google/gemini-3.1-flash-lite"
+}
+
+func dashboardRequestMaxSteps(request APIRequest) int {
+	if request.MaxSteps > 0 {
+		return request.MaxSteps
+	}
+	return 5
+}
+
+func dashboardRequestMaxOutputTokens(request APIRequest) int {
+	if request.MaxOutputTokens > 0 {
+		return request.MaxOutputTokens
+	}
+	return 1500
+}
+
+func dashboardRequiredField(request APIRequest) string {
+	if request.Require == "" {
+		return "None"
+	}
+	return request.Require
+}
+
+func dashboardRunDuration(milliseconds int64) string {
+	if milliseconds < 1 {
+		return "—"
+	}
+	return (time.Duration(milliseconds) * time.Millisecond).Round(100 * time.Millisecond).String()
+}
+
+func dashboardStepEvidence(row DashboardRow, stepIndex int) *Evidence {
+	if stepIndex < 0 || stepIndex >= len(row.AgentLog) || row.AgentLog[stepIndex].Kind != "tool" {
+		return nil
+	}
+	evidenceIndex := -1
+	for index := 0; index <= stepIndex; index++ {
+		if row.AgentLog[index].Kind == "tool" {
+			evidenceIndex++
+		}
+	}
+	if evidenceIndex < 0 || evidenceIndex >= len(row.Result.Evidence) {
+		return nil
+	}
+	return &row.Result.Evidence[evidenceIndex]
+}
+
+func dashboardStepKindLabel(step Step) string {
+	switch step.Kind {
+	case "tool":
+		return "Tool call"
+	case "tool_error":
+		return "Tool rejected"
+	case "answer", "finalize":
+		return "Final response"
+	default:
+		return dashboardStatusLabel(step.Kind)
+	}
+}
+
+func dashboardStepName(step Step) string {
+	if step.Name != "" {
+		return step.Name
+	}
+	switch step.Kind {
+	case "answer":
+		return "Answer produced"
+	case "finalize":
+		return "Schema finalizer"
+	default:
+		return dashboardStatusLabel(step.Kind)
+	}
+}
+
+func dashboardEvidenceLabel(evidence Evidence) string {
+	if evidence.Provider == "" {
+		return evidence.Tool
+	}
+	return evidence.Tool + " via " + evidence.Provider
+}
+
 func dashboardPretty(value any) string {
 	if text, ok := value.(string); ok {
 		return text
@@ -324,6 +467,87 @@ func dashboardJobLabel(job DashboardJob) string {
 		return job.Name
 	}
 	return job.ID
+}
+
+func dashboardNavClass(active string, item string) string {
+	if active == item {
+		return "nav-link active"
+	}
+	return "nav-link"
+}
+
+func dashboardStatusClass(status string) string {
+	switch status {
+	case "queued":
+		return "status-pill status-queued"
+	case "running":
+		return "status-pill status-running"
+	case "completed":
+		return "status-pill status-completed"
+	case "completed with errors", "skipped":
+		return "status-pill status-warning"
+	case "failed":
+		return "status-pill status-failed"
+	default:
+		return "status-pill"
+	}
+}
+
+func dashboardRowStatusClass(status string) string {
+	return "row-status " + strings.ReplaceAll(status, " ", "-")
+}
+
+func dashboardStatusLabel(status string) string {
+	if status == "" {
+		return "Unknown"
+	}
+	return strings.ToUpper(status[:1]) + status[1:]
+}
+
+func dashboardJobProgress(job DashboardJob) int {
+	if job.Total < 1 {
+		return 0
+	}
+	return min(100, job.Completed*100/job.Total)
+}
+
+func dashboardProgressMax(job DashboardJob) int {
+	if job.Total < 1 {
+		return 1
+	}
+	return job.Total
+}
+
+func dashboardHasActiveJobs(jobs []DashboardJob) bool {
+	return dashboardActiveJobCount(jobs) > 0
+}
+
+func dashboardActiveJobCount(jobs []DashboardJob) int {
+	count := 0
+	for _, job := range jobs {
+		if dashboardActive(job) {
+			count++
+		}
+	}
+	return count
+}
+
+func dashboardCompletedRowCount(jobs []DashboardJob) int {
+	count := 0
+	for _, job := range jobs {
+		count += job.Completed
+	}
+	return count
+}
+
+func dashboardAttentionJobCount(jobs []DashboardJob) int {
+	count := 0
+	for _, job := range jobs {
+		if job.Status == "completed with errors" || job.Status == "failed" {
+			count++
+		}
+	}
+	return count
 }
 
 func dashboardEventMessage(message string) string {

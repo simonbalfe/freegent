@@ -9,7 +9,7 @@ import (
 
 var templateFieldPattern = regexp.MustCompile(`\{\{\s*([\w.]+)\s*\}\}`)
 
-func fillTemplate(template string, row Row) string {
+func RenderTemplate(template string, row Row) string {
 	return templateFieldPattern.ReplaceAllStringFunc(template, func(token string) string {
 		key := strings.TrimSpace(strings.Trim(strings.TrimSuffix(strings.TrimPrefix(token, "{{"), "}}"), " "))
 		if value := row[key]; value != "" {

@@ -43,21 +43,27 @@ type Model interface {
 }
 
 type TokenUsage struct {
-	Input  int `json:"input"`
-	Output int `json:"output"`
+	Input     int     `json:"input"`
+	Output    int     `json:"output"`
+	CostUSD   float64 `json:"costUsd,omitempty"`
+	CostKnown bool    `json:"costKnown,omitempty"`
 }
 
 func (u *TokenUsage) Add(other TokenUsage) {
 	u.Input += other.Input
 	u.Output += other.Output
+	u.CostUSD += other.CostUSD
+	u.CostKnown = u.CostKnown || other.CostKnown
 }
 
 type ToolResult struct {
-	Text     string
-	URLs     []string
-	SeenURLs []string
-	Provider string
-	Attempts []FetchAttempt
+	Text      string
+	URLs      []string
+	SeenURLs  []string
+	Provider  string
+	Attempts  []FetchAttempt
+	CostUSD   float64
+	CostKnown bool
 }
 
 type Tool interface {
@@ -68,11 +74,13 @@ type Tool interface {
 }
 
 type Evidence struct {
-	Tool     string         `json:"tool"`
-	Text     string         `json:"text"`
-	URLs     []string       `json:"urls"`
-	Provider string         `json:"provider,omitempty"`
-	Attempts []FetchAttempt `json:"attempts,omitempty"`
+	Tool      string         `json:"tool"`
+	Text      string         `json:"text"`
+	URLs      []string       `json:"urls"`
+	Provider  string         `json:"provider,omitempty"`
+	Attempts  []FetchAttempt `json:"attempts,omitempty"`
+	CostUSD   float64        `json:"costUsd,omitempty"`
+	CostKnown bool           `json:"costKnown,omitempty"`
 }
 
 type FetchAttempt = openextract.Attempt
@@ -81,6 +89,7 @@ type Step struct {
 	Kind  string         `json:"kind"`
 	Name  string         `json:"name,omitempty"`
 	Input map[string]any `json:"input,omitempty"`
+	Error string         `json:"error,omitempty"`
 }
 
 type RunResult struct {
