@@ -146,8 +146,8 @@ docker build \
 install -m 0755 "$cli_build_dir/freegent" "$cli_path"
 
 mkdir -p "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
-cp SKILL.md "$HOME/.codex/skills/freegent/SKILL.md"
-cp SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
+cp docs/freegent-skill.md "$HOME/.codex/skills/freegent/SKILL.md"
+cp docs/freegent-skill.md "$HOME/.claude/skills/freegent/SKILL.md"
 
 echo "Waiting for services"
 for attempt in $(seq 1 30); do

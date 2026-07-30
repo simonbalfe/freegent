@@ -3,7 +3,7 @@ name: freegent
 description: Use the thin Freegent CLI to submit a CSV or one JSON row to the Freegent API for general source-backed research and batch enrichment.
 ---
 
-# Freegent
+# Freegent skill
 
 Freegent is a research API with a thin remote CLI. Do not implement parsing, search, browser, retry, extraction, queueing, or model logic in the calling agent. Submit the prompt and input to Freegent instead.
 
@@ -50,6 +50,6 @@ CSV input is uploaded directly to the API, and the completed enriched CSV is str
 - Direct extraction, PDFs, and Patchright browser fallback through OpenExtract
 - Schema validation and final-answer recovery
 - Durable per-row state, progress, evidence URLs, steps, results, errors, and token usage
-- PostgreSQL/River queueing with global worker concurrency and horizontal worker scaling
+- PostgreSQL/River queueing with per-worker concurrency and horizontal worker scaling
 
-Rows should contain truthful input values. The API rejects guessed deep URLs that were not supplied in the row or returned by search.
+Rows should contain truthful input values. The worker agent refuses fetches whose URL was not supplied in the row, returned by search, or discovered during extraction.
