@@ -6,6 +6,15 @@ Give it any CSV and a prompt. Freegent researches every row and returns the same
 
 See the [project documentation](docs/index.md) for architecture, setup, development, OpenExtract, and the roadmap.
 
+## OpenExtract renderer
+
+Freegent uses OpenExtract to fetch and render page content. Its source code does not live in this repository. OpenExtract is maintained as a separate public source repository:
+
+- source: [github.com/simonbalfe/openextract](https://github.com/simonbalfe/openextract)
+- public image: `ghcr.io/simonbalfe/openextract:latest`
+
+Freegent's Docker Compose stack pulls that image. See the [OpenExtract integration documentation](docs/openextract.md) for the service boundary and configuration.
+
 ## Example
 
 Start with:

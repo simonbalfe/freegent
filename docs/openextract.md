@@ -1,6 +1,8 @@
 # OpenExtract
 
-Freegent workers call the standalone [OpenExtract service](https://github.com/simonbalfe/openextract) through `OPENEXTRACT_URL`. Freegent owns the client contract and Compose integration. OpenExtract owns extraction behavior, tests, and its published image.
+Freegent workers call OpenExtract through `OPENEXTRACT_URL`. OpenExtract's code is not stored in the Freegent repository. It lives in the separate, public [simonbalfe/openextract repository](https://github.com/simonbalfe/openextract), where its extraction behavior, tests, Dockerfile, and image workflow are maintained.
+
+Freegent owns only the client contract and Compose integration. The OpenExtract repository is public and can be inspected or cloned independently.
 
 The Compose stack pulls `ghcr.io/simonbalfe/openextract:latest` by default. Set `OPENEXTRACT_IMAGE` to pin or replace it. The worker reaches the service at `http://openextract:8081`.
 
@@ -12,7 +14,7 @@ Set `OPENEXTRACT_PROXY_URL` to a standard HTTP, HTTPS, SOCKS4, or SOCKS5 proxy U
 
 OpenExtract has no authentication or private-network URL filtering. Keep the service on a private network or put it behind an authenticated gateway.
 
-See the standalone repository for runtime, API, environment, development, and extraction-ladder documentation.
+See the public standalone repository for runtime, API, environment, development, and extraction-ladder documentation.
 
 Related research:
 

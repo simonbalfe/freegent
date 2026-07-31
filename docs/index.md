@@ -6,7 +6,7 @@ Start with the page that matches your task.
 |---|---|
 | [Architecture](architecture.md) | You need to understand components, ownership, routes, or job flow |
 | [Setup](setup.md) | You are installing, developing, updating, or troubleshooting Freegent |
-| [OpenExtract](openextract.md) | You are working on URL extraction or its standalone Docker service |
+| [OpenExtract](openextract.md) | You need its public source repository, image, or Freegent integration details |
 | [Roadmap](roadmap.md) | You need to understand planned work |
 | [OpenExtract research](research/openextract-context-selection.md) | You need the detailed context-selection research |
 | [ZenRows research](research/zenrows.md) | You are comparing ZenRows with OpenExtract or planning a managed extraction fallback |
