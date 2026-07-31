@@ -6,6 +6,8 @@ The Compose stack pulls `ghcr.io/simonbalfe/openextract:latest` by default. Set 
 
 OpenExtract tries direct HTTP first. It uses local Patchright only when the response requires rendering, followed by configured proxy, solver, and hosted fallbacks when needed.
 
+Set `OPENEXTRACT_PROXY_URL` to a standard HTTP, HTTPS, SOCKS4, or SOCKS5 proxy URL. `OPENEXTRACT_PROXY_COUNTRY` optionally aligns the browser identity with a fixed proxy country.
+
 `POST /extract` must remain compatible with the Go client in `internal/openextract`. It returns cleaned content, content type, provider, outcome, links, and attempted extraction rungs.
 
 OpenExtract has no authentication or private-network URL filtering. Keep the service on a private network or put it behind an authenticated gateway.

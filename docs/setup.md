@@ -41,7 +41,7 @@ Required:
 Optional:
 
 - `APIFY_API_TOKEN` enables enrichment tools
-- Evomi settings enable browser proxying
+- a standard proxy URL optionally enables browser proxying
 - CapSolver or 2Captcha keys enable challenge solving
 - concurrency, ports, database pool size, and operation timeout have defaults in `.env.example`
 
