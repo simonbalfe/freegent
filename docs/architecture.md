@@ -26,7 +26,7 @@ flowchart LR
 | `internal/agent` | Runs model and tool calls and validates final answers |
 | `internal/tools` | Provides search, page fetching, and optional Apify enrichment |
 | `internal/openextract` | Calls the standalone OpenExtract HTTP API |
-| `openextract` | Retrieves and cleans public URLs |
+| `ghcr.io/simonbalfe/openextract` | Retrieves and cleans public URLs through the standalone service image |
 
 ## Job flow
 

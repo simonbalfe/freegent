@@ -27,6 +27,5 @@ Increase capacity with worker replicas or per-worker concurrency.
 - add structured sections and query-aware passage selection
 - add provenance and freshness details for hosted fallbacks
 - measure evidence recall and answer quality
-- consider moving OpenExtract into its own repository
 
 Tavily extraction is already the final fallback after direct and browser attempts.

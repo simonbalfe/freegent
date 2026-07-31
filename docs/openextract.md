@@ -1,91 +1,16 @@
 # OpenExtract
 
-OpenExtract is a standalone TypeScript HTTP service. It turns a public URL into clean text, structured data, and discovered links.
+Freegent workers call the standalone [OpenExtract service](https://github.com/simonbalfe/openextract) through `OPENEXTRACT_URL`. Freegent owns the client contract and Compose integration. OpenExtract owns extraction behavior, tests, and its published image.
 
-The Go API does not know how extraction works. Workers call OpenExtract through `OPENEXTRACT_URL`.
+The Compose stack pulls `ghcr.io/simonbalfe/openextract:latest` by default. Set `OPENEXTRACT_IMAGE` to pin or replace it. The worker reaches the service at `http://openextract:8081`.
 
-## Extraction flow
+OpenExtract tries direct HTTP first. It uses local Patchright only when the response requires rendering, followed by configured proxy, solver, and hosted fallbacks when needed.
 
-```mermaid
-flowchart LR
-    Request --> Impit[Direct fetch]
-    Impit -->|blocked or empty| Browser[Patchright]
-    Browser -->|blocked| Proxy[Browser with proxy]
-    Proxy -->|challenged| Solver[Browser with solver]
-    Solver -->|failed| Tavily[Tavily fallback]
-    Impit --> Result
-    Browser --> Result
-    Proxy --> Result
-    Solver --> Result
-    Tavily --> Result
-```
+`POST /extract` must remain compatible with the Go client in `internal/openextract`. It returns cleaned content, content type, provider, outcome, links, and attempted extraction rungs.
 
-Unavailable proxy, solver, or Tavily steps are skipped and recorded in the response.
+OpenExtract has no authentication or private-network URL filtering. Keep the service on a private network or put it behind an authenticated gateway.
 
-## API
-
-Health:
-
-```bash
-curl http://localhost:8081/healthz
-```
-
-Extract:
-
-```bash
-curl -sS http://localhost:8081/extract \
-  -H 'content-type: application/json' \
-  -d '{"url":"https://www.iana.org/help/example-domains"}'
-```
-
-`POST /extract` returns the cleaned content, content type, provider, outcome, links, and every attempt.
-
-## Capacity
-
-OpenExtract uses in-memory limits:
-
-- `OPENEXTRACT_MAX_CONCURRENCY` limits active extractions. Default: `20`.
-- `OPENEXTRACT_BROWSER_CONCURRENCY` limits browser contexts. Default: `4`.
-- `OPENEXTRACT_MAX_WAITING` limits queued requests. Default: `100`.
-
-When the waiting queue is full, OpenExtract returns HTTP `429` with `Retry-After: 1`. River remains the durable retry queue.
-
-`OPEN_EXTRACT_DEBUG=1` enables extraction debug logging.
-
-## Run it
-
-From the repository root:
-
-```bash
-cd openextract
-bun install
-bun run typecheck
-bun run start
-```
-
-Build its Docker image:
-
-```bash
-docker build -t openextract ./openextract
-```
-
-The service has no authentication or private-network URL filtering. Keep it on a private network or place it behind an authenticated gateway.
-
-## Separate repository
-
-OpenExtract can move into its own repository because it already has:
-
-- its own source, package files, tests, and Dockerfile
-- a standalone health route
-- a small HTTP contract
-- no database or River dependency
-
-A future split must:
-
-1. Move the OpenExtract image build to the new repository.
-2. Keep `POST /extract` compatible with the Go client.
-3. Change Freegent Compose to pull the external image.
-4. Update installer fallback behavior and documentation.
+See the standalone repository for runtime, API, environment, development, and extraction-ladder documentation.
 
 Related research:
 

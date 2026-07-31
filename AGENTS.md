@@ -7,7 +7,7 @@ Freegent is a self-hosted research agent. The Go API stores work in PostgreSQL, 
 - `docs/index.md` routes all project documentation.
 - `docs/architecture.md` explains the system and job flow.
 - `docs/setup.md` covers installation, local development, and operations.
-- `docs/openextract.md` explains the standalone extraction service.
+- `docs/openextract.md` explains the standalone extraction service integration.
 - `docs/roadmap.md` records future work.
 
 ## Standing rules
@@ -37,5 +37,5 @@ Freegent is a self-hosted research agent. The Go API stores work in PostgreSQL, 
 
 - Go: `go test ./...`, `go test -race ./...`, and `go vet ./...`
 - CLI: `go run ./cmd/freegent --help`
-- OpenExtract: run `bun install` and `bun run typecheck` from `openextract`
+- OpenExtract integration: `docker compose config --quiet`
 - Full stack: `docker compose up -d --build`

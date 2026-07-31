@@ -62,9 +62,7 @@ services:
     restart: unless-stopped
 
   openextract:
-    image: ghcr.io/simonbalfe/freegent-openextract:${FREEGENT_IMAGE_TAG:-latest}
-    build:
-      context: ./openextract
+    image: ${OPENEXTRACT_IMAGE:-ghcr.io/simonbalfe/openextract:latest}
     ports:
       - "127.0.0.1:${OPENEXTRACT_PORT:-8081}:8081"
     environment:
@@ -83,7 +81,6 @@ services:
     security_opt:
       - seccomp:unconfined
     restart: unless-stopped
-
 volumes:
   freegent_logs:
   freegent_postgres:

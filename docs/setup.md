@@ -71,14 +71,7 @@ go test -race ./...
 go vet ./...
 ```
 
-Verify OpenExtract changes:
-
-```bash
-cd openextract
-bun install
-bun run typecheck
-bun test
-```
+OpenExtract source and tests live in its [standalone repository](https://github.com/simonbalfe/openextract). Freegent pulls its published image during stack startup.
 
 ## Operations
 
