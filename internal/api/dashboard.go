@@ -1,12 +1,12 @@
 package api
 
 import (
-	"context"
 	"database/sql"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"mime"
 	"net/http"
@@ -16,11 +16,162 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/simonbalfe/freegent/internal/agent"
 )
 
-func handleJob(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+var dashboardTemplates = template.Must(template.New("dashboard").Funcs(template.FuncMap{
+	"active":       dashboardActive,
+	"eventLabel":   dashboardEventLabel,
+	"eventMessage": dashboardEventMessage,
+	"eventTime":    dashboardEventTime,
+	"fields":       dashboardFields,
+	"jobLabel":     dashboardJobLabel,
+	"jobTime":      dashboardJobTime,
+	"pretty":       dashboardPretty,
+	"rowNumber":    func(index int) int { return index + 1 },
+	"stepLabel":    dashboardStepLabel,
+	"tokens":       dashboardTokens,
+}).Parse(dashboardTemplateSource))
+
+const dashboardTemplateSource = `{{define "dashboard"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Freegent</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}h1{margin-bottom:8px}h2{margin-top:32px}.card{background:#fff;border:1px solid #e2e4e8;border-radius:10px;padding:24px;margin:20px 0;box-shadow:0 2px 8px #17202a0a}form.card label{display:block;margin:16px 0 7px;font-weight:600}form.card label:first-child{margin-top:0}textarea,input{width:100%;box-sizing:border-box;margin:0 0 4px;padding:11px 12px;border:1px solid #98a2b3;border-radius:6px;font:14px ui-monospace,monospace;line-height:1.45;background:#fff}textarea{min-height:108px;resize:vertical}button{margin-top:12px;padding:11px 18px;border:0;border-radius:6px;background:#175cd3;color:#fff;font-weight:600;cursor:pointer}.muted{color:#667085}.ok{color:#18794e}.error{color:#b42318}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #eee;padding:8px}</style>
+</head>
+<body>
+  <h1>Freegent</h1>
+  <p class="muted"><strong>Open source Freegent</strong> for researching any spreadsheet.</p>
+  <p class="muted">Upload a CSV or paste JSON rows, then watch every row complete. Job history survives API restarts.</p>
+  <form method="post" action="/dashboard/jobs" enctype="multipart/form-data" class="card">
+    <label>Job name</label>
+    <input name="name" placeholder="Optional, defaults to the CSV filename">
+    <label>Instructions</label>
+    <textarea name="instructions">Use current reliable evidence. Follow the requested task exactly and do not guess unsupported facts.</textarea>
+    <label>Template</label>
+    <input name="template" value="Research {{"{{subject}}"}} using {{"{{url}}"}} when supplied. Return a concise factual answer.">
+    <label>Output schema</label>
+    <textarea name="schema">{"answer":"string"}</textarea>
+    <label>CSV file</label>
+    <input type="file" name="csv" accept=".csv,text/csv">
+    <p class="muted">The first row must contain headers matching template fields such as {{"{{subject}}"}} and {{"{{url}}"}}. A CSV takes precedence over JSON rows.</p>
+    <label>Rows (optional JSON array)</label>
+    <textarea name="rows">[
+  {"subject":"Figma","url":"https://figma.com"},
+  {"subject":"Dario Amodei","url":""},
+  {"subject":"EU AI Act","url":""}
+]</textarea>
+    <button type="submit">Start research</button>
+  </form>
+  <h2>Recent jobs</h2>
+  {{if eq (len .) 0}}
+    <p class="muted">No jobs yet.</p>
+  {{else}}
+    {{range .}}
+      <div class="card"><a href="/dashboard/jobs/{{.ID}}">{{jobLabel .}}</a> · {{.Status}} · {{.Completed}}/{{.Total}} rows · <span class="muted">{{jobTime .CreatedAt}}</span></div>
+    {{end}}
+  {{end}}
+</body>
+</html>
+{{end}}
+
+{{define "job"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Freegent job</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}.card{background:#fff;border:1px solid #e2e4e8;border-radius:12px;padding:20px;margin:16px 0;box-shadow:0 2px 8px #17202a0a}.muted{color:#667085}.error{color:#b42318}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.metric{background:#f5f7fa;border-radius:8px;padding:12px}.metric strong{display:block;font-size:20px}.flow{background:#101828;color:#e6edf3;border-radius:8px;padding:14px;max-height:280px;overflow:auto;font:13px ui-monospace,monospace}.event{padding:6px 0;border-bottom:1px solid #ffffff1f}.event span{color:#98a2b3;margin-right:12px}.row-card{border:1px solid #e2e4e8;border-radius:10px;padding:16px;margin:12px 0}.row-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.status{color:#18794e;font-weight:600}.tokens{color:#667085;font-size:14px}.answer,.step-input{display:grid;gap:10px}.answer-row,.step-input-row{border-top:1px solid #eaecf0;padding-top:10px}.answer-row dt,.step-input-row dt{font-weight:600}.answer-row dd,.step-input-row dd{margin:4px 0 0;white-space:pre-wrap}.step{margin:14px 0}.step-title{font-weight:600;font-size:17px}pre{white-space:pre-wrap;overflow:auto;background:#f5f7fa;padding:10px;border-radius:6px}details{margin-top:12px}summary{cursor:pointer;font-weight:600}a{color:#175cd3}</style>
+</head>
+<body>
+  <p><a href="/dashboard">← New job</a></p>
+  <h1>Job {{.ID}}</h1>
+  <div id="job-status">{{template "job-status" .}}</div>
+</body>
+</html>
+{{end}}
+
+{{define "job-status"}}
+<div class="card"{{if active .}} hx-get="/dashboard/jobs/{{.ID}}/status" hx-trigger="every 1s" hx-target="#job-status" hx-swap="innerHTML"{{end}}>
+  <div class="row-head"><h2>{{.Status}}</h2><span class="muted">{{.LatestEvent}}</span></div>
+  <div class="summary">
+    <div class="metric"><span class="muted">Rows</span><strong>{{.Completed}}/{{.Total}}</strong></div>
+    <div class="metric"><span class="muted">Input tokens</span><strong>{{(tokens .).Input}}</strong></div>
+    <div class="metric"><span class="muted">Output tokens</span><strong>{{(tokens .).Output}}</strong></div>
+  </div>
+  <h3>Live activity</h3>
+  <div class="flow">
+    {{range .Events}}
+      <div class="event"><span>{{eventTime .At}} · {{eventLabel .}}</span> <strong>{{eventMessage .Message}}</strong></div>
+    {{end}}
+  </div>
+  <h3>Rows</h3>
+  {{range .Rows}}
+    <article class="row-card">
+      <div class="row-head"><strong>Row {{rowNumber .Index}}</strong><span class="status">{{.Status}}</span><span class="tokens">{{.Result.Tokens.Input}} input · {{.Result.Tokens.Output}} output tokens</span></div>
+      <p class="muted">Input</p><pre>{{pretty .Input}}</pre>
+      <details><summary>{{len .Result.AgentLog}} agent steps</summary>
+        {{if eq (len .Result.AgentLog) 0}}
+          <p class="muted">No completed steps yet. Watch the live activity above.</p>
+        {{else}}
+          <ol>
+            {{range .Result.AgentLog}}
+              {{template "step" .}}
+            {{end}}
+          </ol>
+        {{end}}
+        {{if .Result.Result}}
+          <p><strong>Answer</strong></p>
+          <dl class="answer">
+            {{range fields .Result.Result}}
+              <div class="answer-row"><dt>{{.Key}}</dt><dd>{{.Value}}</dd></div>
+            {{end}}
+          </dl>
+        {{end}}
+        {{if .Result.Sources}}
+          {{template "sources" .Result.Sources}}
+        {{end}}
+        {{if .Result.Error}}
+          <p class="error"><strong>Error:</strong> {{.Result.Error}}</p>
+        {{end}}
+      </details>
+    </article>
+  {{end}}
+  {{if not (active .)}}
+    <p><a href="/jobs/{{.ID}}/results.csv">Download enriched CSV</a> · <a href="/jobs/{{.ID}}">View JSON status</a></p>
+  {{end}}
+</div>
+{{end}}
+
+{{define "step"}}
+<li class="step">
+  <div class="step-title">{{stepLabel .}}</div>
+  {{if .Input}}
+    <dl class="step-input">
+      {{range fields .Input}}
+        <div class="step-input-row"><dt>{{.Key}}</dt><dd>{{.Value}}</dd></div>
+      {{end}}
+    </dl>
+  {{end}}
+</li>
+{{end}}
+
+{{define "sources"}}
+<p><strong>Evidence sources</strong></p>
+<ul>
+  {{range .}}
+    <li><a href="{{.}}" target="_blank" rel="noreferrer">{{.}}</a></li>
+  {{end}}
+</ul>
+{{end}}`
+
+func handleJob(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
 	input, rows, err := decodeJobRequest(writer, request)
 	if err != nil {
 		writeJSON(writer, http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -34,7 +185,7 @@ func handleJob(writer http.ResponseWriter, request *http.Request, store JobBacke
 	writeJSON(writer, http.StatusAccepted, map[string]string{"jobId": id, "status": "queued"})
 }
 
-func handleJobsJSON(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+func handleJobsJSON(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
 	jobs, err := store.List(50)
 	if err != nil {
 		writeJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -43,7 +194,7 @@ func handleJobsJSON(writer http.ResponseWriter, request *http.Request, store Job
 	writeJSON(writer, http.StatusOK, map[string]any{"jobs": jobs})
 }
 
-func handleJobJSON(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+func handleJobJSON(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
 	var job DashboardJob
 	var err error
 	if request.URL.Query().Get("summary") == "1" {
@@ -78,18 +229,18 @@ func handleJobJSON(writer http.ResponseWriter, request *http.Request, store JobB
 	writeJSON(writer, http.StatusOK, job)
 }
 
-func handleDashboard(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+func handleDashboard(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
 	jobs, err := store.List(50)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderDashboard(writer, DashboardPage(jobs))
+	renderDashboard(writer, "dashboard", jobs)
 }
 
-func handleDashboardJob(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+func handleDashboardJob(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
 	request.Body = http.MaxBytesReader(writer, request.Body, 32<<20)
-	input, rows, err := decodeDashboardForm(request)
+	input, rows, err := decodeMultipartJobForm(request)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
@@ -102,7 +253,7 @@ func handleDashboardJob(writer http.ResponseWriter, request *http.Request, store
 	http.Redirect(writer, request, "/dashboard/jobs/"+id, http.StatusSeeOther)
 }
 
-func handleDashboardJobPage(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+func handleDashboardJobPage(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
 	job, err := store.GetPage(request.PathValue("id"), 200, 0)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(writer, request)
@@ -112,10 +263,10 @@ func handleDashboardJobPage(writer http.ResponseWriter, request *http.Request, s
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderDashboard(writer, DashboardJobPage(job))
+	renderDashboard(writer, "job", job)
 }
 
-func handleDashboardJobStatus(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+func handleDashboardJobStatus(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
 	job, err := store.GetPage(request.PathValue("id"), 200, 0)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(writer, request)
@@ -125,7 +276,7 @@ func handleDashboardJobStatus(writer http.ResponseWriter, request *http.Request,
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderDashboard(writer, DashboardJobStatus(job))
+	renderDashboard(writer, "job-status", job)
 }
 
 func decodeJobRequest(writer http.ResponseWriter, request *http.Request) (APIRequest, []map[string]any, error) {
@@ -159,10 +310,6 @@ func decodeJobRequest(writer http.ResponseWriter, request *http.Request) (APIReq
 		return APIRequest{}, nil, err
 	}
 	return input, rows, nil
-}
-
-func decodeDashboardForm(request *http.Request) (APIRequest, []map[string]any, error) {
-	return decodeMultipartJobForm(request)
 }
 
 func decodeMultipartJobForm(request *http.Request) (APIRequest, []map[string]any, error) {
@@ -252,15 +399,11 @@ func validateAPIRequest(input APIRequest) error {
 	return err
 }
 
-func renderDashboard(writer http.ResponseWriter, component templ.Component) {
+func renderDashboard(writer http.ResponseWriter, name string, value any) {
 	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := component.Render(context.Background(), writer); err != nil {
+	if err := dashboardTemplates.ExecuteTemplate(writer, name, value); err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
-}
-
-func dashboardInput(value map[string]any) string {
-	return dashboardPretty(value)
 }
 
 type DashboardField struct {

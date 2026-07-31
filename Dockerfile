@@ -28,9 +28,7 @@ COPY --from=cli-build /freegent /freegent
 
 FROM alpine:3.22 AS runtime
 
-RUN apk add --no-cache ca-certificates \
-    && mkdir -p /data/logs \
-    && chown -R 65532:65532 /data
+RUN apk add --no-cache ca-certificates
 
 COPY --from=build /freegent /usr/local/bin/freegent
 
@@ -46,9 +44,3 @@ HEALTHCHECK --interval=5s --timeout=3s --start-period=5s --retries=20 \
   CMD wget -qO- http://localhost:8080/health >/dev/null || exit 1
 
 CMD ["api", "-port", "8080"]
-
-FROM runtime AS worker
-
-HEALTHCHECK NONE
-
-CMD ["worker"]

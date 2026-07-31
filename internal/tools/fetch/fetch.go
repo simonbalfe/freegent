@@ -2,8 +2,6 @@ package fetch
 
 import (
 	"context"
-	"errors"
-	"net/url"
 	"os"
 
 	"github.com/simonbalfe/freegent/internal/agent"
@@ -29,10 +27,6 @@ func (Tool) Schema() map[string]any {
 
 func (Tool) Run(ctx context.Context, input map[string]any) (agent.ToolResult, error) {
 	rawURL, _ := input["url"].(string)
-	parsed, err := url.Parse(rawURL)
-	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
-		return agent.ToolResult{}, errors.New("fetch_page URL must use http or https")
-	}
 	baseURL := os.Getenv("OPENEXTRACT_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:8081"

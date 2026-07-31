@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/simonbalfe/freegent/internal/openextract"
 )
@@ -13,7 +12,6 @@ type Action struct {
 	Instructions          string
 	FinalizerInstructions string
 	Template              string
-	Schema                json.RawMessage
 	Validator             *CompiledSchema
 }
 

@@ -73,3 +73,16 @@ func TestPermanentOperationError(t *testing.T) {
 		t.Fatal("expected provider rate limit to be retryable")
 	}
 }
+
+func TestDashboardRenders(t *testing.T) {
+	response := httptest.NewRecorder()
+	renderDashboard(response, "job", DashboardJob{ID: "job-1", Status: "queued", Total: 1})
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "/dashboard/jobs/job-1/status") {
+		t.Fatalf("unexpected dashboard response: status=%d body=%q", response.Code, response.Body.String())
+	}
+	response = httptest.NewRecorder()
+	renderDashboard(response, "dashboard", []DashboardJob{})
+	if !strings.Contains(response.Body.String(), `Research {{subject}}`) || !strings.Contains(response.Body.String(), `{"answer":"string"}`) {
+		t.Fatalf("dashboard defaults were not preserved: %q", response.Body.String())
+	}
+}

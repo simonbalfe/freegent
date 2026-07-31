@@ -33,7 +33,7 @@ func TestInvalidAgentAnswerUsesFinalizer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	action := Action{Instructions: "Return a score.", Template: "Score this.", Schema: schema.Canonical, Validator: schema}
+	action := Action{Instructions: "Return a score.", Template: "Score this.", Validator: schema}
 	result, err := (Agent{Model: invalidThenFinalModel{}, Tools: map[string]Tool{}, MaxSteps: 1}).Run(context.Background(), action, Row{})
 	if err != nil {
 		t.Fatal(err)
@@ -78,7 +78,7 @@ func TestAgentReturnsPartialTraceOnFailure(t *testing.T) {
 		Model:    &toolThenErrorModel{},
 		Tools:    map[string]Tool{"web_search": stubTool{name: "web_search"}},
 		MaxSteps: 2,
-	}).Run(context.Background(), Action{Instructions: "Research.", Template: "Research.", Schema: schema.Canonical, Validator: schema}, Row{})
+	}).Run(context.Background(), Action{Instructions: "Research.", Template: "Research.", Validator: schema}, Row{})
 	if err == nil {
 		t.Fatal("expected run failure")
 	}
@@ -106,7 +106,7 @@ func TestAgentRejectsFabricatedEnrichmentURL(t *testing.T) {
 		Model:    fabricatedURLModel{},
 		Tools:    map[string]Tool{"linkedin_profile": stubTool{name: "linkedin_profile"}},
 		MaxSteps: 1,
-	}).Run(context.Background(), Action{Instructions: "Research.", Template: "Research.", Schema: schema.Canonical, Validator: schema}, Row{})
+	}).Run(context.Background(), Action{Instructions: "Research.", Template: "Research.", Validator: schema}, Row{})
 	if err == nil || !strings.Contains(err.Error(), "refusing unverified URL") {
 		t.Fatalf("expected provenance rejection, got %v", err)
 	}

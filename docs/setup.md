@@ -40,6 +40,7 @@ Required:
 
 Optional:
 
+- `OPENROUTER_MODEL` selects the model and defaults to `deepseek/deepseek-v4-flash`
 - `APIFY_API_TOKEN` enables enrichment tools
 - a standard proxy URL optionally enables browser proxying
 - CapSolver or 2Captcha keys enable challenge solving

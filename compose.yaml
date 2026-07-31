@@ -30,10 +30,10 @@ services:
     restart: unless-stopped
 
   worker:
-    image: ghcr.io/simonbalfe/freegent-worker:${FREEGENT_IMAGE_TAG:-latest}
+    image: ghcr.io/simonbalfe/freegent-api:${FREEGENT_IMAGE_TAG:-latest}
     build:
       context: .
-      target: worker
+      target: api
     healthcheck:
       disable: true
     command:
@@ -46,14 +46,12 @@ services:
       FREEGENT_DATABASE_URL: postgres://freegent:${FREEGENT_POSTGRES_PASSWORD:-freegent}@postgres:5432/freegent?sslmode=disable
       FREEGENT_DATABASE_MAX_CONNS: ${FREEGENT_DATABASE_MAX_CONNS:-30}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-deepseek/deepseek-v4-flash}
       SERPER_API_KEY: ${SERPER_API_KEY:-}
       EXA_API_KEY: ${EXA_API_KEY:-}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       APIFY_API_TOKEN: ${APIFY_API_TOKEN:-}
       OPENEXTRACT_URL: http://openextract:8081
-      FREEGENT_LOG_DIR: /data/logs
-    volumes:
-      - freegent_logs:/data/logs
     depends_on:
       api:
         condition: service_healthy
@@ -81,5 +79,4 @@ services:
       - seccomp:unconfined
     restart: unless-stopped
 volumes:
-  freegent_logs:
   freegent_postgres:

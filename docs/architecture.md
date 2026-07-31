@@ -49,7 +49,7 @@ PostgreSQL stores:
 - evidence and results
 - errors and token usage
 
-OpenExtract is stateless. Run logs are diagnostic files, not durable job state.
+OpenExtract is stateless.
 
 ## Main routes
 
@@ -59,5 +59,4 @@ OpenExtract is stateless. Run logs are diagnostic files, not durable job state.
 | `POST /jobs` | Submit JSON rows or a CSV |
 | `GET /jobs/{id}` | Read job state |
 | `GET /jobs/{id}/results.csv` | Download enriched CSV output |
-| `POST /run` | Submit a durable job and wait for it |
 | `/dashboard` | Submit and inspect jobs in a browser |

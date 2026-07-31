@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -80,7 +79,7 @@ type PostgresStore struct {
 	client *river.Client[pgx.Tx]
 }
 
-func OpenBackend(ctx context.Context) (JobBackend, error) {
+func OpenBackend(ctx context.Context) (*PostgresStore, error) {
 	databaseURL := os.Getenv("FREEGENT_DATABASE_URL")
 	if databaseURL == "" {
 		return nil, errors.New("FREEGENT_DATABASE_URL is required")
@@ -132,9 +131,8 @@ func OpenPostgresStore(ctx context.Context, databaseURL string) (*PostgresStore,
 	return &PostgresStore{pool: pool, client: client}, nil
 }
 
-func (s *PostgresStore) Close() error {
+func (s *PostgresStore) Close() {
 	s.pool.Close()
-	return nil
 }
 
 func (s *PostgresStore) Ping(ctx context.Context) error {
@@ -267,7 +265,6 @@ func (s *PostgresStore) get(id string, limit int, offset int) (DashboardJob, err
 			if err := json.Unmarshal(resultJSON, &row.Result); err != nil {
 				return DashboardJob{}, err
 			}
-			row.AgentLog = row.Result.AgentLog
 		}
 		if startedAt.Valid {
 			row.StartedAt = startedAt.Time
@@ -383,25 +380,6 @@ func (s *PostgresStore) List(limit int) ([]DashboardJob, error) {
 		jobs = append(jobs, job)
 	}
 	return jobs, rows.Err()
-}
-
-func (s *PostgresStore) Wait(ctx context.Context, id string) (DashboardJob, error) {
-	ticker := time.NewTicker(250 * time.Millisecond)
-	defer ticker.Stop()
-	for {
-		job, err := s.GetSummary(id)
-		if err != nil {
-			return DashboardJob{}, err
-		}
-		if jobTerminal(job.Status) {
-			return s.Get(id)
-		}
-		select {
-		case <-ctx.Done():
-			return DashboardJob{}, ctx.Err()
-		case <-ticker.C:
-		}
-	}
 }
 
 func (s *PostgresStore) beginOperation(

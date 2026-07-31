@@ -5,12 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/simonbalfe/freegent/internal/agent"
@@ -23,19 +21,20 @@ type Evidence = agent.Evidence
 type TokenUsage = agent.TokenUsage
 type AgentEvent = agent.AgentEvent
 
+const defaultOpenRouterModel = "deepseek/deepseek-v4-flash"
+
 type APIRequest struct {
-	Name              string           `json:"name"`
-	Instructions      string           `json:"instructions"`
-	Template          string           `json:"template"`
-	Schema            json.RawMessage  `json:"schema"`
-	Rows              []map[string]any `json:"rows"`
-	Input             map[string]any   `json:"input"`
-	Model             string           `json:"model"`
-	MaxSteps          int              `json:"maxSteps"`
-	MaxOutputTokens   int              `json:"maxOutputTokens"`
-	LegacyConcurrency int              `json:"concurrency,omitempty"`
-	Require           string           `json:"require"`
-	Verbose           bool             `json:"verbose,omitempty"`
+	Name            string           `json:"name"`
+	Instructions    string           `json:"instructions"`
+	Template        string           `json:"template"`
+	Schema          json.RawMessage  `json:"schema"`
+	Rows            []map[string]any `json:"rows"`
+	Input           map[string]any   `json:"input"`
+	Model           string           `json:"model"`
+	MaxSteps        int              `json:"maxSteps"`
+	MaxOutputTokens int              `json:"maxOutputTokens"`
+	Require         string           `json:"require"`
+	Verbose         bool             `json:"verbose,omitempty"`
 }
 
 type APIResult struct {
@@ -72,9 +71,6 @@ func Serve(args []string) {
 		}
 		writeJSON(writer, http.StatusOK, map[string]bool{"ok": true})
 	})
-	mux.HandleFunc("POST /run", func(writer http.ResponseWriter, request *http.Request) {
-		handleRun(writer, request, store)
-	})
 	mux.HandleFunc("GET /jobs", func(writer http.ResponseWriter, request *http.Request) {
 		handleJobsJSON(writer, request, store)
 	})
@@ -105,37 +101,15 @@ func Serve(args []string) {
 	}
 }
 
-func handleRun(writer http.ResponseWriter, request *http.Request, store JobBackend) {
-	started := time.Now()
-	input, rows, err := decodeJobRequest(writer, request)
-	if err != nil {
-		writeJSON(writer, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return
-	}
-	id, err := store.Start(request.Context(), input, rows)
-	if err != nil {
-		writeJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	job, err := store.Wait(request.Context(), id)
-	if err != nil {
-		status := http.StatusInternalServerError
-		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			status = http.StatusRequestTimeout
-		}
-		writeJSON(writer, status, map[string]string{"error": err.Error(), "jobId": id})
-		return
-	}
-	fmt.Fprintf(os.Stderr, "run rows=%d durationMs=%d\n", len(rows), time.Since(started).Milliseconds())
-	writeJSON(writer, http.StatusOK, map[string]any{"jobId": id, "results": jobResults(job)})
-}
-
 func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(AgentEvent)) APIResult {
 	started := time.Now()
 	runID := newRunID()
 	modelName := request.Model
 	if modelName == "" {
-		modelName = "google/gemini-3.1-flash-lite"
+		modelName = os.Getenv("OPENROUTER_MODEL")
+	}
+	if modelName == "" {
+		modelName = defaultOpenRouterModel
 	}
 	result := APIResult{RunID: runID, Result: nil, Sources: []string{}, AgentLog: []Step{}, Evidence: []Evidence{}, Model: modelName}
 	row := agent.Row{}
@@ -145,28 +119,24 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 	if request.Require != "" && row[request.Require] == "" {
 		result.Skipped = true
 		result.DurationMS = time.Since(started).Milliseconds()
-		writeRunLog(request, values, result)
 		return result
 	}
 	key := os.Getenv("OPENROUTER_API_KEY")
 	if key == "" {
 		result.Error = "OPENROUTER_API_KEY is not set"
 		result.DurationMS = time.Since(started).Milliseconds()
-		writeRunLog(request, values, result)
 		return result
 	}
 	compiledSchema, err := agent.CompileOutputSchema(request.Schema)
 	if err != nil {
 		result.Error = err.Error()
 		result.DurationMS = time.Since(started).Milliseconds()
-		writeRunLog(request, values, result)
 		return result
 	}
 	action := agent.Action{
 		Instructions:          agent.ResearchInstructions(request.Instructions, string(compiledSchema.Canonical)),
 		FinalizerInstructions: agent.FinalizerInstructions(request.Instructions),
 		Template:              request.Template,
-		Schema:                compiledSchema.Canonical,
 		Validator:             compiledSchema,
 	}
 	maxSteps := request.MaxSteps
@@ -183,36 +153,7 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 		result.Reasoning = ""
 		result.Error = err.Error()
 	}
-	writeRunLog(request, values, result)
 	return result
-}
-
-func writeRunLog(request APIRequest, row map[string]any, result APIResult) {
-	directory := os.Getenv("FREEGENT_LOG_DIR")
-	if directory == "" {
-		directory = "logs"
-	}
-	if os.MkdirAll(directory, 0755) != nil {
-		return
-	}
-	data, err := json.MarshalIndent(map[string]any{
-		"recordedAt": time.Now().UTC().Format(time.RFC3339Nano),
-		"action": map[string]any{
-			"name":         request.Name,
-			"instructions": request.Instructions,
-			"template":     request.Template,
-			"schema":       request.Schema,
-		},
-		"input": row,
-		"run":   result,
-	}, "", "  ")
-	if err == nil {
-		path := filepath.Join(directory, result.RunID+".json")
-		temporaryPath := path + ".tmp"
-		if os.WriteFile(temporaryPath, append(data, '\n'), 0644) == nil {
-			_ = os.Rename(temporaryPath, path)
-		}
-	}
 }
 
 func newRunID() string {

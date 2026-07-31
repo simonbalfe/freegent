@@ -21,7 +21,11 @@ func CompileOutputSchema(raw json.RawMessage) (*CompiledSchema, error) {
 		return nil, fmt.Errorf("invalid schema JSON: %w", err)
 	}
 	if !isJSONSchema(document) {
-		document = shortFormSchema(document)
+		var err error
+		document, err = shortFormSchema(document)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if err := rejectRemoteRefs(document); err != nil {
 		return nil, err
@@ -57,11 +61,15 @@ func isJSONSchema(document map[string]any) bool {
 	return hasType || hasProperties || hasSchema || hasReference
 }
 
-func shortFormSchema(shape map[string]any) map[string]any {
+func shortFormSchema(shape map[string]any) (map[string]any, error) {
 	properties := map[string]any{}
 	required := make([]any, 0, len(shape))
 	for name, spec := range shape {
-		properties[name] = shortFieldSchema(spec)
+		field, err := shortFieldSchema(spec)
+		if err != nil {
+			return nil, fmt.Errorf("invalid shorthand schema field %q: %w", name, err)
+		}
+		properties[name] = field
 		required = append(required, name)
 	}
 	return map[string]any{
@@ -70,30 +78,26 @@ func shortFormSchema(shape map[string]any) map[string]any {
 		"properties":           properties,
 		"required":             required,
 		"additionalProperties": false,
-	}
+	}, nil
 }
 
-func shortFieldSchema(spec any) map[string]any {
-	if values, ok := spec.([]any); ok {
-		enum := make([]any, 0, len(values))
-		for _, value := range values {
-			enum = append(enum, fmt.Sprint(value))
-		}
-		return map[string]any{"type": "string", "enum": enum}
+func shortFieldSchema(spec any) (map[string]any, error) {
+	value, ok := spec.(string)
+	if !ok {
+		return nil, errors.New("type must be a string")
 	}
-	value := strings.TrimSpace(fmt.Sprint(spec))
+	value = strings.TrimSpace(value)
+	if strings.HasPrefix(strings.ToLower(value), "enum:") {
+		return nil, errors.New("enum: syntax is not supported")
+	}
 	nullable := strings.HasSuffix(value, "?")
 	value = strings.TrimSpace(strings.TrimSuffix(value, "?"))
 	parts := splitSpec(value)
-	filtered := parts[:0]
 	for _, part := range parts {
-		if part == "null" {
-			nullable = true
-		} else {
-			filtered = append(filtered, part)
+		if strings.EqualFold(part, "null") {
+			return nil, errors.New("use ? for nullable fields")
 		}
 	}
-	parts = filtered
 	var schema map[string]any
 	if len(parts) > 1 {
 		enum := make([]any, len(parts))
@@ -106,41 +110,21 @@ func shortFieldSchema(spec any) map[string]any {
 		if len(parts) == 1 {
 			token = strings.ToLower(parts[0])
 		}
-		if strings.HasPrefix(token, "enum:") {
-			values := splitComma(strings.TrimPrefix(token, "enum:"))
-			enum := make([]any, len(values))
-			for index, item := range values {
-				enum[index] = item
-			}
-			schema = map[string]any{"type": "string", "enum": enum}
-		} else {
-			switch token {
-			case "number", "boolean", "integer", "string":
-				schema = map[string]any{"type": token}
-			default:
-				schema = map[string]any{"type": "string"}
-			}
+		switch token {
+		case "number", "boolean", "integer", "string":
+			schema = map[string]any{"type": token}
+		default:
+			schema = map[string]any{"type": "string"}
 		}
 	}
 	if nullable {
 		schema = map[string]any{"anyOf": []any{schema, map[string]any{"type": "null"}}}
 	}
-	return schema
+	return schema, nil
 }
 
 func splitSpec(value string) []string {
 	parts := strings.Split(value, "|")
-	output := make([]string, 0, len(parts))
-	for _, part := range parts {
-		if trimmed := strings.TrimSpace(part); trimmed != "" {
-			output = append(output, trimmed)
-		}
-	}
-	return output
-}
-
-func splitComma(value string) []string {
-	parts := strings.Split(value, ",")
 	output := make([]string, 0, len(parts))
 	for _, part := range parts {
 		if trimmed := strings.TrimSpace(part); trimmed != "" {

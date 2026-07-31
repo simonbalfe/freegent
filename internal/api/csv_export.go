@@ -21,7 +21,7 @@ type csvExportColumn struct {
 	key    string
 }
 
-func handleJobCSV(writer http.ResponseWriter, request *http.Request, store JobBackend) {
+func handleJobCSV(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
 	job, err := store.GetPage(request.PathValue("id"), csvExportPageSize, 0)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeJSON(writer, http.StatusNotFound, map[string]string{"error": "job not found"})

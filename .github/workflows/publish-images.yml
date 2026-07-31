@@ -30,11 +30,3 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/simonbalfe/freegent-api:latest
-
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          target: worker
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/simonbalfe/freegent-worker:latest

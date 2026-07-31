@@ -18,8 +18,7 @@ import (
 
 type OperationWorker struct {
 	river.WorkerDefaults[OperationArgs]
-	store  *PostgresStore
-	runner JobRunner
+	store *PostgresStore
 }
 
 func (w *OperationWorker) NextRetry(job *river.Job[OperationArgs]) time.Time {
@@ -47,7 +46,7 @@ func (w *OperationWorker) Work(ctx context.Context, job *river.Job[OperationArgs
 	if done {
 		return nil
 	}
-	result := w.runner(ctx, request, input, func(event AgentEvent) {
+	result := runOneWithEvents(ctx, request, input, func(event AgentEvent) {
 		if err := w.store.appendOperationEvent(ctx, job.Args, event.Message); err != nil {
 			fmt.Fprintf(os.Stderr, "operation event persistence failed job=%s row=%d error=%v\n", job.Args.JobID, job.Args.RowIndex+1, err)
 		}
@@ -110,7 +109,7 @@ func RunWorker(args []string) {
 	}
 	defer store.Close()
 	workers := river.NewWorkers()
-	river.AddWorker(workers, &OperationWorker{store: store, runner: runOneWithEvents})
+	river.AddWorker(workers, &OperationWorker{store: store})
 	client, err := river.NewClient(riverpgxv5.New(store.pool), &river.Config{
 		JobTimeout: *timeout,
 		Queues: map[string]river.QueueConfig{

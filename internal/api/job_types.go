@@ -1,22 +1,8 @@
 package api
 
 import (
-	"context"
 	"time"
 )
-
-type JobBackend interface {
-	Close() error
-	Ping(context.Context) error
-	Start(context.Context, APIRequest, []map[string]any) (string, error)
-	Get(string) (DashboardJob, error)
-	GetPage(string, int, int) (DashboardJob, error)
-	GetSummary(string) (DashboardJob, error)
-	List(int) ([]DashboardJob, error)
-	Wait(context.Context, string) (DashboardJob, error)
-}
-
-type JobRunner func(context.Context, APIRequest, map[string]any, func(AgentEvent)) APIResult
 
 type DashboardJob struct {
 	ID          string           `json:"id"`
@@ -44,21 +30,6 @@ type DashboardRow struct {
 	Input      map[string]any `json:"input"`
 	Status     string         `json:"status"`
 	Result     APIResult      `json:"result"`
-	AgentLog   []Step         `json:"agentLog"`
 	StartedAt  time.Time      `json:"startedAt,omitempty"`
 	FinishedAt time.Time      `json:"finishedAt,omitempty"`
-}
-
-func jobTerminal(status string) bool {
-	return status == "completed" || status == "completed with errors"
-}
-
-func jobResults(job DashboardJob) []APIResult {
-	results := make([]APIResult, len(job.Rows))
-	for _, row := range job.Rows {
-		if row.Index >= 0 && row.Index < len(results) {
-			results[row.Index] = row.Result
-		}
-	}
-	return results
 }

@@ -3,7 +3,6 @@ module github.com/simonbalfe/freegent
 go 1.25.5
 
 require (
-	github.com/a-h/templ v0.3.1020
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/riverqueue/river v0.41.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.41.0

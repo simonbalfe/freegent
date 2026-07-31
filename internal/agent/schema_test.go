@@ -40,3 +40,15 @@ func TestRemoteSchemaReferenceRejected(t *testing.T) {
 		t.Fatal("expected remote reference to be rejected")
 	}
 }
+
+func TestRemovedShortFormSchemaSyntaxIsRejected(t *testing.T) {
+	for _, raw := range []string{
+		`{"status":["open","closed"]}`,
+		`{"status":"enum:open,closed"}`,
+		`{"status":"string|null"}`,
+	} {
+		if _, err := CompileOutputSchema(json.RawMessage(raw)); err == nil {
+			t.Fatalf("expected removed syntax to fail: %s", raw)
+		}
+	}
+}
