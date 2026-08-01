@@ -46,11 +46,12 @@ func (w *OperationWorker) Work(ctx context.Context, job *river.Job[OperationArgs
 	if done {
 		return nil
 	}
-	result := runOneWithEvents(ctx, request, input, func(event AgentEvent) {
+	event := func(event AgentEvent) {
 		if err := w.store.appendOperationEvent(ctx, job.Args, event.Message); err != nil {
 			fmt.Fprintf(os.Stderr, "operation event persistence failed job=%s row=%d error=%v\n", job.Args.JobID, job.Args.RowIndex+1, err)
 		}
-	})
+	}
+	result := runOneWithEvents(ctx, request, input, event, newOperationCache(w.store, job.Args, event))
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -71,6 +72,7 @@ func permanentOperationError(message string) bool {
 		"url must use http or https",
 		"schema validation",
 		"invalid output schema",
+		"openextract could not extract the url",
 		"unsupported protocol",
 		"401 unauthorized",
 		"404 not found",
@@ -111,7 +113,9 @@ func RunWorker(args []string) {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &OperationWorker{store: store})
 	client, err := river.NewClient(riverpgxv5.New(store.pool), &river.Config{
-		JobTimeout: *timeout,
+		JobTimeout:           *timeout,
+		RescueStuckJobsAfter: *timeout + time.Minute,
+		SoftStopTimeout:      30 * time.Second,
 		Queues: map[string]river.QueueConfig{
 			"research": {MaxWorkers: *concurrency},
 		},
@@ -126,12 +130,7 @@ func RunWorker(args []string) {
 		return
 	}
 	fmt.Fprintf(os.Stderr, "freegent worker started concurrency=%d timeout=%s\n", *concurrency, timeout.String())
-	<-ctx.Done()
-	shutdownContext, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	if err := client.Stop(shutdownContext); err != nil {
-		fmt.Fprintf(os.Stderr, "freegent worker stop failed: %v\n", err)
-	}
+	<-client.Stopped()
 }
 
 func workerConcurrency() int {

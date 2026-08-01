@@ -34,10 +34,28 @@ flowchart LR
 2. The API stores the batch and its rows in PostgreSQL.
 3. The API inserts one River operation for each row in the same transaction.
 4. A worker claims an operation and runs the complete agent loop.
-5. The worker stores progress, evidence, errors, and the final result.
-6. The CLI polls the job and streams JSON or CSV output.
+5. Successful model and tool calls are stored on the row before the loop continues.
+6. The worker stores progress, evidence, errors, and the final result.
+7. The CLI polls the job and streams JSON or CSV output.
 
 River may deliver a job more than once. A worker checks the row state before running it, so completed rows are not repeated.
+When OpenExtract exhausts its extraction fallbacks, the row fails immediately. River still retries transient transport and provider failures.
+An invalid answer or transient finalizer request failure gets one local finalizer retry. Research tools are not repeated.
+Each row reuses identical tool results and finalizes after six successful tool calls.
+Shared business-field instructions prefer current company-owned evidence, reject slogan-based customer segments, and use current whole-product categories.
+
+## Durable replay
+
+Each successful model, tool, and finalizer call is stored in the row's `step_results` JSON object.
+The key includes a replay version, the operation type, the model or tool identity, and the exact input.
+A retried row starts the agent loop again and reuses matching results until it reaches the first missing call.
+Errors are not stored. New jobs never reuse results from older jobs.
+
+Step commits are first-writer-wins. A provider call can still repeat if a worker dies after the provider responds but before PostgreSQL records the result.
+Change `operationStepVersion` when an incompatible runtime change must invalidate stored steps for jobs already in flight.
+
+Workers stop claiming jobs on `SIGTERM`, give active rows 30 seconds to finish, then cancel remaining work.
+River rescues a worker lost without graceful shutdown after the operation timeout plus one minute.
 
 ## Data ownership
 
@@ -46,6 +64,7 @@ PostgreSQL stores:
 - jobs and row state
 - River queue state
 - progress events
+- successful external step results
 - evidence and results
 - errors and token usage
 

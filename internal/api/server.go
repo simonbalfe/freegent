@@ -101,7 +101,7 @@ func Serve(args []string) {
 	}
 }
 
-func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(AgentEvent)) APIResult {
+func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(AgentEvent), cache operationCache) APIResult {
 	started := time.Now()
 	runID := newRunID()
 	modelName := request.Model
@@ -144,7 +144,12 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 		maxSteps = 5
 	}
 	tools := toolset.Default()
-	runner := agent.Agent{Model: openrouter.OpenRouterModel{APIKey: key, Model: modelName, Client: &http.Client{Timeout: 90 * time.Second}, Tools: toolset.List(tools), MaxOutputTokens: request.MaxOutputTokens}, Tools: tools, MaxSteps: maxSteps, Verbose: request.Verbose, Event: event}
+	for name, tool := range tools {
+		tools[name] = cachedTool{Tool: tool, cache: cache}
+	}
+	toolList := toolset.List(tools)
+	model := openrouter.OpenRouterModel{APIKey: key, Model: modelName, Client: &http.Client{Timeout: 90 * time.Second}, Tools: toolList, MaxOutputTokens: request.MaxOutputTokens}
+	runner := agent.Agent{Model: newCachedModel(model, cache, modelName, request.MaxOutputTokens, toolList), Tools: tools, MaxSteps: maxSteps, Verbose: request.Verbose, Event: event}
 	run, err := runner.Run(ctx, action, row)
 	result.DurationMS = time.Since(started).Milliseconds()
 	result.Result, result.Reasoning, result.Sources, result.AgentLog, result.Evidence, result.Tokens = run.Answer, run.Reasoning, run.Sources, run.Steps, run.Evidence, run.Tokens

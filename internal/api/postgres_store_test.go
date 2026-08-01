@@ -63,6 +63,7 @@ func TestPermanentOperationError(t *testing.T) {
 	for _, message := range []string{
 		"OPENROUTER_API_KEY is not set",
 		"URL must use http or https",
+		"fetch_page: OpenExtract could not extract the URL: Response appears to be a JavaScript shell or block page",
 		"401 Unauthorized",
 	} {
 		if !permanentOperationError(message) {
@@ -76,9 +77,23 @@ func TestPermanentOperationError(t *testing.T) {
 
 func TestDashboardRenders(t *testing.T) {
 	response := httptest.NewRecorder()
-	renderDashboard(response, "job", DashboardJob{ID: "job-1", Status: "queued", Total: 1})
+	renderDashboard(response, "job", DashboardJob{
+		ID:     "job-1",
+		Status: "queued",
+		Total:  1,
+		Rows: []DashboardRow{{
+			Input: map[string]any{"private": "hidden-input"},
+			Result: APIResult{
+				Result:   map[string]any{"answer": "visible-answer"},
+				AgentLog: []Step{{Kind: "tool", Name: "web_search"}},
+			},
+		}},
+	})
 	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "/dashboard/jobs/job-1/status") {
 		t.Fatalf("unexpected dashboard response: status=%d body=%q", response.Code, response.Body.String())
+	}
+	if body := response.Body.String(); strings.Contains(body, "hidden-input") || !strings.Contains(body, "visible-answer") || !strings.Contains(body, "Agent trace") || !strings.Contains(body, `id="trace-0"`) || !strings.Contains(body, "htmx:afterSwap") {
+		t.Fatalf("dashboard did not render a clean trace: %q", body)
 	}
 	response = httptest.NewRecorder()
 	renderDashboard(response, "dashboard", []DashboardJob{})

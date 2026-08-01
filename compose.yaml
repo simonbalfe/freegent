@@ -34,12 +34,13 @@ services:
     build:
       context: .
       target: api
+    stop_grace_period: 40s
     healthcheck:
       disable: true
     command:
       - worker
       - -concurrency
-      - ${FREEGENT_WORKER_CONCURRENCY:-10}
+      - ${FREEGENT_WORKER_CONCURRENCY:-50}
       - -timeout
       - ${FREEGENT_OPERATION_TIMEOUT:-15m}
     environment:

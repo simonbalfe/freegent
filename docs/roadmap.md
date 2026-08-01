@@ -11,6 +11,8 @@ Freegent currently runs as one Docker Compose stack:
 
 Increase capacity with worker replicas or per-worker concurrency.
 
+Workers drain active rows for 30 seconds during shutdown. Successful model and tool calls survive retries in PostgreSQL.
+
 ## Planned work
 
 ### Elastic workers
@@ -18,8 +20,10 @@ Increase capacity with worker replicas or per-worker concurrency.
 - evaluate K3s for replicated workers
 - compare KEDA with a small queue-depth scaler
 - add node autoscaling only after container scaling is proven
-- add graceful draining, spending limits, throttling, and queue metrics first
+- add spending limits, throttling, and queue metrics first
 - keep Docker Compose for development and smaller deployments
+
+Keep row step results in JSONB while the bounded agent loop makes writes small. Move them to a separate table only if measured PostgreSQL write amplification becomes a bottleneck.
 
 ### OpenExtract
 

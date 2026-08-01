@@ -36,11 +36,13 @@ CREATE TABLE IF NOT EXISTS job_rows (
 	input_json JSONB NOT NULL,
 	status TEXT NOT NULL,
 	result_json JSONB,
+	step_results JSONB NOT NULL DEFAULT '{}'::jsonb,
 	attempts INTEGER NOT NULL DEFAULT 0,
 	started_at TIMESTAMPTZ,
 	finished_at TIMESTAMPTZ,
 	PRIMARY KEY (job_id, row_index)
 );
+ALTER TABLE job_rows ADD COLUMN IF NOT EXISTS step_results JSONB NOT NULL DEFAULT '{}'::jsonb;
 CREATE TABLE IF NOT EXISTS job_events (
 	id BIGSERIAL PRIMARY KEY,
 	job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
@@ -477,6 +479,57 @@ func (s *PostgresStore) appendOperationEvent(ctx context.Context, args Operation
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+func (s *PostgresStore) operationStep(ctx context.Context, args OperationArgs, key string) (json.RawMessage, bool, error) {
+	var raw []byte
+	err := s.pool.QueryRow(
+		ctx,
+		`SELECT COALESCE(step_results -> ($3::text), 'null'::jsonb)
+		 FROM job_rows WHERE job_id = $1 AND row_index = $2`,
+		args.JobID,
+		args.RowIndex,
+		key,
+	).Scan(&raw)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, sql.ErrNoRows
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	if string(raw) == "null" {
+		return nil, false, nil
+	}
+	return json.RawMessage(raw), true, nil
+}
+
+func (s *PostgresStore) commitOperationStep(ctx context.Context, args OperationArgs, key string, value json.RawMessage) (json.RawMessage, error) {
+	var stored []byte
+	err := s.pool.QueryRow(
+		ctx,
+		`UPDATE job_rows
+		 SET step_results = jsonb_set(step_results, ARRAY[$3]::text[], $4::jsonb, true)
+		 WHERE job_id = $1 AND row_index = $2 AND NOT (step_results ? ($3::text))
+		 RETURNING step_results -> ($3::text)`,
+		args.JobID,
+		args.RowIndex,
+		key,
+		string(value),
+	).Scan(&stored)
+	if err == nil {
+		return json.RawMessage(stored), nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+	winner, found, err := s.operationStep(ctx, args, key)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, errors.New("operation step was not committed")
+	}
+	return winner, nil
 }
 
 func (s *PostgresStore) retryOperation(ctx context.Context, args OperationArgs, result APIResult, attempt int) error {

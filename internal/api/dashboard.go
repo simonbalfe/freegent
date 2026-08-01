@@ -87,7 +87,16 @@ const dashboardTemplateSource = `{{define "dashboard"}}
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Freegent job</title>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}.card{background:#fff;border:1px solid #e2e4e8;border-radius:12px;padding:20px;margin:16px 0;box-shadow:0 2px 8px #17202a0a}.muted{color:#667085}.error{color:#b42318}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.metric{background:#f5f7fa;border-radius:8px;padding:12px}.metric strong{display:block;font-size:20px}.flow{background:#101828;color:#e6edf3;border-radius:8px;padding:14px;max-height:280px;overflow:auto;font:13px ui-monospace,monospace}.event{padding:6px 0;border-bottom:1px solid #ffffff1f}.event span{color:#98a2b3;margin-right:12px}.row-card{border:1px solid #e2e4e8;border-radius:10px;padding:16px;margin:12px 0}.row-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.status{color:#18794e;font-weight:600}.tokens{color:#667085;font-size:14px}.answer,.step-input{display:grid;gap:10px}.answer-row,.step-input-row{border-top:1px solid #eaecf0;padding-top:10px}.answer-row dt,.step-input-row dt{font-weight:600}.answer-row dd,.step-input-row dd{margin:4px 0 0;white-space:pre-wrap}.step{margin:14px 0}.step-title{font-weight:600;font-size:17px}pre{white-space:pre-wrap;overflow:auto;background:#f5f7fa;padding:10px;border-radius:6px}details{margin-top:12px}summary{cursor:pointer;font-weight:600}a{color:#175cd3}</style>
+  <script>
+    let openTraces = []
+    document.addEventListener("htmx:beforeSwap", event => {
+      if (event.detail.target.id === "job-status") openTraces = [...event.detail.target.querySelectorAll(".trace[open]")].map(trace => trace.id)
+    })
+    document.addEventListener("htmx:afterSwap", event => {
+      if (event.detail.target.id === "job-status") openTraces.forEach(id => document.getElementById(id)?.setAttribute("open", ""))
+    })
+  </script>
+  <style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px;color:#17202a;background:#fafafa}.card{background:#fff;border:1px solid #e2e4e8;border-radius:12px;padding:20px;margin:16px 0;box-shadow:0 2px 8px #17202a0a}.muted{color:#667085}.error{color:#b42318}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.metric{background:#f5f7fa;border-radius:8px;padding:12px}.metric strong{display:block;font-size:20px}.flow{border:1px solid #e2e4e8;border-radius:8px;max-height:280px;overflow:auto}.event{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 12px;border-bottom:1px solid #eaecf0}.event:last-child{border-bottom:0}.event span{color:#667085;font:13px ui-monospace,monospace}.row-card{border:1px solid #e2e4e8;border-radius:10px;padding:18px;margin:12px 0}.row-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.status{color:#18794e;font-weight:600}.tokens{color:#667085;font-size:14px}.answer{display:grid;gap:10px;margin:12px 0}.answer-row{background:#f8fafc;border-radius:7px;padding:11px 12px}.answer-row dt,.step-input-row dt{font-weight:600}.answer-row dd,.step-input-row dd{margin:4px 0 0;white-space:pre-wrap}.trace{border-top:1px solid #eaecf0;padding-top:12px}.trace ol{border-left:2px solid #d0d5dd;list-style:none;margin-left:8px;padding-left:20px}.step{margin:16px 0;position:relative}.step:before{background:#175cd3;border:3px solid #fff;border-radius:50%;content:"";height:8px;left:-26px;position:absolute;top:5px;width:8px}.step-title{font-weight:600}.step-input{display:grid;gap:6px;margin-top:8px}.step-input-row{font-size:14px}.sources{font-size:14px;padding-left:20px}details{margin-top:12px}summary{cursor:pointer;font-weight:600}a{color:#175cd3}@media(max-width:640px){.summary{grid-template-columns:1fr}.event{grid-template-columns:1fr;gap:3px}}</style>
 </head>
 <body>
   <p><a href="/dashboard">← New job</a></p>
@@ -111,12 +120,21 @@ const dashboardTemplateSource = `{{define "dashboard"}}
       <div class="event"><span>{{eventTime .At}} · {{eventLabel .}}</span> <strong>{{eventMessage .Message}}</strong></div>
     {{end}}
   </div>
-  <h3>Rows</h3>
+  <h3>Row runs</h3>
   {{range .Rows}}
     <article class="row-card">
       <div class="row-head"><strong>Row {{rowNumber .Index}}</strong><span class="status">{{.Status}}</span><span class="tokens">{{.Result.Tokens.Input}} input · {{.Result.Tokens.Output}} output tokens</span></div>
-      <p class="muted">Input</p><pre>{{pretty .Input}}</pre>
-      <details><summary>{{len .Result.AgentLog}} agent steps</summary>
+      {{if .Result.Result}}
+        <dl class="answer">
+          {{range fields .Result.Result}}
+            <div class="answer-row"><dt>{{.Key}}</dt><dd>{{.Value}}</dd></div>
+          {{end}}
+        </dl>
+      {{end}}
+      {{if .Result.Error}}
+        <p class="error"><strong>Error:</strong> {{.Result.Error}}</p>
+      {{end}}
+      <details class="trace" id="trace-{{.Index}}"><summary>Agent trace · {{len .Result.AgentLog}} steps</summary>
         {{if eq (len .Result.AgentLog) 0}}
           <p class="muted">No completed steps yet. Watch the live activity above.</p>
         {{else}}
@@ -126,19 +144,8 @@ const dashboardTemplateSource = `{{define "dashboard"}}
             {{end}}
           </ol>
         {{end}}
-        {{if .Result.Result}}
-          <p><strong>Answer</strong></p>
-          <dl class="answer">
-            {{range fields .Result.Result}}
-              <div class="answer-row"><dt>{{.Key}}</dt><dd>{{.Value}}</dd></div>
-            {{end}}
-          </dl>
-        {{end}}
         {{if .Result.Sources}}
           {{template "sources" .Result.Sources}}
-        {{end}}
-        {{if .Result.Error}}
-          <p class="error"><strong>Error:</strong> {{.Result.Error}}</p>
         {{end}}
       </details>
     </article>
@@ -164,7 +171,7 @@ const dashboardTemplateSource = `{{define "dashboard"}}
 
 {{define "sources"}}
 <p><strong>Evidence sources</strong></p>
-<ul>
+<ul class="sources">
   {{range .}}
     <li><a href="{{.}}" target="_blank" rel="noreferrer">{{.}}</a></li>
   {{end}}
