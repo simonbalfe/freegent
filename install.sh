@@ -3,6 +3,8 @@ set -euo pipefail
 
 repo_url="${FREEGENT_REPO_URL:-https://github.com/simonbalfe/freegent.git}"
 install_dir="${FREEGENT_DIR:-$HOME/freegent}"
+api_url="http://localhost:${FREEGENT_PORT:-8080}"
+openextract_url="http://localhost:${OPENEXTRACT_PORT:-8081}"
 
 host_cli_platform() {
   case "$(uname -s)" in
@@ -166,8 +168,8 @@ cp SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
 echo "Waiting for services"
 for attempt in $(seq 1 30); do
   running_services="$(docker compose ps --status running --services)"
-  if curl -fsS http://localhost:8080/health >/dev/null 2>&1 \
-    && curl -fsS http://localhost:8081/healthz >/dev/null 2>&1 \
+  if curl -fsS "$api_url/health" >/dev/null 2>&1 \
+    && curl -fsS "$openextract_url/healthz" >/dev/null 2>&1 \
     && printf '%s\n' "$running_services" | grep -qx postgres \
     && printf '%s\n' "$running_services" | grep -qx api \
     && printf '%s\n' "$running_services" | grep -qx worker \
@@ -175,7 +177,7 @@ for attempt in $(seq 1 30); do
     && docker compose exec -T worker sh -c 'test -n "$OPENROUTER_API_KEY"' \
     && "$cli_path" --help >/dev/null 2>&1; then
     echo
-    echo "Freegent is ready: http://localhost:8080/dashboard"
+    echo "Freegent is ready: $api_url/dashboard"
     echo "CLI installed at $cli_path"
     if [[ ":$PATH:" != *":$(dirname "$cli_path"):"* ]]; then
       echo "CLI PATH saved for new shells. Run: export PATH=\"$(dirname "$cli_path"):\$PATH\""
