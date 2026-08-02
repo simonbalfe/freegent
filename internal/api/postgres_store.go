@@ -390,7 +390,12 @@ func (s *PostgresStore) List(limit int) ([]DashboardJob, error) {
 
 func (s *PostgresStore) Stats(ctx context.Context, id string) (DashboardStats, error) {
 	var stats DashboardStats
-	if err := s.pool.QueryRow(ctx, `SELECT total FROM jobs WHERE id = $1`, id).Scan(&stats.Rows); err != nil {
+	if err := s.pool.QueryRow(ctx, `
+		SELECT total, CASE
+			WHEN started_at IS NULL THEN 0
+			ELSE (EXTRACT(EPOCH FROM (COALESCE(finished_at, NOW()) - started_at)) * 1000)::BIGINT
+		END
+		FROM jobs WHERE id = $1`, id).Scan(&stats.Rows, &stats.DurationMS); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return DashboardStats{}, sql.ErrNoRows
 		}
@@ -440,7 +445,6 @@ func accumulateDashboardStats(stats *DashboardStats, models map[string]*Dashboar
 	stats.Tokens.Add(result.Tokens)
 	stats.AgentSteps += len(result.AgentLog)
 	stats.Sources += len(result.Sources)
-	stats.DurationMS += result.DurationMS
 	stats.Costs.OpenRouterUSD += result.Costs.OpenRouterUSD
 	stats.Costs.ApifyUSD += result.Costs.ApifyUSD
 	stats.Costs.ApifyRuns += result.Costs.ApifyRuns

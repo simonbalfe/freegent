@@ -262,6 +262,20 @@ function pretty(value: unknown): string {
   return JSON.stringify(value, null, 2) ?? "";
 }
 
+function sheetValue(value: unknown): string {
+  if (value === null || value === undefined) return "Not found";
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "None found";
+    const names = value.map((item) => isObject(item) ? text(item.name) : text(item)).filter(Boolean);
+    return names.length === value.length ? `${value.length} · ${names.join(", ")}` : `${value.length} items`;
+  }
+  if (typeof value !== "string") return pretty(value);
+  const trimmed = value.trim();
+  if (trimmed === "" || trimmed === "null") return "Not found";
+  if (trimmed === "[]") return "None found";
+  return value;
+}
+
 function label(value: string): string {
   return value.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
 }
@@ -341,7 +355,7 @@ function NewJob({ submitting, error, onSubmit, onClose }: {
             <summary className="flex cursor-pointer list-none items-center justify-between text-[11px] font-bold"><span>Advanced settings <small className="ml-1 font-normal text-slate-400">Instructions and output schema</small></span><span className="text-slate-400 group-open:hidden">＋</span><span className="hidden text-slate-400 group-open:inline">−</span></summary>
             <div className="mt-3 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
               <label className="grid gap-1.5 text-[11px] font-bold">Instructions<textarea className={textareaClass} name="instructions" defaultValue={defaultInstructions} /></label>
-              <label className="grid gap-1.5 text-[11px] font-bold">Output schema<textarea className={`${textareaClass} font-mono`} name="schema" defaultValue={defaultSchema} /></label>
+              <label className="grid gap-1.5 text-[11px] font-bold">Output schema<textarea className={`${textareaClass} font-mono`} name="schema" defaultValue={defaultSchema} /><small className="font-normal text-slate-500">Use full JSON Schema for arrays or objects. Allow null when a value may be unknown.</small></label>
             </div>
           </details>
           {error !== "" && <p className="m-0 whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700" role="alert">{error}</p>}
@@ -448,7 +462,7 @@ function Spreadsheet({ job, onSelectRow }: {
               </td>
               <td className="border-r border-b border-slate-200 px-2 py-1"><span className={statusClass(row.status)}>{row.status}</span></td>
               {inputColumns.map((name) => <td className="max-w-56 border-r border-b border-slate-200 px-2 py-1.5 align-middle" key={`input-${name}`}><div className="truncate whitespace-nowrap text-slate-700">{pretty(row.input[name])}</div></td>)}
-              {outputColumns.map((name) => <td className="max-w-56 border-r border-b border-blue-100 bg-blue-50/20 px-2 py-1.5 align-middle" key={`output-${name}`}><div className="truncate whitespace-nowrap text-slate-900">{pretty(row.result.result[name])}</div></td>)}
+              {outputColumns.map((name) => <td className="max-w-56 border-r border-b border-blue-100 bg-blue-50/20 p-0 align-middle" key={`output-${name}`}><button aria-label={`Open row ${row.index + 1} details for ${label(name)}`} className="block h-8 w-full cursor-pointer truncate whitespace-nowrap px-2 py-1.5 text-left text-slate-900 hover:bg-blue-100/70 hover:text-blue-800" title="Open full row details" type="button" onClick={() => onSelectRow(row.index)}>{sheetValue(row.result.result[name])}</button></td>)}
             </tr>
           ))}
         </tbody>
@@ -581,7 +595,7 @@ function DetailedStats({ job, onClose }: {
               <Stat label={estimatedOpenRouter > 0 || serperCost > 0 ? "Estimated total cost" : "Recorded total cost"} value={usd(totalCost)} />
               <Stat label="Total tokens" value={(stats.tokens.input + stats.tokens.output).toLocaleString()} />
               <Stat label="Rows finished" value={`${stats.completed + stats.failed + stats.skipped}/${stats.rows}`} />
-              <Stat label="Runtime across rows" value={duration(stats.durationMS)} />
+              <Stat label="Total runtime" value={duration(stats.durationMS)} />
             </div>
             <section>
               <h3 className="m-0 border-b border-slate-200 pb-2 text-[10px] font-extrabold tracking-wide text-slate-500 uppercase">Cost breakdown</h3>

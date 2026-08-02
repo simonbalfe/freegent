@@ -91,6 +91,9 @@ func TestAccumulateDashboardStats(t *testing.T) {
 	if stats.Completed != 1 || stats.Failed != 1 || stats.Tokens.Input != 150 || stats.Costs.OpenRouterUSD != 0.01 || stats.Costs.ApifyUSD != 0.03 || stats.UnpricedApifyRuns != 1 || stats.SerperQueries != 1 {
 		t.Fatalf("unexpected aggregate stats: %+v", stats)
 	}
+	if stats.DurationMS != 0 {
+		t.Fatalf("row runtimes must not be summed: %+v", stats)
+	}
 	if model == nil || model.InputTokens != 150 || model.UnpricedInputTokens != 50 || model.OpenRouterUSD != 0.01 {
 		t.Fatalf("unexpected model stats: %+v", model)
 	}

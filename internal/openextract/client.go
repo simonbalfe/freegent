@@ -83,17 +83,18 @@ func Extract(ctx context.Context, rawURL string, config Config) (Result, error) 
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return Result{}, fmt.Errorf("invalid OpenExtract response: %w", err)
 	}
-	if payload.Outcome != "ok" || strings.TrimSpace(payload.Content) == "" {
-		return Result{}, fmt.Errorf("OpenExtract could not extract the URL: %s", attemptDetail(payload))
-	}
-	return Result{
+	result := Result{
 		URL:         payload.URL,
 		Text:        payload.Content,
 		ContentType: payload.ContentType,
 		Links:       payload.Links,
 		Provider:    payload.Provider,
 		Attempts:    payload.Attempts,
-	}, nil
+	}
+	if payload.Outcome != "ok" || strings.TrimSpace(payload.Content) == "" {
+		return result, fmt.Errorf("OpenExtract could not extract the URL: %s", attemptDetail(payload))
+	}
+	return result, nil
 }
 
 func attemptDetail(payload response) string {

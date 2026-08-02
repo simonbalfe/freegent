@@ -18,8 +18,9 @@ Freegent is a self-hosted research agent. The Go API stores work in PostgreSQL, 
 - Workers run complete research operations from the shared River `research` queue.
 - PostgreSQL is the only durable source of truth. Do not add a SQLite fallback.
 - Keep OpenExtract independent and reachable through `OPENEXTRACT_URL`.
+- Load provider environment variables once through `internal/config` and pass typed configuration into runtime dependencies.
 - Keep search limited to Serper, Exa, and Tavily.
-- Tavily is OpenExtract's final extraction fallback.
+- Keep the `fetch_page` fallback order OpenExtract, Exa, then Tavily. Managed providers must not live inside OpenExtract.
 - Never fabricate URLs. Fetch only URLs supplied in a row, returned by search, or discovered during extraction.
 - Keep the current deployment as one Docker Compose stack until a roadmap item explicitly changes it.
 - Keep code comment-free. Put durable explanations in `docs/`.

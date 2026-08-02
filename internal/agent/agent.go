@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 )
@@ -43,6 +44,10 @@ func (a Agent) Run(ctx context.Context, action Action, row Row) (RunResult, erro
 		}
 		tokens.Add(response.Usage)
 		costs.addOpenRouter(response.CostUSD)
+		if response.OutputError != "" {
+			a.tracef("model returned invalid output; finalizing: %s", response.OutputError)
+			return a.finalize(ctx, task, action, ledger, evidence, steps, tokens, costs)
+		}
 		if response.Final != nil {
 			if err := action.Validator.Validate(response.Final); err == nil {
 				a.tracef("model returned schema-valid final answer")
@@ -84,7 +89,14 @@ func (a Agent) Run(ctx context.Context, action Action, row Row) (RunResult, erro
 			}
 			result, err := tool.Run(ctx, call.Input)
 			if err != nil {
-				return failed(fmt.Errorf("%s: %w", call.Name, err))
+				if ctx.Err() != nil {
+					return failed(fmt.Errorf("%s: %w", call.Name, ctx.Err()))
+				}
+				message := fmt.Sprintf("%s failed: %v. Treat this source or method as unavailable and try another verified source or tool.", call.Name, err)
+				a.tracef("tool=%s failed: %v", call.Name, err)
+				steps = append(steps, Step{Kind: "tool_error", Name: call.Name, Input: call.Input})
+				messages = append(messages, Message{Role: "tool", ToolCall: &call, Content: message})
+				continue
 			}
 			toolResults[callKey] = result
 			costs.addApify(result.CostUSD)
@@ -122,6 +134,14 @@ func (a Agent) finalize(ctx context.Context, task string, action Action, ledger 
 		}
 		tokens.Add(response.Usage)
 		costs.addOpenRouter(response.CostUSD)
+		if response.OutputError != "" {
+			if attempt == 1 {
+				a.tracef("finalizer returned invalid output; retrying: %s", response.OutputError)
+				action.FinalizerInstructions += "\n\nThe previous response was invalid: " + response.OutputError + ". Return shorter valid JSON that matches every required field."
+				continue
+			}
+			return RunResult{Answer: nil, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, errors.New(response.OutputError)
+		}
 		if err := action.Validator.Validate(response.Final); err != nil {
 			if attempt == 1 {
 				a.tracef("finalizer returned invalid answer; retrying")

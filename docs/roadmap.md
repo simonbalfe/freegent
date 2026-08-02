@@ -29,7 +29,6 @@ Keep row step results in JSONB while the bounded agent loop makes writes small. 
 
 - preserve complete extracted content instead of silently truncating it
 - add structured sections and query-aware passage selection
-- add provenance and freshness details for hosted fallbacks
 - measure evidence recall and answer quality
 
-Tavily extraction is already the final fallback after direct and browser attempts.
+Managed extraction fallbacks belong to Freegent's `fetch_page` tool. OpenExtract stays a local extraction service.

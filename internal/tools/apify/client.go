@@ -32,8 +32,7 @@ type apifyRunResult struct {
 	CostUSD    *float64
 }
 
-func runApifyActor(ctx context.Context, actor string, input map[string]any) (apifyRunResult, error) {
-	token := os.Getenv("APIFY_API_TOKEN")
+func runApifyActor(ctx context.Context, token, actor string, input map[string]any) (apifyRunResult, error) {
 	if token == "" {
 		return apifyRunResult{}, errors.New("APIFY_API_TOKEN is not set")
 	}

@@ -8,14 +8,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/simonbalfe/freegent/internal/agent"
 )
 
-type Tool struct{}
+type Tool struct {
+	serperAPIKey string
+	exaAPIKey    string
+	tavilyAPIKey string
+}
+
+func New(serperAPIKey, exaAPIKey, tavilyAPIKey string) Tool {
+	return Tool{serperAPIKey: serperAPIKey, exaAPIKey: exaAPIKey, tavilyAPIKey: tavilyAPIKey}
+}
 
 func (Tool) Name() string { return "web_search" }
 
@@ -39,16 +46,16 @@ type searchProvider struct {
 	run  func(context.Context, string, string, int) ([]SearchHit, error)
 }
 
-func (Tool) Run(ctx context.Context, input map[string]any) (agent.ToolResult, error) {
+func (tool Tool) Run(ctx context.Context, input map[string]any) (agent.ToolResult, error) {
 	query := strings.TrimSpace(stringValue(input["query"]))
 	if query == "" {
 		return agent.ToolResult{}, errors.New("search query cannot be empty")
 	}
 	limit := boundedInt(input["max_results"], 5, 1, 8)
 	providers := []searchProvider{
-		{name: "serper", key: os.Getenv("SERPER_API_KEY"), run: serperSearch},
-		{name: "exa", key: os.Getenv("EXA_API_KEY"), run: exaSearch},
-		{name: "tavily", key: os.Getenv("TAVILY_API_KEY"), run: tavilySearch},
+		{name: "serper", key: tool.serperAPIKey, run: serperSearch},
+		{name: "exa", key: tool.exaAPIKey, run: exaSearch},
+		{name: "tavily", key: tool.tavilyAPIKey, run: tavilySearch},
 	}
 	return runSearchLadder(ctx, providers, query, limit)
 }

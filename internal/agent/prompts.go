@@ -28,7 +28,8 @@ Reading and navigating:
 
 Answering:
 - Output only concrete values supported by evidence gathered in this run.
-- Unsupported fields are null, never guesses or placeholders.
+- Follow the requested schema exactly. Unsupported nullable scalar fields are null. Array fields with no supported items are empty arrays.
+- Never use empty strings or textual placeholders such as "N/A", "unknown", "null", or "[]" for missing values.
 - Return numbers as numbers, enums exactly as specified, and URLs only when they appeared in gathered evidence.
 - Resolve conflicts with the most recent authoritative source and lower confidence when uncertainty remains.
 - Obey narrower task instructions exactly.
@@ -38,7 +39,8 @@ Task-specific rules are appended below and win on conflict.`
 const finalizerSystemPrompt = `You finalize one row of a data-enrichment table.
 Research is complete and you have no tools. Produce the answer immediately from the supplied evidence.
 - Use only concrete values supported by the evidence.
-- Unsupported fields are null.
+- Follow the requested schema exactly. Unsupported nullable scalar fields are null. Array fields with no supported items are empty arrays.
+- Never use empty strings or textual placeholders such as "N/A", "unknown", "null", or "[]" for missing values.
 - Never answer from memory.
 - Return numbers as numbers, enums exactly as specified, and URLs only when present in the evidence.
 - When evidence conflicts, prefer the most recent authoritative source and lower confidence.`
@@ -56,7 +58,7 @@ func ResearchInstructions(userInstructions string, schema string) string {
 		researchSystemPrompt,
 		businessFieldRules,
 		"Task-specific rules:\n" + strings.TrimSpace(userInstructions),
-		"Return a JSON object with exactly two fields: answer, containing the requested schema, and reasoning, containing one or two sentences naming the deciding sources. Unsupported answer fields must be null.\nAnswer schema: " + schema,
+		"Return a JSON object with exactly two fields: answer, containing the requested schema, and reasoning, containing one or two sentences naming the deciding sources. Follow the answer schema exactly.\nAnswer schema: " + schema,
 	}
 	return strings.Join(parts, "\n\n")
 }

@@ -18,6 +18,7 @@ type apifyTool struct {
 	name        string
 	description string
 	schema      map[string]any
+	token       string
 	actor       func() string
 	input       func(map[string]any) (map[string]any, error)
 	output      func([]map[string]any, map[string]any) (any, []string)
@@ -33,7 +34,7 @@ func (t apifyTool) Run(ctx context.Context, input map[string]any) (ToolResult, e
 		return ToolResult{}, err
 	}
 	actor := t.actor()
-	result, err := runApifyActor(ctx, actor, actorInput)
+	result, err := runApifyActor(ctx, t.token, actor, actorInput)
 	if err != nil {
 		return ToolResult{}, err
 	}
@@ -52,22 +53,23 @@ func (t apifyTool) Run(ctx context.Context, input map[string]any) (ToolResult, e
 	}, nil
 }
 
-func Tools() []Tool {
+func Tools(token string) []Tool {
 	return []Tool{
-		linkedinProfileTool(),
-		linkedinPostsTool(),
-		linkedinReactionsTool(),
-		linkedinPeopleTool(),
-		linkedinCompanyTool(),
-		crunchbaseCompanyTool(),
+		linkedinProfileTool(token),
+		linkedinPostsTool(token),
+		linkedinReactionsTool(token),
+		linkedinPeopleTool(token),
+		linkedinCompanyTool(token),
+		crunchbaseCompanyTool(token),
 	}
 }
 
-func linkedinProfileTool() Tool {
+func linkedinProfileTool(token string) Tool {
 	return apifyTool{
 		name:        "linkedin_profile",
 		description: "Get a person's LinkedIn profile as structured data: name, headline, location, about, experience, follower count, and connection count. Use this instead of fetching LinkedIn pages. The URL must come from the input row or gathered evidence. Costs credits, so call once per person.",
 		schema:      objectSchema(map[string]any{"url": map[string]any{"type": "string", "format": "uri"}}, []string{"url"}),
+		token:       token,
 		actor:       func() string { return envOr("APIFY_LINKEDIN_PROFILE_ACTOR", "harvestapi~linkedin-profile-scraper") },
 		input: func(input map[string]any) (map[string]any, error) {
 			rawURL := strings.TrimSpace(stringValue(input["url"]))
@@ -107,10 +109,11 @@ func linkedinProfileTool() Tool {
 	}
 }
 
-func linkedinPostsTool() Tool {
+func linkedinPostsTool(token string) Tool {
 	return apifyTool{
 		name:        "linkedin_posts",
 		description: "Get recent LinkedIn posts for a person or company: text, date, engagement counts, and post URLs. The profile URL must come from the input row or gathered evidence. Costs credits, so keep maxPosts small.",
+		token:       token,
 		schema: objectSchema(map[string]any{
 			"profileUrl": map[string]any{"type": "string", "format": "uri"},
 			"maxPosts":   map[string]any{"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
@@ -146,10 +149,11 @@ func linkedinPostsTool() Tool {
 	}
 }
 
-func linkedinReactionsTool() Tool {
+func linkedinReactionsTool(token string) Tool {
 	return apifyTool{
 		name:        "linkedin_post_reactions",
 		description: "Get people who reacted to a LinkedIn post, including reaction type, name, position, and profile URL. The post URL must come from the input row or gathered evidence. Costs credits, so keep maxReactions small.",
+		token:       token,
 		schema: objectSchema(map[string]any{
 			"postUrl":      map[string]any{"type": "string", "format": "uri"},
 			"maxReactions": map[string]any{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},
@@ -179,10 +183,11 @@ func linkedinReactionsTool() Tool {
 	}
 }
 
-func linkedinPeopleTool() Tool {
+func linkedinPeopleTool(token string) Tool {
 	return apifyTool{
 		name:        "linkedin_find_people",
 		description: "Find people at a company through LinkedIn employee search, filtered by title or query. Returns name, title, location, profile URL, and optionally work email. Pass an exact company name or a verified LinkedIn company URL. Costs credits, especially with findEmails.",
+		token:       token,
 		schema: objectSchema(map[string]any{
 			"company":     map[string]any{"type": "string"},
 			"jobTitles":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "maxItems": 8},
@@ -234,11 +239,12 @@ func linkedinPeopleTool() Tool {
 	}
 }
 
-func linkedinCompanyTool() Tool {
+func linkedinCompanyTool(token string) Tool {
 	return apifyTool{
 		name:        "linkedin_company",
 		description: "Get a company's LinkedIn firmographics: exact employee count, size range, industry, founded year, headquarters, followers, website, and description. Pass the exact company name and let the actor resolve it. A URL is accepted only when it came from the input row or gathered evidence. Costs credits, so call once per company.",
 		schema:      objectSchema(map[string]any{"company": map[string]any{"type": "string"}}, []string{"company"}),
+		token:       token,
 		actor:       func() string { return envOr("APIFY_LINKEDIN_COMPANY_ACTOR", "harvestapi~linkedin-company") },
 		input: func(input map[string]any) (map[string]any, error) {
 			company := strings.TrimSpace(stringValue(input["company"]))
@@ -302,11 +308,12 @@ func linkedinCompanyTool() Tool {
 	}
 }
 
-func crunchbaseCompanyTool() Tool {
+func crunchbaseCompanyTool(token string) Tool {
 	return apifyTool{
 		name:        "crunchbase_company",
 		description: "Fallback only. Get Crunchbase funding and firmographics including total funding, latest round, investors, founders, employee range, headquarters, founded year, and IPO status. Pass a verified Crunchbase organization URL or the exact company name. Costs credits, so call at most once.",
 		schema:      objectSchema(map[string]any{"company": map[string]any{"type": "string"}}, []string{"company"}),
+		token:       token,
 		actor:       func() string { return envOr("CRUNCHBASE_ACTOR", "parseforge~crunchbase-scraper") },
 		input: func(input map[string]any) (map[string]any, error) {
 			company := strings.TrimSpace(stringValue(input["company"]))

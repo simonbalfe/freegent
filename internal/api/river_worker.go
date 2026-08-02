@@ -14,11 +14,13 @@ import (
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/simonbalfe/freegent/internal/config"
 )
 
 type OperationWorker struct {
 	river.WorkerDefaults[OperationArgs]
-	store *PostgresStore
+	store     *PostgresStore
+	providers config.Providers
 }
 
 func (w *OperationWorker) NextRetry(job *river.Job[OperationArgs]) time.Time {
@@ -51,7 +53,7 @@ func (w *OperationWorker) Work(ctx context.Context, job *river.Job[OperationArgs
 			fmt.Fprintf(os.Stderr, "operation event persistence failed job=%s row=%d error=%v\n", job.Args.JobID, job.Args.RowIndex+1, err)
 		}
 	}
-	result := runOneWithEvents(ctx, request, input, event, newOperationCache(w.store, job.Args, event))
+	result := runOneWithEvents(ctx, request, input, event, newOperationCache(w.store, job.Args, event), w.providers)
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -110,8 +112,9 @@ func RunWorker(args []string) {
 		return
 	}
 	defer store.Close()
+	providers := config.LoadProviders()
 	workers := river.NewWorkers()
-	river.AddWorker(workers, &OperationWorker{store: store})
+	river.AddWorker(workers, &OperationWorker{store: store, providers: providers})
 	client, err := river.NewClient(riverpgxv5.New(store.pool), &river.Config{
 		JobTimeout:           *timeout,
 		RescueStuckJobsAfter: *timeout + time.Minute,

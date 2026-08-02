@@ -4,7 +4,7 @@ Freegent is a general-purpose AI research agent for spreadsheets, similar to a s
 
 Give it any CSV and a prompt. Freegent researches every row and returns the same CSV with one new `answer` column.
 
-See the [project documentation](docs/index.md) for architecture, setup, development, OpenExtract, and the roadmap.
+See the [project documentation](docs/index.md) for architecture, setup, development, OpenExtract, and the roadmap. The [Freegent and Claygent comparison](docs/claygent-comparison.md) documents a reproducible cost benchmark.
 
 ## OpenExtract renderer
 

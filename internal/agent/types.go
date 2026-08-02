@@ -29,11 +29,12 @@ type ToolCall struct {
 }
 
 type ModelResponse struct {
-	ToolCalls []ToolCall
-	Final     map[string]any
-	Reasoning string
-	Usage     TokenUsage
-	CostUSD   *float64
+	ToolCalls   []ToolCall
+	Final       map[string]any
+	Reasoning   string
+	OutputError string
+	Usage       TokenUsage
+	CostUSD     *float64
 }
 
 type Model interface {

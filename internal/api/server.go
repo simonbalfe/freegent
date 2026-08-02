@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/simonbalfe/freegent/internal/agent"
+	"github.com/simonbalfe/freegent/internal/config"
 	"github.com/simonbalfe/freegent/internal/openrouter"
 	"github.com/simonbalfe/freegent/internal/toolset"
 )
@@ -22,8 +23,6 @@ type FetchAttempt = agent.FetchAttempt
 type TokenUsage = agent.TokenUsage
 type CostUsage = agent.CostUsage
 type AgentEvent = agent.AgentEvent
-
-const defaultOpenRouterModel = "deepseek/deepseek-v4-flash"
 
 type APIRequest struct {
 	Name            string           `json:"name"`
@@ -98,15 +97,12 @@ func Serve(args []string) {
 	}
 }
 
-func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(AgentEvent), cache operationCache) APIResult {
+func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(AgentEvent), cache operationCache, providers config.Providers) APIResult {
 	started := time.Now()
 	runID := newRunID()
 	modelName := request.Model
 	if modelName == "" {
-		modelName = os.Getenv("OPENROUTER_MODEL")
-	}
-	if modelName == "" {
-		modelName = defaultOpenRouterModel
+		modelName = providers.OpenRouterModel
 	}
 	result := APIResult{RunID: runID, Result: nil, Sources: []string{}, AgentLog: []Step{}, Evidence: []Evidence{}, Model: modelName}
 	row := agent.Row{}
@@ -118,7 +114,7 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 		result.DurationMS = time.Since(started).Milliseconds()
 		return result
 	}
-	key := os.Getenv("OPENROUTER_API_KEY")
+	key := providers.OpenRouterAPIKey
 	if key == "" {
 		result.Error = "OPENROUTER_API_KEY is not set"
 		result.DurationMS = time.Since(started).Milliseconds()
@@ -140,12 +136,12 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 	if maxSteps < 1 {
 		maxSteps = 5
 	}
-	tools := toolset.Default()
+	tools := toolset.Default(providers)
 	for name, tool := range tools {
 		tools[name] = cachedTool{Tool: tool, cache: cache}
 	}
 	toolList := toolset.List(tools)
-	model := openrouter.OpenRouterModel{APIKey: key, Model: modelName, Client: &http.Client{Timeout: 90 * time.Second}, Tools: toolList, MaxOutputTokens: request.MaxOutputTokens}
+	model := openrouter.OpenRouterModel{APIKey: key, Model: modelName, Client: &http.Client{Timeout: 150 * time.Second}, Tools: toolList, MaxOutputTokens: request.MaxOutputTokens}
 	runner := agent.Agent{Model: newCachedModel(model, cache, modelName, request.MaxOutputTokens, toolList), Tools: tools, MaxSteps: maxSteps, Verbose: request.Verbose, Event: event}
 	run, err := runner.Run(ctx, action, row)
 	result.DurationMS = time.Since(started).Milliseconds()

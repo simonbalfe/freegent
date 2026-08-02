@@ -49,18 +49,21 @@ func TestExtractCallsOpenExtractService(t *testing.T) {
 func TestExtractReturnsServiceFailure(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		_ = json.NewEncoder(writer).Encode(map[string]any{
-			"provider": "tavily",
+			"provider": "patchright+solver",
 			"outcome":  "failed",
 			"attempts": []map[string]any{
-				{"provider": "tavily", "outcome": "error", "durationMs": 20, "detail": "provider unavailable"},
+				{"provider": "patchright+solver", "outcome": "error", "durationMs": 20, "detail": "provider unavailable"},
 			},
 		})
 	}))
 	defer server.Close()
 
-	_, err := Extract(context.Background(), "https://example.com", Config{BaseURL: server.URL})
+	result, err := Extract(context.Background(), "https://example.com", Config{BaseURL: server.URL})
 	if err == nil || !strings.Contains(err.Error(), "provider unavailable") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Provider != "patchright+solver" || len(result.Attempts) != 1 {
+		t.Fatalf("failure result lost extraction attempts: %+v", result)
 	}
 }
 

@@ -46,6 +46,8 @@ func TestRemovedShortFormSchemaSyntaxIsRejected(t *testing.T) {
 		`{"status":["open","closed"]}`,
 		`{"status":"enum:open,closed"}`,
 		`{"status":"string|null"}`,
+		`{"events":"array of strings"}`,
+		`{"count":"number or null"}`,
 	} {
 		if _, err := CompileOutputSchema(json.RawMessage(raw)); err == nil {
 			t.Fatalf("expected removed syntax to fail: %s", raw)

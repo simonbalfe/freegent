@@ -114,7 +114,7 @@ func shortFieldSchema(spec any) (map[string]any, error) {
 		case "number", "boolean", "integer", "string":
 			schema = map[string]any{"type": token}
 		default:
-			schema = map[string]any{"type": "string"}
+			return nil, fmt.Errorf("unsupported shorthand type %q; use full JSON Schema for arrays and objects", value)
 		}
 	}
 	if nullable {

@@ -6,7 +6,9 @@ Freegent owns only the client contract and Compose integration. The OpenExtract 
 
 The Compose stack pulls `ghcr.io/simonbalfe/openextract:latest` by default. Set `OPENEXTRACT_IMAGE` to pin or replace it. The worker reaches the service at `http://openextract:8081`.
 
-OpenExtract tries direct HTTP first. It uses local Patchright only when the response requires rendering, followed by configured proxy, solver, and hosted fallbacks when needed.
+OpenExtract tries direct HTTP first. It uses local Patchright only when the response requires rendering, followed by configured proxy and solver attempts when needed. It contains no Exa, Tavily, or other managed extraction provider.
+
+Freegent owns the complete `fetch_page` chain. The same tool call tries OpenExtract first, Exa second, and Tavily last. The model does not select providers or issue another tool call for fallback extraction.
 
 Set `OPENEXTRACT_PROXY_URL` to a standard HTTP, HTTPS, SOCKS4, or SOCKS5 proxy URL. `OPENEXTRACT_PROXY_COUNTRY` optionally aligns the browser identity with a fixed proxy country.
 

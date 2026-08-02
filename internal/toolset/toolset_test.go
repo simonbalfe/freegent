@@ -1,14 +1,16 @@
 package toolset
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/simonbalfe/freegent/internal/config"
+)
 
 func TestDefaultToolsAreEnvironmentGated(t *testing.T) {
-	t.Setenv("APIFY_API_TOKEN", "")
-	if tools := Default(); len(tools) != 2 {
+	if tools := Default(config.Providers{}); len(tools) != 2 {
 		t.Fatalf("expected web-only tools, got %d", len(tools))
 	}
-	t.Setenv("APIFY_API_TOKEN", "secret")
-	tools := Default()
+	tools := Default(config.Providers{ApifyAPIToken: "secret"})
 	if len(tools) != 8 {
 		t.Fatalf("expected web and enrichment tools, got %d", len(tools))
 	}

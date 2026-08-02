@@ -23,7 +23,8 @@ The current extraction ladder is a good capture foundation:
 2. Patchright browser rendering.
 3. Patchright with a proxy.
 4. Patchright with a solver.
-5. Tavily as the final fallback.
+
+Freegent applies Exa and Tavily as managed fallbacks after OpenExtract fails. They are not part of OpenExtract.
 
 HTML extraction already combines:
 
@@ -77,7 +78,7 @@ Sources:
 
 Exa Contents can return complete text, generated summaries, or query-relevant highlights. Highlights are extractive, accept a custom query and character budget, and return per-highlight similarity scores. Exa recommends highlights for agent workflows because they use much less context than full text.
 
-The extraction and ranking implementation is proprietary. Exa is therefore a useful quality baseline and optional provider, not a design dependency.
+The extraction and ranking implementation is proprietary. Exa is therefore a useful quality baseline and a Freegent fallback provider, not an OpenExtract dependency.
 
 Source: [Exa Contents retrieval](https://exa.ai/docs/reference/contents-retrieval)
 
@@ -85,7 +86,7 @@ Source: [Exa Contents retrieval](https://exa.ai/docs/reference/contents-retrieva
 
 Tavily Extract accepts a query, reranks extracted chunks, and returns between one and five chunks per source. Each returned chunk is capped at 500 characters. This prevents context growth but may omit surrounding qualifications, heading context, or long table rows.
 
-OpenExtract should retain Tavily as a fallback and benchmark its focused extraction mode, but should not adopt its fixed small-chunk budget as the internal document model.
+Freegent should retain Tavily as its final managed extraction fallback. OpenExtract should not adopt its API or fixed small-chunk budget as part of the internal document model.
 
 Source: [Tavily Extract best practices](https://docs.tavily.com/documentation/best-practices/best-practices-extract)
 

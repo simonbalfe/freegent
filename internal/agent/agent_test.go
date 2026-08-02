@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -117,6 +118,37 @@ func TestFinalizerRetriesRequestFailure(t *testing.T) {
 	}
 	if model.finalizations != 2 || result.Answer["score"] != float64(5) {
 		t.Fatalf("finalizer request retry failed: model=%+v result=%+v", model, result)
+	}
+}
+
+type invalidOutputThenValidModel struct {
+	finalizations int
+}
+
+func (*invalidOutputThenValidModel) Next(context.Context, []Message, Action) (ModelResponse, error) {
+	return ModelResponse{}, nil
+}
+
+func (m *invalidOutputThenValidModel) Finalize(context.Context, string, Action, []Evidence) (ModelResponse, error) {
+	m.finalizations++
+	if m.finalizations == 1 {
+		return ModelResponse{OutputError: "model output reached the token limit before completing valid JSON"}, nil
+	}
+	return ModelResponse{Final: map[string]any{"score": float64(5)}}, nil
+}
+
+func TestFinalizerRetriesInvalidModelOutput(t *testing.T) {
+	schema, err := CompileOutputSchema(json.RawMessage(`{"score":"number"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := &invalidOutputThenValidModel{}
+	result, err := (Agent{Model: model, Tools: map[string]Tool{}, MaxSteps: 1}).Run(context.Background(), Action{Instructions: "Return a score.", Template: "Score this.", Validator: schema}, Row{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if model.finalizations != 2 || result.Answer["score"] != float64(5) {
+		t.Fatalf("invalid output retry failed: model=%+v result=%+v", model, result)
 	}
 }
 
@@ -267,5 +299,55 @@ func TestAgentRecoversFromFabricatedEnrichmentURL(t *testing.T) {
 	}
 	if model.calls != 2 || !model.sawRejection || result.Answer["name"] != "Acme" || len(result.Evidence) != 0 || len(result.Steps) != 2 || result.Steps[0].Kind != "rejected" {
 		t.Fatalf("agent did not recover from rejected URL: model=%+v result=%+v", model, result)
+	}
+}
+
+type deadPageTool struct{}
+
+func (deadPageTool) Name() string           { return "fetch_page" }
+func (deadPageTool) Description() string    { return "test tool" }
+func (deadPageTool) Schema() map[string]any { return map[string]any{} }
+func (deadPageTool) Run(context.Context, map[string]any) (ToolResult, error) {
+	return ToolResult{}, errors.New("OpenExtract could not extract the URL: HTTP 404")
+}
+
+type deadPageRecoveryModel struct {
+	calls    int
+	sawError bool
+}
+
+func (m *deadPageRecoveryModel) Next(_ context.Context, messages []Message, _ Action) (ModelResponse, error) {
+	m.calls++
+	if m.calls == 1 {
+		return ModelResponse{ToolCalls: []ToolCall{{ID: "fetch", Name: "fetch_page", Input: map[string]any{"url": "https://rhythms.example/missing"}}}}, nil
+	}
+	for _, message := range messages {
+		if message.Role == "tool" && strings.Contains(message.Content, "HTTP 404") {
+			m.sawError = true
+		}
+	}
+	return ModelResponse{Final: map[string]any{"name": "Rhythms"}}, nil
+}
+
+func (*deadPageRecoveryModel) Finalize(context.Context, string, Action, []Evidence) (ModelResponse, error) {
+	return ModelResponse{}, nil
+}
+
+func TestAgentRecoversFromToolFailure(t *testing.T) {
+	schema, err := CompileOutputSchema(json.RawMessage(`{"name":"string"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := &deadPageRecoveryModel{}
+	result, err := (Agent{
+		Model:    model,
+		Tools:    map[string]Tool{"fetch_page": deadPageTool{}},
+		MaxSteps: 2,
+	}).Run(context.Background(), Action{Instructions: "Research.", Template: "Research.", Validator: schema}, Row{"url": "https://rhythms.example/missing"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !model.sawError || result.Answer["name"] != "Rhythms" || len(result.Steps) != 2 || result.Steps[0].Kind != "tool_error" {
+		t.Fatalf("agent did not recover from tool failure: model=%+v result=%+v", model, result)
 	}
 }

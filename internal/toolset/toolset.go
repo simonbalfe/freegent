@@ -1,22 +1,22 @@
 package toolset
 
 import (
-	"os"
 	"sort"
 
 	"github.com/simonbalfe/freegent/internal/agent"
+	"github.com/simonbalfe/freegent/internal/config"
 	"github.com/simonbalfe/freegent/internal/tools/apify"
 	"github.com/simonbalfe/freegent/internal/tools/fetch"
 	"github.com/simonbalfe/freegent/internal/tools/search"
 )
 
-func Default() map[string]agent.Tool {
+func Default(providers config.Providers) map[string]agent.Tool {
 	tools := map[string]agent.Tool{
-		"web_search": search.Tool{},
-		"fetch_page": fetch.Tool{},
+		"web_search": search.New(providers.SerperAPIKey, providers.ExaAPIKey, providers.TavilyAPIKey),
+		"fetch_page": fetch.New(providers.OpenExtractURL, providers.ExaAPIKey, providers.TavilyAPIKey),
 	}
-	if os.Getenv("APIFY_API_TOKEN") != "" {
-		for _, tool := range apify.Tools() {
+	if providers.ApifyAPIToken != "" {
+		for _, tool := range apify.Tools(providers.ApifyAPIToken) {
 			tools[tool.Name()] = tool
 		}
 	}

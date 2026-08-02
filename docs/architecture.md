@@ -11,7 +11,9 @@ flowchart LR
     Worker --> Agent[Agent loop]
     Agent --> Model[OpenRouter]
     Agent --> Search[Serper, Exa, Tavily]
-    Agent --> Extract[OpenExtract]
+    Agent --> Fetch[fetch_page]
+    Fetch --> Extract[OpenExtract]
+    Fetch --> Managed[Exa, then Tavily fallback]
     Worker --> DB
     DB --> User
 ```
@@ -24,6 +26,7 @@ flowchart LR
 | `internal/cli` | Submits work, polls jobs, and downloads results |
 | `internal/api` | Owns HTTP routes, PostgreSQL state, River jobs, and embedded dashboard assets |
 | `internal/api/dashboard` | Vite, React, and Tailwind dashboard source |
+| `internal/config` | Loads provider configuration once at worker startup |
 | `internal/agent` | Runs model and tool calls and validates final answers |
 | `internal/tools` | Provides search, page fetching, and optional Apify enrichment |
 | `internal/openextract` | Calls the standalone OpenExtract HTTP API |
@@ -40,7 +43,7 @@ flowchart LR
 7. The CLI polls the job and streams JSON or CSV output.
 
 River may deliver a job more than once. A worker checks the row state before running it, so completed rows are not repeated.
-When OpenExtract exhausts its extraction fallbacks, the row fails immediately. River still retries transient transport and provider failures.
+One `fetch_page` call tries OpenExtract, then Exa, then Tavily until one returns usable content. If all configured methods fail, the agent receives a recoverable tool error and can search for another source. River still retries transient operation failures.
 An invalid answer or transient finalizer request failure gets one local finalizer retry. Research tools are not repeated.
 Each row reuses identical tool results and finalizes after six successful tool calls.
 Shared business-field instructions prefer current company-owned evidence, reject slogan-based customer segments, and use current whole-product categories.

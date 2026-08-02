@@ -12,20 +12,20 @@ The recommended initial position is:
 
 ```text
 River worker
-  -> OpenExtract
-     -> Impit
-     -> local Patchright
-     -> existing proxy and solver attempts
+  -> fetch_page
+     -> OpenExtract: Impit, Patchright, proxy, solver
      -> ZenRows Adaptive Stealth Mode
+     -> Exa fallback
      -> Tavily fallback
 ```
 
 Benchmark a simpler alternative if maintaining the local proxy and solver rungs becomes expensive:
 
 ```text
-Impit
-  -> local Patchright
+fetch_page
+  -> OpenExtract: Impit, Patchright
   -> ZenRows Adaptive Stealth Mode
+  -> Exa fallback
   -> Tavily fallback
 ```
 
@@ -37,7 +37,7 @@ ZenRows provides three services under one shared subscription balance:
 
 | Product | Responsibility | Freegent fit |
 |---|---|---|
-| Universal Scraper API | Fetch pages, render JavaScript, use residential proxies, return HTML, Markdown, or structured output | Managed OpenExtract fallback |
+| Universal Scraper API | Fetch pages, render JavaScript, use residential proxies, return HTML, Markdown, or structured output | Managed `fetch_page` fallback |
 | Scraping Browser | Remote browser sessions billed by session time and transferred data | Possible managed browser provider, but broader than the current one-page extraction contract |
 | Residential Proxies | Standalone residential proxy traffic | Alternative proxy source, not a replacement for extraction logic |
 
@@ -132,7 +132,7 @@ ZenRows overlaps with OpenExtract's retrieval rungs, not with Freegent's orchest
 
 ## Integration shape
 
-Add ZenRows behind the existing OpenExtract HTTP contract rather than calling it from the Go agent.
+Add ZenRows to Freegent's existing `fetch_page` provider chain after OpenExtract. Keep the model-facing tool contract unchanged.
 
 The adapter should:
 
@@ -142,10 +142,10 @@ The adapter should:
 - read `X-Request-Cost` and `X-Request-Credits`
 - record ZenRows as one extraction attempt
 - retain the successful configuration and cost in provider diagnostics
-- return the same OpenExtract result schema
+- return the same Freegent tool result shape
 - keep River as the durable retry owner
 
-Provider selection belongs inside OpenExtract. The Go API and model should not need to know whether evidence came from Impit, Patchright, ZenRows, or Tavily.
+Managed provider selection belongs inside Freegent's `fetch_page` implementation. The model should not need to know whether evidence came from OpenExtract, ZenRows, Exa, or Tavily.
 
 ## Benchmark
 
@@ -181,7 +181,7 @@ Keep OpenExtract as the default. Add ZenRows only after a benchmark shows one of
 - its structured extraction lets a material share of rows skip model inference
 - it reduces evidence size without lowering required-evidence recall
 
-If adopted, start with ZenRows after the local protected-page attempts and before Tavily. Move it earlier only when measured operational savings exceed the additional subscription cost.
+If adopted, start with ZenRows after OpenExtract and before Exa and Tavily. Move it earlier only when measured operational savings exceed the additional subscription cost.
 
 ## Sources
 

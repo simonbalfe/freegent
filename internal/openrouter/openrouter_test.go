@@ -6,10 +6,10 @@ import (
 	"testing"
 )
 
-func TestMalformedModelJSONDefersToFinalizer(t *testing.T) {
+func TestMalformedModelJSONReportsOutputError(t *testing.T) {
 	message := map[string]any{"content": `{"answer":{"company":"Notion"}`}
 	payload := map[string]any{
-		"choices": []any{map[string]any{"message": message}},
+		"choices": []any{map[string]any{"finish_reason": "length", "message": message}},
 		"usage":   map[string]any{"prompt_tokens": 12, "completion_tokens": 4, "cost": 0.0042},
 	}
 	data, _ := json.Marshal(payload)
@@ -17,8 +17,15 @@ func TestMalformedModelJSONDefersToFinalizer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if response.Final != nil || response.Usage.Input != 12 || response.Usage.Output != 4 || response.CostUSD == nil || *response.CostUSD != 0.0042 {
-		t.Fatalf("expected empty final response with preserved usage: %+v", response)
+	if response.Final != nil || !strings.Contains(response.OutputError, "token limit") || response.Usage.Input != 12 || response.Usage.Output != 4 || response.CostUSD == nil || *response.CostUSD != 0.0042 {
+		t.Fatalf("expected diagnosed output error with preserved usage: %+v", response)
+	}
+}
+
+func TestFinalizerOutputTokenLimit(t *testing.T) {
+	model := OpenRouterModel{MaxOutputTokens: 1500}
+	if got := model.outputTokenLimit(false); got != 8000 {
+		t.Fatalf("finalizer output limit = %d, want 8000", got)
 	}
 }
 

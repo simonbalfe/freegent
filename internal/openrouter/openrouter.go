@@ -101,8 +101,8 @@ func (m OpenRouterModel) outputTokenLimit(enableTools bool) int {
 	if limit < 1 {
 		limit = 1500
 	}
-	if !enableTools && limit < 4000 {
-		return 4000
+	if !enableTools && limit < 8000 {
+		return 8000
 	}
 	return limit
 }
@@ -137,7 +137,8 @@ func openRouterMessages(messages []Message) ([]map[string]any, error) {
 func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 	var payload struct {
 		Choices []struct {
-			Message struct {
+			FinishReason string `json:"finish_reason"`
+			Message      struct {
 				Content   string `json:"content"`
 				ToolCalls []struct {
 					ID       string `json:"id"`
@@ -160,7 +161,8 @@ func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 	if len(payload.Choices) == 0 {
 		return ModelResponse{}, errors.New("OpenRouter returned no choices")
 	}
-	message := payload.Choices[0].Message
+	choice := payload.Choices[0]
+	message := choice.Message
 	usage := TokenUsage{Input: payload.Usage.PromptTokens, Output: payload.Usage.CompletionTokens}
 	if len(message.ToolCalls) > 0 {
 		calls := make([]ToolCall, 0, len(message.ToolCalls))
@@ -175,7 +177,11 @@ func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 	}
 	answer, err := parseJSONObject(message.Content)
 	if err != nil {
-		return ModelResponse{Usage: usage, CostUSD: payload.Usage.Cost}, nil
+		detail := fmt.Sprintf("model returned invalid JSON: %v", err)
+		if choice.FinishReason == "length" {
+			detail = "model output reached the token limit before completing valid JSON"
+		}
+		return ModelResponse{OutputError: detail, Usage: usage, CostUSD: payload.Usage.Cost}, nil
 	}
 	reasoning, _ := answer["reasoning"].(string)
 	if nested, ok := answer["answer"].(map[string]any); ok {

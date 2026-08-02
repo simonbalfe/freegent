@@ -33,10 +33,9 @@ func TestApifyActorStartsPollsAndReadsDataset(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("APIFY_API_TOKEN", "secret")
 	t.Setenv("APIFY_BASE_URL", server.URL)
 
-	result, err := runApifyActor(context.Background(), "example~actor", map[string]any{"query": "Linear"})
+	result, err := runApifyActor(context.Background(), "secret", "example~actor", map[string]any{"query": "Linear"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,10 +72,9 @@ func TestLinkedInCompanyToolMapsCompactOutput(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("APIFY_API_TOKEN", "secret")
 	t.Setenv("APIFY_BASE_URL", server.URL)
 
-	result, err := linkedinCompanyTool().Run(context.Background(), map[string]any{"company": "Linear"})
+	result, err := linkedinCompanyTool("secret").Run(context.Background(), map[string]any{"company": "Linear"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,10 +98,9 @@ func TestMalformedApifyRunIsRejected(t *testing.T) {
 		_, _ = writer.Write([]byte(`{"data":{"id":"run-1","status":"RUNNING"}}`))
 	}))
 	defer server.Close()
-	t.Setenv("APIFY_API_TOKEN", "secret")
 	t.Setenv("APIFY_BASE_URL", server.URL)
 
-	_, err := runApifyActor(context.Background(), "example~actor", map[string]any{})
+	_, err := runApifyActor(context.Background(), "secret", "example~actor", map[string]any{})
 	if err == nil || !strings.Contains(err.Error(), "invalid run response") {
 		t.Fatalf("expected boundary validation error, got %v", err)
 	}
@@ -113,7 +110,7 @@ func TestLiveLinkedInCompany(t *testing.T) {
 	if os.Getenv("RUN_LIVE_APIFY") == "" || os.Getenv("APIFY_API_TOKEN") == "" {
 		t.Skip("RUN_LIVE_APIFY and APIFY_API_TOKEN are required")
 	}
-	result, err := linkedinCompanyTool().Run(context.Background(), map[string]any{"company": "Linear"})
+	result, err := linkedinCompanyTool(os.Getenv("APIFY_API_TOKEN")).Run(context.Background(), map[string]any{"company": "Linear"})
 	if err != nil {
 		t.Fatal(err)
 	}
