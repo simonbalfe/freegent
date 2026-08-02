@@ -156,4 +156,10 @@ Update:
 curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh | bash
 ```
 
+Uninstall everything except saved provider keys:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/uninstall.sh | bash
+```
+
 Jobs and results are saved locally and survive restarts.

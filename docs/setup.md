@@ -94,4 +94,10 @@ Update:
 curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh | bash
 ```
 
+Uninstall Freegent while keeping provider keys in `~/freegent/.env`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/uninstall.sh | bash
+```
+
 PostgreSQL data and job results use a Docker volume and survive container restarts.

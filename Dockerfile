@@ -19,7 +19,7 @@ RUN apk add --no-cache ca-certificates
 
 COPY --from=build /freegent /usr/local/bin/freegent
 COPY --from=build /freegent-darwin /opt/freegent/darwin/freegent
-COPY compose.yaml .env.example SKILL.md /opt/freegent/install/
+COPY compose.yaml .env.example SKILL.md uninstall.sh /opt/freegent/install/
 
 RUN mkdir -p /opt/freegent/linux \
     && ln /usr/local/bin/freegent /opt/freegent/linux/freegent
