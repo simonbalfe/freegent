@@ -18,10 +18,14 @@ fi
 
 rm -f /usr/local/bin/freegent "$HOME/.local/bin/freegent"
 rm -rf "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
-rm -f \
-  "$install_dir/compose.yaml" \
-  "$install_dir/.env.example" \
-  "$install_dir/SKILL.md" \
-  "$install_dir/uninstall.sh"
+if [ "$install_dir" = "$HOME/freegent" ] && [ -d "$install_dir" ]; then
+  find "$install_dir" -mindepth 1 -maxdepth 1 ! -name .env -exec rm -rf -- {} +
+else
+  rm -f \
+    "$install_dir/compose.yaml" \
+    "$install_dir/.env.example" \
+    "$install_dir/SKILL.md" \
+    "$install_dir/uninstall.sh"
+fi
 
 echo "Freegent was removed. Credentials remain in $install_dir/.env"
