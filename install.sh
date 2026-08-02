@@ -130,6 +130,16 @@ if [ -w /usr/local/bin ]; then
 else
   mkdir -p "$HOME/.local/bin"
   cli_path="$HOME/.local/bin/freegent"
+  if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    case "${SHELL:-}" in
+      */zsh) shell_profile="$HOME/.zprofile" ;;
+      *) shell_profile="$HOME/.profile" ;;
+    esac
+    path_line='export PATH="$HOME/.local/bin:$PATH"'
+    if ! grep -Fqx "$path_line" "$shell_profile" 2>/dev/null; then
+      printf '\n%s\n' "$path_line" >> "$shell_profile"
+    fi
+  fi
 fi
 cli_build_dir="$(mktemp -d)"
 cleanup_cli_build() {
@@ -146,8 +156,8 @@ docker build \
 install -m 0755 "$cli_build_dir/freegent" "$cli_path"
 
 mkdir -p "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
-cp docs/freegent-skill.md "$HOME/.codex/skills/freegent/SKILL.md"
-cp docs/freegent-skill.md "$HOME/.claude/skills/freegent/SKILL.md"
+cp SKILL.md "$HOME/.codex/skills/freegent/SKILL.md"
+cp SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
 
 echo "Waiting for services"
 for attempt in $(seq 1 30); do
@@ -164,7 +174,7 @@ for attempt in $(seq 1 30); do
     echo "Freegent is ready: http://localhost:8080/dashboard"
     echo "CLI installed at $cli_path"
     if [[ ":$PATH:" != *":$(dirname "$cli_path"):"* ]]; then
-      echo "Add $(dirname "$cli_path") to PATH to call freegent from any shell."
+      echo "CLI PATH saved for new shells. Run: export PATH=\"$(dirname "$cli_path"):\$PATH\""
     fi
     echo "Codex and Claude skill installed."
     echo "CLI usage: freegent --help"

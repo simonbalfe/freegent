@@ -11,4 +11,4 @@ Start with the page that matches your task.
 | [OpenExtract research](research/openextract-context-selection.md) | You need the detailed context-selection research |
 | [ZenRows research](research/zenrows.md) | You are comparing ZenRows with OpenExtract or planning a managed extraction fallback |
 
-The source for the installed Codex and Claude skill is [freegent-skill.md](freegent-skill.md).
+The source for the installed Codex and Claude skill is the repository root [SKILL.md](../SKILL.md).
