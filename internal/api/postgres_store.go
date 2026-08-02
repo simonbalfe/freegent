@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -332,6 +334,8 @@ func (s *PostgresStore) GetSummary(id string) (DashboardJob, error) {
 	if err := json.Unmarshal(requestJSON, &job.Request); err != nil {
 		return DashboardJob{}, err
 	}
+	job.Template = job.Request.Template
+	job.Schema = job.Request.Schema
 	if startedAt.Valid {
 		job.StartedAt = startedAt.Time
 	}
@@ -382,6 +386,98 @@ func (s *PostgresStore) List(limit int) ([]DashboardJob, error) {
 		jobs = append(jobs, job)
 	}
 	return jobs, rows.Err()
+}
+
+func (s *PostgresStore) Stats(ctx context.Context, id string) (DashboardStats, error) {
+	var stats DashboardStats
+	if err := s.pool.QueryRow(ctx, `SELECT total FROM jobs WHERE id = $1`, id).Scan(&stats.Rows); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return DashboardStats{}, sql.ErrNoRows
+		}
+		return DashboardStats{}, err
+	}
+	rows, err := s.pool.Query(ctx, `SELECT status, result_json FROM job_rows WHERE job_id = $1`, id)
+	if err != nil {
+		return DashboardStats{}, err
+	}
+	defer rows.Close()
+	models := map[string]*DashboardModelStats{}
+	for rows.Next() {
+		var status string
+		var resultJSON []byte
+		if err := rows.Scan(&status, &resultJSON); err != nil {
+			return DashboardStats{}, err
+		}
+		if len(resultJSON) == 0 {
+			accumulateDashboardStats(&stats, models, status, APIResult{})
+			continue
+		}
+		var result APIResult
+		if err := json.Unmarshal(resultJSON, &result); err != nil {
+			return DashboardStats{}, err
+		}
+		accumulateDashboardStats(&stats, models, status, result)
+	}
+	if err := rows.Err(); err != nil {
+		return DashboardStats{}, err
+	}
+	for _, model := range models {
+		stats.Models = append(stats.Models, *model)
+	}
+	sort.Slice(stats.Models, func(left, right int) bool { return stats.Models[left].Model < stats.Models[right].Model })
+	return stats, nil
+}
+
+func accumulateDashboardStats(stats *DashboardStats, models map[string]*DashboardModelStats, status string, result APIResult) {
+	switch status {
+	case "completed":
+		stats.Completed++
+	case "failed":
+		stats.Failed++
+	case "skipped":
+		stats.Skipped++
+	}
+	stats.Tokens.Add(result.Tokens)
+	stats.AgentSteps += len(result.AgentLog)
+	stats.Sources += len(result.Sources)
+	stats.DurationMS += result.DurationMS
+	stats.Costs.OpenRouterUSD += result.Costs.OpenRouterUSD
+	stats.Costs.ApifyUSD += result.Costs.ApifyUSD
+	stats.Costs.ApifyRuns += result.Costs.ApifyRuns
+	if result.Model != "" || result.Tokens.Input+result.Tokens.Output > 0 {
+		model := models[result.Model]
+		if model == nil {
+			model = &DashboardModelStats{Model: result.Model}
+			models[result.Model] = model
+		}
+		model.InputTokens += result.Tokens.Input
+		model.OutputTokens += result.Tokens.Output
+		if result.Costs.OpenRouterRecorded {
+			model.OpenRouterUSD += result.Costs.OpenRouterUSD
+		} else {
+			model.UnpricedInputTokens += result.Tokens.Input
+			model.UnpricedOutputTokens += result.Tokens.Output
+		}
+	}
+	if result.Costs.ApifyRuns == 0 {
+		for _, evidence := range result.Evidence {
+			if strings.HasPrefix(evidence.Provider, "apify:") {
+				stats.UnpricedApifyRuns++
+			}
+		}
+	}
+	for _, evidence := range result.Evidence {
+		counted := false
+		for _, attempt := range evidence.Attempts {
+			if attempt.Provider == "serper" && (attempt.Outcome == "ok" || attempt.Outcome == "empty") {
+				stats.SerperQueries++
+				counted = true
+			}
+		}
+		if evidence.Provider == "serper" && !counted && len(evidence.Attempts) == 0 {
+			stats.SerperQueries++
+		}
+	}
 }
 
 func (s *PostgresStore) beginOperation(

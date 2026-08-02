@@ -22,7 +22,8 @@ flowchart LR
 |---|---|
 | `cmd/freegent` | Starts CLI, API, or worker mode |
 | `internal/cli` | Submits work, polls jobs, and downloads results |
-| `internal/api` | Owns HTTP routes, PostgreSQL state, River jobs, and the dashboard |
+| `internal/api` | Owns HTTP routes, PostgreSQL state, River jobs, and embedded dashboard assets |
+| `internal/api/dashboard` | Vite, React, and Tailwind dashboard source |
 | `internal/agent` | Runs model and tool calls and validates final answers |
 | `internal/tools` | Provides search, page fetching, and optional Apify enrichment |
 | `internal/openextract` | Calls the standalone OpenExtract HTTP API |
@@ -78,4 +79,4 @@ OpenExtract is stateless.
 | `POST /jobs` | Submit JSON rows or a CSV |
 | `GET /jobs/{id}` | Read job state |
 | `GET /jobs/{id}/results.csv` | Download enriched CSV output |
-| `/dashboard` | Submit and inspect jobs in a browser |
+| `/dashboard` | Embedded React spreadsheet with research output columns and a separate row analytics view |

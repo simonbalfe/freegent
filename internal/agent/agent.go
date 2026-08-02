@@ -29,10 +29,11 @@ func (a Agent) Run(ctx context.Context, action Action, row Row) (RunResult, erro
 	evidence := []Evidence{}
 	steps := []Step{}
 	tokens := TokenUsage{}
+	costs := CostUsage{}
 	toolResults := map[string]ToolResult{}
 	successfulToolCalls := 0
 	failed := func(err error) (RunResult, error) {
-		return RunResult{Answer: nil, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens}, err
+		return RunResult{Answer: nil, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, err
 	}
 
 	for range a.MaxSteps {
@@ -41,18 +42,19 @@ func (a Agent) Run(ctx context.Context, action Action, row Row) (RunResult, erro
 			return failed(err)
 		}
 		tokens.Add(response.Usage)
+		costs.addOpenRouter(response.CostUSD)
 		if response.Final != nil {
 			if err := action.Validator.Validate(response.Final); err == nil {
 				a.tracef("model returned schema-valid final answer")
 				steps = append(steps, Step{Kind: "answer"})
-				return RunResult{Answer: response.Final, Reasoning: response.Reasoning, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens}, nil
+				return RunResult{Answer: response.Final, Reasoning: response.Reasoning, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, nil
 			}
 			a.tracef("model returned invalid final answer; finalizing from %d evidence items", len(evidence))
-			return a.finalize(ctx, task, action, ledger, evidence, steps, tokens)
+			return a.finalize(ctx, task, action, ledger, evidence, steps, tokens, costs)
 		}
 		if len(response.ToolCalls) == 0 {
 			a.tracef("model returned no tool call; finalizing from %d evidence items", len(evidence))
-			return a.finalize(ctx, task, action, ledger, evidence, steps, tokens)
+			return a.finalize(ctx, task, action, ledger, evidence, steps, tokens, costs)
 		}
 		messages = append(messages, Message{Role: "assistant", ToolCalls: response.ToolCalls})
 
@@ -85,6 +87,7 @@ func (a Agent) Run(ctx context.Context, action Action, row Row) (RunResult, erro
 				return failed(fmt.Errorf("%s: %w", call.Name, err))
 			}
 			toolResults[callKey] = result
+			costs.addApify(result.CostUSD)
 			successfulToolCalls++
 			a.tracef("tool=%s completed chars=%d urls=%d", call.Name, len(result.Text), len(result.URLs))
 			for _, rawURL := range result.URLs {
@@ -98,15 +101,15 @@ func (a Agent) Run(ctx context.Context, action Action, row Row) (RunResult, erro
 			messages = append(messages, Message{Role: "tool", ToolCall: &call, Content: result.Text})
 			if successfulToolCalls == maxSuccessfulToolCalls {
 				a.tracef("tool call limit reached; finalizing from %d evidence items", len(evidence))
-				return a.finalize(ctx, task, action, ledger, evidence, steps, tokens)
+				return a.finalize(ctx, task, action, ledger, evidence, steps, tokens, costs)
 			}
 		}
 	}
 	a.tracef("step limit reached; finalizing from %d evidence items", len(evidence))
-	return a.finalize(ctx, task, action, ledger, evidence, steps, tokens)
+	return a.finalize(ctx, task, action, ledger, evidence, steps, tokens, costs)
 }
 
-func (a Agent) finalize(ctx context.Context, task string, action Action, ledger urlLedger, evidence []Evidence, steps []Step, tokens TokenUsage) (RunResult, error) {
+func (a Agent) finalize(ctx context.Context, task string, action Action, ledger urlLedger, evidence []Evidence, steps []Step, tokens TokenUsage, costs CostUsage) (RunResult, error) {
 	for attempt := 1; attempt <= 2; attempt++ {
 		a.tracef("finalizer start attempt=%d evidence=%d", attempt, len(evidence))
 		response, err := a.Model.Finalize(ctx, task, action, evidence)
@@ -115,21 +118,38 @@ func (a Agent) finalize(ctx context.Context, task string, action Action, ledger 
 				a.tracef("finalizer request failed; retrying: %v", err)
 				continue
 			}
-			return RunResult{Answer: nil, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens}, err
+			return RunResult{Answer: nil, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, err
 		}
 		tokens.Add(response.Usage)
+		costs.addOpenRouter(response.CostUSD)
 		if err := action.Validator.Validate(response.Final); err != nil {
 			if attempt == 1 {
 				a.tracef("finalizer returned invalid answer; retrying")
 				action.FinalizerInstructions += "\n\nThe previous answer failed schema validation: " + err.Error() + "\nReturn every required property with the correct type."
 				continue
 			}
-			return RunResult{Answer: nil, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens}, fmt.Errorf("final answer failed schema validation: %w", err)
+			return RunResult{Answer: nil, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, fmt.Errorf("final answer failed schema validation: %w", err)
 		}
 		steps = append(steps, Step{Kind: "finalize"})
-		return RunResult{Answer: response.Final, Reasoning: response.Reasoning, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens}, nil
+		return RunResult{Answer: response.Final, Reasoning: response.Reasoning, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, nil
 	}
 	panic("unreachable")
+}
+
+func (c *CostUsage) addOpenRouter(cost *float64) {
+	if cost == nil {
+		return
+	}
+	c.OpenRouterUSD += *cost
+	c.OpenRouterRecorded = true
+}
+
+func (c *CostUsage) addApify(cost *float64) {
+	if cost == nil {
+		return
+	}
+	c.ApifyUSD += *cost
+	c.ApifyRuns++
 }
 
 func (a Agent) tracef(format string, args ...any) {

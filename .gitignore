@@ -4,3 +4,5 @@
 /freegent
 /.env
 openextract/node_modules/
+internal/api/dashboard/node_modules/
+internal/api/dashboard/*.tsbuildinfo

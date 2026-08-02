@@ -8,14 +8,15 @@ import (
 )
 
 type stubTool struct {
-	name string
+	name    string
+	costUSD *float64
 }
 
 func (t stubTool) Name() string         { return t.name }
 func (stubTool) Description() string    { return "test tool" }
 func (stubTool) Schema() map[string]any { return map[string]any{} }
-func (stubTool) Run(context.Context, map[string]any) (ToolResult, error) {
-	return ToolResult{Text: "Acme builds workflow tools.", URLs: []string{"https://acme.example/about"}}, nil
+func (t stubTool) Run(context.Context, map[string]any) (ToolResult, error) {
+	return ToolResult{Text: "Acme builds workflow tools.", URLs: []string{"https://acme.example/about"}, CostUSD: t.costUSD}, nil
 }
 
 type countingTool struct {
@@ -199,7 +200,8 @@ type toolThenErrorModel struct {
 func (m *toolThenErrorModel) Next(context.Context, []Message, Action) (ModelResponse, error) {
 	m.calls++
 	if m.calls == 1 {
-		return ModelResponse{ToolCalls: []ToolCall{{ID: "search", Name: "web_search", Input: map[string]any{"query": "Acme"}}}, Usage: TokenUsage{Input: 10, Output: 2}}, nil
+		cost := 0.004
+		return ModelResponse{ToolCalls: []ToolCall{{ID: "search", Name: "web_search", Input: map[string]any{"query": "Acme"}}}, Usage: TokenUsage{Input: 10, Output: 2}, CostUSD: &cost}, nil
 	}
 	return ModelResponse{}, context.DeadlineExceeded
 }
@@ -213,15 +215,16 @@ func TestAgentReturnsPartialTraceOnFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	toolCost := 0.02
 	result, err := (Agent{
 		Model:    &toolThenErrorModel{},
-		Tools:    map[string]Tool{"web_search": stubTool{name: "web_search"}},
+		Tools:    map[string]Tool{"web_search": stubTool{name: "web_search", costUSD: &toolCost}},
 		MaxSteps: 2,
 	}).Run(context.Background(), Action{Instructions: "Research.", Template: "Research.", Validator: schema}, Row{})
 	if err == nil {
 		t.Fatal("expected run failure")
 	}
-	if len(result.Evidence) != 1 || len(result.Steps) != 1 || result.Tokens.Input != 10 || len(result.Sources) != 1 {
+	if len(result.Evidence) != 1 || len(result.Steps) != 1 || result.Tokens.Input != 10 || len(result.Sources) != 1 || result.Costs.OpenRouterUSD != 0.004 || result.Costs.ApifyUSD != 0.02 {
 		t.Fatalf("expected preserved partial trace: %+v", result)
 	}
 }

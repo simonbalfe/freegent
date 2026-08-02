@@ -25,7 +25,7 @@ func TestApifyActorStartsPollsAndReadsDataset(t *testing.T) {
 			if request.URL.Query().Get("waitForFinish") != "30" {
 				t.Fatalf("missing waitForFinish")
 			}
-			_, _ = writer.Write([]byte(`{"data":{"id":"run-1","status":"SUCCEEDED","defaultDatasetId":"dataset-1"}}`))
+			_, _ = writer.Write([]byte(`{"data":{"id":"run-1","status":"SUCCEEDED","defaultDatasetId":"dataset-1","usageTotalUsd":0.02654}}`))
 		case "/datasets/dataset-1/items":
 			_, _ = writer.Write([]byte(`[{"name":"Linear"}]`))
 		default:
@@ -40,7 +40,7 @@ func TestApifyActorStartsPollsAndReadsDataset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Status != "SUCCEEDED" || result.Items[0]["name"] != "Linear" {
+	if result.Status != "SUCCEEDED" || result.Items[0]["name"] != "Linear" || result.CostUSD == nil || *result.CostUSD != 0.02654 {
 		t.Fatalf("unexpected actor result: %+v", result)
 	}
 	expected := []string{

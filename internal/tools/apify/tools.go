@@ -48,6 +48,7 @@ func (t apifyTool) Run(ctx context.Context, input map[string]any) (ToolResult, e
 		SeenURLs: urls,
 		Provider: "apify:" + actor,
 		Attempts: []FetchAttempt{{Provider: "apify:" + actor, Outcome: strings.ToLower(result.Status), DurationMS: result.DurationMS, Detail: fmt.Sprintf("run %s, dataset %s, %d items", result.RunID, result.DatasetID, len(result.Items))}},
+		CostUSD:  result.CostUSD,
 	}, nil
 }
 

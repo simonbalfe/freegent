@@ -33,6 +33,7 @@ type ModelResponse struct {
 	Final     map[string]any
 	Reasoning string
 	Usage     TokenUsage
+	CostUSD   *float64
 }
 
 type Model interface {
@@ -56,6 +57,7 @@ type ToolResult struct {
 	SeenURLs []string
 	Provider string
 	Attempts []FetchAttempt
+	CostUSD  *float64
 }
 
 type Tool interface {
@@ -81,6 +83,13 @@ type Step struct {
 	Input map[string]any `json:"input,omitempty"`
 }
 
+type CostUsage struct {
+	OpenRouterUSD      float64 `json:"openRouterUsd"`
+	ApifyUSD           float64 `json:"apifyUsd"`
+	OpenRouterRecorded bool    `json:"openRouterRecorded"`
+	ApifyRuns          int     `json:"apifyRuns"`
+}
+
 type RunResult struct {
 	Answer    map[string]any `json:"answer"`
 	Reasoning string         `json:"reasoning,omitempty"`
@@ -88,4 +97,5 @@ type RunResult struct {
 	Evidence  []Evidence     `json:"evidence"`
 	Steps     []Step         `json:"steps"`
 	Tokens    TokenUsage     `json:"tokens"`
+	Costs     CostUsage      `json:"costs"`
 }

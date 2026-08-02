@@ -71,6 +71,17 @@ go test -race ./...
 go vet ./...
 ```
 
+Build or develop the dashboard after changing files under `internal/api/dashboard`:
+
+```bash
+cd internal/api/dashboard
+npm ci
+npm run build
+npm run dev
+```
+
+The Vite development server proxies job API calls to `http://localhost:8080`. Commit the production build under `dist`; Docker embeds it in the Go binary.
+
 OpenExtract source and tests live in its [standalone repository](https://github.com/simonbalfe/openextract). Freegent pulls its published image during stack startup.
 
 ## Operations

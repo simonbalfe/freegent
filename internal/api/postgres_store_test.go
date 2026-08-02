@@ -75,29 +75,39 @@ func TestPermanentOperationError(t *testing.T) {
 	}
 }
 
-func TestDashboardRenders(t *testing.T) {
-	response := httptest.NewRecorder()
-	renderDashboard(response, "job", DashboardJob{
-		ID:     "job-1",
-		Status: "queued",
-		Total:  1,
-		Rows: []DashboardRow{{
-			Input: map[string]any{"private": "hidden-input"},
-			Result: APIResult{
-				Result:   map[string]any{"answer": "visible-answer"},
-				AgentLog: []Step{{Kind: "tool", Name: "web_search"}},
-			},
-		}},
+func TestAccumulateDashboardStats(t *testing.T) {
+	stats := DashboardStats{}
+	models := map[string]*DashboardModelStats{}
+	accumulateDashboardStats(&stats, models, "completed", APIResult{
+		Model: "example/model", Tokens: TokenUsage{Input: 100, Output: 20},
+		Costs:    CostUsage{OpenRouterUSD: 0.01, OpenRouterRecorded: true, ApifyUSD: 0.03, ApifyRuns: 1},
+		AgentLog: []Step{{Kind: "tool"}}, Sources: []string{"https://example.com"}, DurationMS: 500,
 	})
-	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "/dashboard/jobs/job-1/status") {
-		t.Fatalf("unexpected dashboard response: status=%d body=%q", response.Code, response.Body.String())
+	accumulateDashboardStats(&stats, models, "failed", APIResult{
+		Model: "example/model", Tokens: TokenUsage{Input: 50, Output: 5},
+		Evidence: []Evidence{{Provider: "apify:example~actor"}, {Provider: "serper", Attempts: []FetchAttempt{{Provider: "serper", Outcome: "ok"}}}}, DurationMS: 250,
+	})
+	model := models["example/model"]
+	if stats.Completed != 1 || stats.Failed != 1 || stats.Tokens.Input != 150 || stats.Costs.OpenRouterUSD != 0.01 || stats.Costs.ApifyUSD != 0.03 || stats.UnpricedApifyRuns != 1 || stats.SerperQueries != 1 {
+		t.Fatalf("unexpected aggregate stats: %+v", stats)
 	}
-	if body := response.Body.String(); strings.Contains(body, "hidden-input") || !strings.Contains(body, "visible-answer") || !strings.Contains(body, "Agent trace") || !strings.Contains(body, `id="trace-0"`) || !strings.Contains(body, "htmx:afterSwap") {
-		t.Fatalf("dashboard did not render a clean trace: %q", body)
+	if model == nil || model.InputTokens != 150 || model.UnpricedInputTokens != 50 || model.OpenRouterUSD != 0.01 {
+		t.Fatalf("unexpected model stats: %+v", model)
 	}
-	response = httptest.NewRecorder()
-	renderDashboard(response, "dashboard", []DashboardJob{})
-	if !strings.Contains(response.Body.String(), `Research {{subject}}`) || !strings.Contains(response.Body.String(), `{"answer":"string"}`) {
-		t.Fatalf("dashboard defaults were not preserved: %q", response.Body.String())
+}
+
+func TestDashboardHandler(t *testing.T) {
+	handler := newDashboardHandler()
+	for _, target := range []string{"/dashboard", "/dashboard/jobs/job-1"} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, target, nil))
+		if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `<div id="root"></div>`) {
+			t.Fatalf("dashboard %s: status=%d body=%q", target, response.Code, response.Body.String())
+		}
+	}
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/dashboard/missing.js", nil))
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("missing asset status=%d, want %d", response.Code, http.StatusNotFound)
 	}
 }

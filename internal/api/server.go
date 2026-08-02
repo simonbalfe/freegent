@@ -18,7 +18,9 @@ import (
 
 type Step = agent.Step
 type Evidence = agent.Evidence
+type FetchAttempt = agent.FetchAttempt
 type TokenUsage = agent.TokenUsage
+type CostUsage = agent.CostUsage
 type AgentEvent = agent.AgentEvent
 
 const defaultOpenRouterModel = "deepseek/deepseek-v4-flash"
@@ -45,6 +47,7 @@ type APIResult struct {
 	AgentLog   []Step         `json:"agentLog"`
 	Evidence   []Evidence     `json:"evidence"`
 	Tokens     TokenUsage     `json:"tokens"`
+	Costs      CostUsage      `json:"costs"`
 	DurationMS int64          `json:"durationMs"`
 	Model      string         `json:"model"`
 	Skipped    bool           `json:"skipped,omitempty"`
@@ -80,21 +83,15 @@ func Serve(args []string) {
 	mux.HandleFunc("GET /jobs/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		handleJobJSON(writer, request, store)
 	})
+	mux.HandleFunc("GET /jobs/{id}/stats", func(writer http.ResponseWriter, request *http.Request) {
+		handleJobStatsJSON(writer, request, store)
+	})
 	mux.HandleFunc("GET /jobs/{id}/results.csv", func(writer http.ResponseWriter, request *http.Request) {
 		handleJobCSV(writer, request, store)
 	})
-	mux.HandleFunc("GET /dashboard", func(writer http.ResponseWriter, request *http.Request) {
-		handleDashboard(writer, request, store)
-	})
-	mux.HandleFunc("POST /dashboard/jobs", func(writer http.ResponseWriter, request *http.Request) {
-		handleDashboardJob(writer, request, store)
-	})
-	mux.HandleFunc("GET /dashboard/jobs/{id}", func(writer http.ResponseWriter, request *http.Request) {
-		handleDashboardJobPage(writer, request, store)
-	})
-	mux.HandleFunc("GET /dashboard/jobs/{id}/status", func(writer http.ResponseWriter, request *http.Request) {
-		handleDashboardJobStatus(writer, request, store)
-	})
+	dashboard := newDashboardHandler()
+	mux.Handle("GET /dashboard", dashboard)
+	mux.Handle("GET /dashboard/", dashboard)
 	fmt.Fprintf(os.Stderr, "freegent listening on http://localhost:%d\n", *port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), mux); err != nil {
 		fmt.Fprintf(os.Stderr, "freegent server stopped: %v\n", err)
@@ -152,7 +149,7 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 	runner := agent.Agent{Model: newCachedModel(model, cache, modelName, request.MaxOutputTokens, toolList), Tools: tools, MaxSteps: maxSteps, Verbose: request.Verbose, Event: event}
 	run, err := runner.Run(ctx, action, row)
 	result.DurationMS = time.Since(started).Milliseconds()
-	result.Result, result.Reasoning, result.Sources, result.AgentLog, result.Evidence, result.Tokens = run.Answer, run.Reasoning, run.Sources, run.Steps, run.Evidence, run.Tokens
+	result.Result, result.Reasoning, result.Sources, result.AgentLog, result.Evidence, result.Tokens, result.Costs = run.Answer, run.Reasoning, run.Sources, run.Steps, run.Evidence, run.Tokens, run.Costs
 	if err != nil {
 		result.Result = nil
 		result.Reasoning = ""

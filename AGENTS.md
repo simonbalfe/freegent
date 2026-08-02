@@ -36,6 +36,7 @@ Freegent is a self-hosted research agent. The Go API stores work in PostgreSQL, 
 ## Verification
 
 - Go: `go test ./...`, `go test -race ./...`, and `go vet ./...`
+- Dashboard: `cd internal/api/dashboard && npm ci && npm run build`
 - CLI: `go run ./cmd/freegent --help`
 - OpenExtract integration: `docker compose config --quiet`
 - Full stack: `docker compose up -d --build`

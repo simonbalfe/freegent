@@ -149,8 +149,9 @@ func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 			} `json:"message"`
 		} `json:"choices"`
 		Usage struct {
-			PromptTokens     int `json:"prompt_tokens"`
-			CompletionTokens int `json:"completion_tokens"`
+			PromptTokens     int      `json:"prompt_tokens"`
+			CompletionTokens int      `json:"completion_tokens"`
+			Cost             *float64 `json:"cost"`
 		} `json:"usage"`
 	}
 	if err := json.Unmarshal(data, &payload); err != nil {
@@ -170,17 +171,17 @@ func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 			}
 			calls = append(calls, ToolCall{ID: raw.ID, Name: raw.Function.Name, Input: input})
 		}
-		return ModelResponse{ToolCalls: calls, Usage: usage}, nil
+		return ModelResponse{ToolCalls: calls, Usage: usage, CostUSD: payload.Usage.Cost}, nil
 	}
 	answer, err := parseJSONObject(message.Content)
 	if err != nil {
-		return ModelResponse{Usage: usage}, nil
+		return ModelResponse{Usage: usage, CostUSD: payload.Usage.Cost}, nil
 	}
 	reasoning, _ := answer["reasoning"].(string)
 	if nested, ok := answer["answer"].(map[string]any); ok {
 		answer = nested
 	}
-	return ModelResponse{Final: answer, Reasoning: reasoning, Usage: usage}, nil
+	return ModelResponse{Final: answer, Reasoning: reasoning, Usage: usage, CostUSD: payload.Usage.Cost}, nil
 }
 
 func answerEnvelopeSchema(answer map[string]any) map[string]any {

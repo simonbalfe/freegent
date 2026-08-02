@@ -4,3 +4,5 @@
 logs
 openextract
 freegent
+internal/api/dashboard/node_modules
+internal/api/dashboard/*.tsbuildinfo
