@@ -5,7 +5,6 @@
 You need:
 
 - macOS or Linux on arm64 or amd64
-- Git
 - curl
 - Docker with Docker Compose
 - an OpenRouter API key
@@ -17,7 +16,7 @@ Run:
 curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh | bash
 ```
 
-By default, the installer clones Freegent into `~/freegent`, starts the Docker Compose stack, builds a native CLI, and installs the Freegent skill.
+By default, the installer stores only the runtime configuration in `~/freegent`, pulls the Docker images, extracts the native CLI, and installs the Freegent skill. It does not clone the repository.
 
 Check the result:
 
@@ -92,10 +91,7 @@ docker compose logs -f api worker openextract
 Update:
 
 ```bash
-cd ~/freegent
-git pull --ff-only
-docker compose pull
-docker compose up -d --force-recreate
+curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh | bash
 ```
 
 PostgreSQL data and job results use a Docker volume and survive container restarts.

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_url="${FREEGENT_REPO_URL:-https://github.com/simonbalfe/freegent.git}"
 install_dir="${FREEGENT_DIR:-$HOME/freegent}"
+api_image="ghcr.io/simonbalfe/freegent-api:${FREEGENT_IMAGE_TAG:-latest}"
 api_url="http://localhost:${FREEGENT_PORT:-8080}"
 openextract_url="http://localhost:${OPENEXTRACT_PORT:-8081}"
 
@@ -52,10 +52,6 @@ has_env_value() {
   ' .env
 }
 
-if ! command -v git >/dev/null 2>&1; then
-  echo "git is required. Install git and run this script again."
-  exit 1
-fi
 if ! command -v docker >/dev/null 2>&1; then
   echo "Docker is required. Install Docker Desktop and run this script again."
   exit 1
@@ -68,38 +64,80 @@ if ! docker compose version >/dev/null 2>&1; then
   echo "Docker Compose is required. Update Docker Desktop and run this script again."
   exit 1
 fi
-
-if [ -d "$install_dir/.git" ]; then
-  echo "Updating $install_dir"
-  git -C "$install_dir" pull --ff-only
-else
-  echo "Cloning Freegent to $install_dir"
-  git clone "$repo_url" "$install_dir"
+if ! docker info >/dev/null 2>&1; then
+  echo "Docker is installed but not running. Open Docker Desktop and run this command again."
+  exit 1
 fi
+
+host_cli_platform
+if [ -w /usr/local/bin ]; then
+  cli_path=/usr/local/bin/freegent
+else
+  mkdir -p "$HOME/.local/bin"
+  cli_path="$HOME/.local/bin/freegent"
+  if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    case "${SHELL:-}" in
+      */zsh) shell_profile="$HOME/.zprofile" ;;
+      *) shell_profile="$HOME/.profile" ;;
+    esac
+    path_line='export PATH="$HOME/.local/bin:$PATH"'
+    if ! grep -Fqx "$path_line" "$shell_profile" 2>/dev/null; then
+      printf '\n%s\n' "$path_line" >> "$shell_profile"
+    fi
+  fi
+fi
+
+echo "Pulling Freegent install bundle"
+docker pull "$api_image"
+bundle_dir="$(mktemp -d)"
+bundle_container="$(docker create "$api_image" true)"
+cleanup_bundle() {
+  docker rm "$bundle_container" >/dev/null 2>&1 || true
+  rm -rf "$bundle_dir"
+}
+trap cleanup_bundle EXIT
+docker cp "$bundle_container:/opt/freegent/install/." "$bundle_dir"
+docker cp "$bundle_container:/opt/freegent/$cli_goos/freegent" "$bundle_dir/freegent"
+mkdir -p "$install_dir"
+install -m 0644 "$bundle_dir/compose.yaml" "$install_dir/compose.yaml"
+install -m 0644 "$bundle_dir/.env.example" "$install_dir/.env.example"
+install -m 0644 "$bundle_dir/SKILL.md" "$install_dir/SKILL.md"
+install -m 0755 "$bundle_dir/freegent" "$cli_path"
 
 cd "$install_dir"
 
-if [ "${FREEGENT_INSTALL_FROM_CHECKOUT:-0}" != "1" ]; then
-  FREEGENT_INSTALL_FROM_CHECKOUT=1 exec bash "$install_dir/install.sh"
-fi
-
-if [ -f .env ] && [ "${FREEGENT_REFRESH_KEYS:-0}" != "1" ]; then
+if [ -f .env ] \
+  && [ "${FREEGENT_REFRESH_KEYS:-0}" != "1" ] \
+  && has_env_value OPENROUTER_API_KEY \
+  && { has_env_value SERPER_API_KEY \
+    || has_env_value EXA_API_KEY \
+    || has_env_value TAVILY_API_KEY; }; then
   echo "Keeping existing .env"
 else
-  [ -f .env ] || cp .env.example .env
   echo
-  echo "Enter provider keys. Leave a key blank to use the next fallback."
+  echo "Enter an OpenRouter key and one search key. Input is hidden."
   openrouter_key="${FREEGENT_OPENROUTER_API_KEY:-}"
   serper_key="${FREEGENT_SERPER_API_KEY:-}"
   exa_key="${FREEGENT_EXA_API_KEY:-}"
   tavily_key="${FREEGENT_TAVILY_API_KEY:-}"
   apify_key="${FREEGENT_APIFY_API_TOKEN:-}"
   if [ "${FREEGENT_NONINTERACTIVE:-0}" != "1" ] && [ -r /dev/tty ]; then
-    [ -n "$openrouter_key" ] || read -r -p "OpenRouter API key: " openrouter_key </dev/tty
-    [ -n "$serper_key" ] || read -r -p "Serper API key (recommended): " serper_key </dev/tty
-    [ -n "$exa_key" ] || read -r -p "Exa API key: " exa_key </dev/tty
-    [ -n "$tavily_key" ] || read -r -p "Tavily API key: " tavily_key </dev/tty
-    [ -n "$apify_key" ] || read -r -p "Apify API token (optional): " apify_key </dev/tty
+    if [ -z "$openrouter_key" ]; then
+      read -r -s -p "OpenRouter API key: " openrouter_key </dev/tty
+      printf '\n' >/dev/tty
+    fi
+    if [ -z "$serper_key$exa_key$tavily_key" ]; then
+      read -r -s -p "Serper API key (press Enter to use Exa or Tavily): " serper_key </dev/tty
+      printf '\n' >/dev/tty
+    fi
+    if [ -z "$serper_key$exa_key$tavily_key" ]; then
+      read -r -s -p "Exa API key (press Enter to use Tavily): " exa_key </dev/tty
+      printf '\n' >/dev/tty
+    fi
+    if [ -z "$serper_key$exa_key$tavily_key" ]; then
+      read -r -s -p "Tavily API key: " tavily_key </dev/tty
+      printf '\n' >/dev/tty
+    fi
   fi
 
   {
@@ -124,42 +162,8 @@ if ! has_env_value SERPER_API_KEY \
 fi
 
 echo "Pulling and starting prebuilt Freegent images"
-if ! docker compose pull; then
-  echo "Prebuilt images could not be pulled. Building locally instead."
-  docker compose build
-fi
+docker compose pull
 docker compose up -d --force-recreate
-
-host_cli_platform
-if [ -w /usr/local/bin ]; then
-  cli_path=/usr/local/bin/freegent
-else
-  mkdir -p "$HOME/.local/bin"
-  cli_path="$HOME/.local/bin/freegent"
-  if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    case "${SHELL:-}" in
-      */zsh) shell_profile="$HOME/.zprofile" ;;
-      *) shell_profile="$HOME/.profile" ;;
-    esac
-    path_line='export PATH="$HOME/.local/bin:$PATH"'
-    if ! grep -Fqx "$path_line" "$shell_profile" 2>/dev/null; then
-      printf '\n%s\n' "$path_line" >> "$shell_profile"
-    fi
-  fi
-fi
-cli_build_dir="$(mktemp -d)"
-cleanup_cli_build() {
-  rm -rf "$cli_build_dir"
-}
-trap cleanup_cli_build EXIT
-echo "Building native CLI for $cli_goos/$cli_goarch"
-docker build \
-  --target cli-artifact \
-  --build-arg CLI_GOOS="$cli_goos" \
-  --build-arg CLI_GOARCH="$cli_goarch" \
-  --output "type=local,dest=$cli_build_dir" \
-  .
-install -m 0755 "$cli_build_dir/freegent" "$cli_path"
 
 mkdir -p "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
 cp SKILL.md "$HOME/.codex/skills/freegent/SKILL.md"
@@ -184,6 +188,13 @@ for attempt in $(seq 1 30); do
     fi
     echo "Codex and Claude skill installed."
     echo "CLI usage: freegent --help"
+    if [ "${FREEGENT_NO_OPEN:-0}" != "1" ]; then
+      if command -v open >/dev/null 2>&1; then
+        open "$api_url/dashboard" >/dev/null 2>&1 || true
+      elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "$api_url/dashboard" >/dev/null 2>&1 || true
+      fi
+    fi
     exit 0
   fi
   sleep 2
