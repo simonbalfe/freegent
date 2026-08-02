@@ -3,6 +3,7 @@ set -euo pipefail
 
 install_dir="${FREEGENT_DIR:-$HOME/freegent}"
 api_image="ghcr.io/simonbalfe/freegent-api:${FREEGENT_IMAGE_TAG:-latest}"
+project_name="${COMPOSE_PROJECT_NAME:-$(basename "$install_dir")}"
 
 if command -v docker >/dev/null 2>&1; then
   if ! docker info >/dev/null 2>&1; then
@@ -12,6 +13,9 @@ if command -v docker >/dev/null 2>&1; then
   if [ -f "$install_dir/compose.yaml" ]; then
     echo "Removing Freegent containers, volumes, and networks"
     docker compose -f "$install_dir/compose.yaml" down --volumes --remove-orphans
+    while IFS= read -r volume_name; do
+      [ -z "$volume_name" ] || docker volume rm "$volume_name"
+    done < <(docker volume ls -q --filter "label=com.docker.compose.project=$project_name")
     docker image rm "$api_image" >/dev/null 2>&1 || true
   fi
 fi
