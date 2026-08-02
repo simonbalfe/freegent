@@ -80,9 +80,19 @@ Check that it worked:
 freegent --help
 ```
 
-Open the dashboard:
+## Dashboard
 
-[http://localhost:8080/dashboard](http://localhost:8080/dashboard)
+Open [http://localhost:8080/dashboard](http://localhost:8080/dashboard) after installation.
+
+The dashboard provides a full-width spreadsheet for every research job. Use it to:
+
+- upload a CSV and start a job
+- follow row progress and inspect failures
+- view generated output as new spreadsheet columns
+- open a row's sources, agent trace, tokens, and cost
+- review the prompt and output schema
+- see whole-sheet usage and cost totals
+- download the enriched CSV
 
 ## Research a CSV
 
