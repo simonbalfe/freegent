@@ -77,6 +77,10 @@ fi
 
 cd "$install_dir"
 
+if [ "${FREEGENT_INSTALL_FROM_CHECKOUT:-0}" != "1" ]; then
+  FREEGENT_INSTALL_FROM_CHECKOUT=1 exec bash "$install_dir/install.sh"
+fi
+
 if [ -f .env ] && [ "${FREEGENT_REFRESH_KEYS:-0}" != "1" ]; then
   echo "Keeping existing .env"
 else
