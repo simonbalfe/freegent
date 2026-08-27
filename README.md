@@ -56,13 +56,21 @@ Use Freegent for:
 - row classification, scoring, and verification
 - lead qualification and sales personalization
 
+## LinkedIn enrichment through Apify
+
+Set `APIFY_API_TOKEN` to let the agent pull structured LinkedIn data through Apify. It can retrieve person profiles, recent person or company posts, post reactions, employees filtered by title or query, and company firmographics. Apify actors cost credits. Freegent starts each actor, polls it for up to 150 seconds, then reads the resulting dataset and records the billed run cost.
+
+LinkedIn profile and post URLs must come from the input row or evidence gathered during research. Freegent does not invent them.
+
 ## Set up Freegent
 
 You need:
 
 1. [Docker](https://docs.docker.com/get-docker/)
 2. an [OpenRouter API key](https://openrouter.ai/settings/keys)
-3. a search key from [Serper](https://serper.dev/), [Exa](https://dashboard.exa.ai/api-keys), or [Tavily](https://app.tavily.com/home)
+3. at least one search key from [Serper](https://serper.dev/), [Exa](https://dashboard.exa.ai/api-keys), or [Tavily](https://app.tavily.com/home)
+
+You can add all three search keys to improve coverage and fallback. You can also add an optional [Apify API token](https://console.apify.com/account/integrations) for LinkedIn profiles, posts, reactions, employee search, company firmographics, and Crunchbase company enrichment.
 
 Run the installer:
 

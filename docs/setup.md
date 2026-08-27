@@ -40,7 +40,7 @@ Required:
 Optional:
 
 - `OPENROUTER_MODEL` selects the model and defaults to `deepseek/deepseek-v4-flash`
-- `APIFY_API_TOKEN` enables enrichment tools
+- `APIFY_API_TOKEN` enables Apify-backed LinkedIn profiles, posts, reactions, employee search, and company firmographics, plus Crunchbase company enrichment
 - a standard proxy URL optionally enables browser proxying
 - CapSolver or 2Captcha keys enable challenge solving
 - concurrency, ports, database pool size, and operation timeout have defaults in `.env.example`
