@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/simonbalfe/freegent/internal/agent"
 )
 
 type DashboardJob struct {
@@ -15,8 +17,6 @@ type DashboardJob struct {
 	Total       int              `json:"total"`
 	Completed   int              `json:"completed"`
 	CreatedAt   time.Time        `json:"createdAt"`
-	StartedAt   time.Time        `json:"startedAt,omitempty"`
-	FinishedAt  time.Time        `json:"finishedAt,omitempty"`
 	Rows        []DashboardRow   `json:"rows"`
 	Events      []DashboardEvent `json:"events"`
 	LatestEvent string           `json:"latestEvent,omitempty"`
@@ -29,12 +29,10 @@ type DashboardEvent struct {
 }
 
 type DashboardRow struct {
-	Index      int            `json:"index"`
-	Input      map[string]any `json:"input"`
-	Status     string         `json:"status"`
-	Result     APIResult      `json:"result"`
-	StartedAt  time.Time      `json:"startedAt,omitempty"`
-	FinishedAt time.Time      `json:"finishedAt,omitempty"`
+	Index  int            `json:"index"`
+	Input  map[string]any `json:"input"`
+	Status string         `json:"status"`
+	Result APIResult      `json:"result"`
 }
 
 type DashboardStats struct {
@@ -42,11 +40,11 @@ type DashboardStats struct {
 	Completed         int                   `json:"completed"`
 	Failed            int                   `json:"failed"`
 	Skipped           int                   `json:"skipped"`
-	Tokens            TokenUsage            `json:"tokens"`
+	Tokens            agent.TokenUsage      `json:"tokens"`
 	AgentSteps        int                   `json:"agentSteps"`
 	Sources           int                   `json:"sources"`
 	DurationMS        int64                 `json:"durationMs"`
-	Costs             CostUsage             `json:"costs"`
+	Costs             agent.CostUsage       `json:"costs"`
 	UnpricedApifyRuns int                   `json:"unpricedApifyRuns"`
 	SerperQueries     int                   `json:"serperQueries"`
 	Models            []DashboardModelStats `json:"models"`

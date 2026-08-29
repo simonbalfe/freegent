@@ -1,9 +1,10 @@
 package agent
 
 import (
+	"maps"
 	"net/url"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -51,12 +52,7 @@ func (l urlLedger) permits(rawURL string) bool {
 }
 
 func (l urlLedger) sources() []string {
-	values := make([]string, 0, len(l.sourceURLs))
-	for _, value := range l.sourceURLs {
-		values = append(values, value)
-	}
-	sort.Strings(values)
-	return values
+	return slices.Sorted(maps.Values(l.sourceURLs))
 }
 
 func normalizeURL(rawURL string) string {

@@ -15,10 +15,10 @@ const operationStepVersion = "1"
 type operationCache struct {
 	load   func(context.Context, string) (json.RawMessage, bool, error)
 	commit func(context.Context, string, json.RawMessage) (json.RawMessage, error)
-	event  func(AgentEvent)
+	event  func(agent.AgentEvent)
 }
 
-func newOperationCache(store *PostgresStore, args OperationArgs, event func(AgentEvent)) operationCache {
+func newOperationCache(store *PostgresStore, args OperationArgs, event func(agent.AgentEvent)) operationCache {
 	return operationCache{
 		load: func(ctx context.Context, key string) (json.RawMessage, bool, error) {
 			return store.operationStep(ctx, args, key)
@@ -44,7 +44,7 @@ func (c operationCache) run(ctx context.Context, kind string, input any, output 
 			return fmt.Errorf("decode cached %s: %w", kind, err)
 		}
 		if c.event != nil {
-			c.event(AgentEvent{Message: "replay reused " + kind})
+			c.event(agent.AgentEvent{Message: "replay reused " + kind})
 		}
 		return nil
 	}

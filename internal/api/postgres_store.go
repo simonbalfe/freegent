@@ -147,10 +147,9 @@ func (s *PostgresStore) Start(ctx context.Context, request APIRequest, rows []ma
 	if len(rows) == 0 {
 		return "", errors.New("at least one row is required")
 	}
-	id := newRunID()
+	id := newJobID()
 	storedRequest := request
 	storedRequest.Rows = nil
-	storedRequest.Input = nil
 	requestJSON, err := json.Marshal(storedRequest)
 	if err != nil {
 		return "", err
@@ -212,29 +211,12 @@ func (s *PostgresStore) Start(ctx context.Context, request APIRequest, rows []ma
 	return id, nil
 }
 
-func (s *PostgresStore) Get(id string) (DashboardJob, error) {
-	return s.get(id, 0, 0)
-}
-
-func (s *PostgresStore) GetPage(id string, limit int, offset int) (DashboardJob, error) {
-	if limit < 1 {
-		limit = 200
-	}
-	if limit > 1000 {
-		limit = 1000
-	}
-	if offset < 0 {
-		offset = 0
-	}
-	return s.get(id, limit, offset)
-}
-
 func (s *PostgresStore) get(id string, limit int, offset int) (DashboardJob, error) {
 	job, err := s.GetSummary(id)
 	if err != nil {
 		return DashboardJob{}, err
 	}
-	rowQuery := `SELECT row_index, input_json, status, result_json, started_at, finished_at
+	rowQuery := `SELECT row_index, input_json, status, result_json
 		FROM job_rows WHERE job_id = $1 ORDER BY row_index`
 	rowArgs := []any{id}
 	if limit > 0 {
@@ -250,15 +232,11 @@ func (s *PostgresStore) get(id string, limit int, offset int) (DashboardJob, err
 		var row DashboardRow
 		var inputJSON []byte
 		var resultJSON []byte
-		var startedAt sql.NullTime
-		var finishedAt sql.NullTime
 		if err := rows.Scan(
 			&row.Index,
 			&inputJSON,
 			&row.Status,
 			&resultJSON,
-			&startedAt,
-			&finishedAt,
 		); err != nil {
 			return DashboardJob{}, err
 		}
@@ -269,12 +247,6 @@ func (s *PostgresStore) get(id string, limit int, offset int) (DashboardJob, err
 			if err := json.Unmarshal(resultJSON, &row.Result); err != nil {
 				return DashboardJob{}, err
 			}
-		}
-		if startedAt.Valid {
-			row.StartedAt = startedAt.Time
-		}
-		if finishedAt.Valid {
-			row.FinishedAt = finishedAt.Time
 		}
 		job.Rows = append(job.Rows, row)
 	}
@@ -306,11 +278,9 @@ func (s *PostgresStore) get(id string, limit int, offset int) (DashboardJob, err
 func (s *PostgresStore) GetSummary(id string) (DashboardJob, error) {
 	var job DashboardJob
 	var requestJSON []byte
-	var startedAt sql.NullTime
-	var finishedAt sql.NullTime
 	err := s.pool.QueryRow(
 		context.Background(),
-		`SELECT id, name, request_json, status, total, completed, created_at, started_at, finished_at, latest_event
+		`SELECT id, name, request_json, status, total, completed, created_at, latest_event
 		 FROM jobs WHERE id = $1`,
 		id,
 	).Scan(
@@ -321,8 +291,6 @@ func (s *PostgresStore) GetSummary(id string) (DashboardJob, error) {
 		&job.Total,
 		&job.Completed,
 		&job.CreatedAt,
-		&startedAt,
-		&finishedAt,
 		&job.LatestEvent,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -336,24 +304,14 @@ func (s *PostgresStore) GetSummary(id string) (DashboardJob, error) {
 	}
 	job.Template = job.Request.Template
 	job.Schema = job.Request.Schema
-	if startedAt.Valid {
-		job.StartedAt = startedAt.Time
-	}
-	if finishedAt.Valid {
-		job.FinishedAt = finishedAt.Time
-	}
 	return job, nil
 }
 
-func (s *PostgresStore) List(limit int) ([]DashboardJob, error) {
-	if limit < 1 {
-		limit = 50
-	}
+func (s *PostgresStore) list() ([]DashboardJob, error) {
 	rows, err := s.pool.Query(
 		context.Background(),
-		`SELECT id, name, status, total, completed, created_at, started_at, finished_at, latest_event
-		 FROM jobs ORDER BY created_at DESC LIMIT $1`,
-		limit,
+		`SELECT id, name, status, total, completed, created_at, latest_event
+		 FROM jobs ORDER BY created_at DESC LIMIT 50`,
 	)
 	if err != nil {
 		return nil, err
@@ -362,8 +320,6 @@ func (s *PostgresStore) List(limit int) ([]DashboardJob, error) {
 	jobs := []DashboardJob{}
 	for rows.Next() {
 		var job DashboardJob
-		var startedAt sql.NullTime
-		var finishedAt sql.NullTime
 		if err := rows.Scan(
 			&job.ID,
 			&job.Name,
@@ -371,17 +327,9 @@ func (s *PostgresStore) List(limit int) ([]DashboardJob, error) {
 			&job.Total,
 			&job.Completed,
 			&job.CreatedAt,
-			&startedAt,
-			&finishedAt,
 			&job.LatestEvent,
 		); err != nil {
 			return nil, err
-		}
-		if startedAt.Valid {
-			job.StartedAt = startedAt.Time
-		}
-		if finishedAt.Valid {
-			job.FinishedAt = finishedAt.Time
 		}
 		jobs = append(jobs, job)
 	}
@@ -672,8 +620,6 @@ func (s *PostgresStore) completeOperation(ctx context.Context, args OperationArg
 	status := "completed"
 	if result.Error != "" {
 		status = "failed"
-	} else if result.Skipped {
-		status = "skipped"
 	}
 	resultJSON, err := json.Marshal(result)
 	if err != nil {

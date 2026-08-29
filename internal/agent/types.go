@@ -31,7 +31,6 @@ type ToolCall struct {
 type ModelResponse struct {
 	ToolCalls   []ToolCall
 	Final       map[string]any
-	Reasoning   string
 	OutputError string
 	Usage       TokenUsage
 	CostUSD     *float64
@@ -92,11 +91,10 @@ type CostUsage struct {
 }
 
 type RunResult struct {
-	Answer    map[string]any `json:"answer"`
-	Reasoning string         `json:"reasoning,omitempty"`
-	Sources   []string       `json:"sources"`
-	Evidence  []Evidence     `json:"evidence"`
-	Steps     []Step         `json:"steps"`
-	Tokens    TokenUsage     `json:"tokens"`
-	Costs     CostUsage      `json:"costs"`
+	Answer   map[string]any `json:"answer"`
+	Sources  []string       `json:"sources"`
+	Evidence []Evidence     `json:"evidence"`
+	Steps    []Step         `json:"steps"`
+	Tokens   TokenUsage     `json:"tokens"`
+	Costs    CostUsage      `json:"costs"`
 }

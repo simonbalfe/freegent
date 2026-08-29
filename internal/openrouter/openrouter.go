@@ -13,42 +13,34 @@ import (
 	"github.com/simonbalfe/freegent/internal/agent"
 )
 
-type Tool = agent.Tool
-type Message = agent.Message
-type Action = agent.Action
-type ModelResponse = agent.ModelResponse
-type Evidence = agent.Evidence
-type TokenUsage = agent.TokenUsage
-type ToolCall = agent.ToolCall
-
 type OpenRouterModel struct {
 	APIKey          string
 	Model           string
 	Client          *http.Client
-	Tools           []Tool
+	Tools           []agent.Tool
 	MaxOutputTokens int
 }
 
-func (m OpenRouterModel) Next(ctx context.Context, messages []Message, action Action) (ModelResponse, error) {
+func (m OpenRouterModel) Next(ctx context.Context, messages []agent.Message, action agent.Action) (agent.ModelResponse, error) {
 	return m.chat(ctx, messages, action, true)
 }
 
-func (m OpenRouterModel) Finalize(ctx context.Context, task string, action Action, evidence []Evidence) (ModelResponse, error) {
+func (m OpenRouterModel) Finalize(ctx context.Context, task string, action agent.Action, evidence []agent.Evidence) (agent.ModelResponse, error) {
 	encodedEvidence, err := json.Marshal(evidence)
 	if err != nil {
-		return ModelResponse{}, err
+		return agent.ModelResponse{}, err
 	}
-	messages := []Message{
-		{Role: "system", Content: firstNonEmpty(action.FinalizerInstructions, action.Instructions) + "\nReturn a JSON object with exactly two fields: answer and reasoning. Answer schema: " + string(action.Validator.Canonical)},
+	messages := []agent.Message{
+		{Role: "system", Content: firstNonEmpty(action.FinalizerInstructions, action.Instructions) + "\nReturn only a JSON object matching this schema exactly: " + string(action.Validator.Canonical)},
 		{Role: "user", Content: task + "\n\nEvidence:\n" + string(encodedEvidence)},
 	}
 	return m.chat(ctx, messages, action, false)
 }
 
-func (m OpenRouterModel) chat(ctx context.Context, messages []Message, action Action, enableTools bool) (ModelResponse, error) {
+func (m OpenRouterModel) chat(ctx context.Context, messages []agent.Message, action agent.Action, enableTools bool) (agent.ModelResponse, error) {
 	requestMessages, err := openRouterMessages(messages)
 	if err != nil {
-		return ModelResponse{}, err
+		return agent.ModelResponse{}, err
 	}
 	body := map[string]any{
 		"model":       m.Model,
@@ -66,32 +58,32 @@ func (m OpenRouterModel) chat(ctx context.Context, messages []Message, action Ac
 			"json_schema": map[string]any{
 				"name":   "freegent_answer",
 				"strict": true,
-				"schema": answerEnvelopeSchema(action.Validator.Document),
+				"schema": action.Validator.Document,
 			},
 		}
 	}
 	encoded, err := json.Marshal(body)
 	if err != nil {
-		return ModelResponse{}, err
+		return agent.ModelResponse{}, err
 	}
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://openrouter.ai/api/v1/chat/completions", bytes.NewReader(encoded))
 	if err != nil {
-		return ModelResponse{}, err
+		return agent.ModelResponse{}, err
 	}
 	request.Header.Set("Authorization", "Bearer "+m.APIKey)
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("HTTP-Referer", "https://github.com/simonbalfe/freegent")
 	response, err := m.Client.Do(request)
 	if err != nil {
-		return ModelResponse{}, err
+		return agent.ModelResponse{}, err
 	}
 	defer response.Body.Close()
 	data, err := io.ReadAll(io.LimitReader(response.Body, 2<<20))
 	if err != nil {
-		return ModelResponse{}, err
+		return agent.ModelResponse{}, err
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return ModelResponse{}, fmt.Errorf("OpenRouter %s: %s", response.Status, string(data))
+		return agent.ModelResponse{}, fmt.Errorf("OpenRouter %s: %s", response.Status, string(data))
 	}
 	return parseOpenRouterResponse(data)
 }
@@ -107,7 +99,7 @@ func (m OpenRouterModel) outputTokenLimit(enableTools bool) int {
 	return limit
 }
 
-func openRouterMessages(messages []Message) ([]map[string]any, error) {
+func openRouterMessages(messages []agent.Message) ([]map[string]any, error) {
 	result := make([]map[string]any, 0, len(messages))
 	for _, message := range messages {
 		entry := map[string]any{"role": message.Role}
@@ -134,7 +126,7 @@ func openRouterMessages(messages []Message) ([]map[string]any, error) {
 	return result, nil
 }
 
-func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
+func parseOpenRouterResponse(data []byte) (agent.ModelResponse, error) {
 	var payload struct {
 		Choices []struct {
 			FinishReason string `json:"finish_reason"`
@@ -156,24 +148,24 @@ func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 		} `json:"usage"`
 	}
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return ModelResponse{}, err
+		return agent.ModelResponse{}, err
 	}
 	if len(payload.Choices) == 0 {
-		return ModelResponse{}, errors.New("OpenRouter returned no choices")
+		return agent.ModelResponse{}, errors.New("OpenRouter returned no choices")
 	}
 	choice := payload.Choices[0]
 	message := choice.Message
-	usage := TokenUsage{Input: payload.Usage.PromptTokens, Output: payload.Usage.CompletionTokens}
+	usage := agent.TokenUsage{Input: payload.Usage.PromptTokens, Output: payload.Usage.CompletionTokens}
 	if len(message.ToolCalls) > 0 {
-		calls := make([]ToolCall, 0, len(message.ToolCalls))
+		calls := make([]agent.ToolCall, 0, len(message.ToolCalls))
 		for _, raw := range message.ToolCalls {
 			input := map[string]any{}
 			if err := json.Unmarshal([]byte(raw.Function.Arguments), &input); err != nil {
-				return ModelResponse{}, fmt.Errorf("invalid %s arguments: %w", raw.Function.Name, err)
+				return agent.ModelResponse{}, fmt.Errorf("invalid %s arguments: %w", raw.Function.Name, err)
 			}
-			calls = append(calls, ToolCall{ID: raw.ID, Name: raw.Function.Name, Input: input})
+			calls = append(calls, agent.ToolCall{ID: raw.ID, Name: raw.Function.Name, Input: input})
 		}
-		return ModelResponse{ToolCalls: calls, Usage: usage, CostUSD: payload.Usage.Cost}, nil
+		return agent.ModelResponse{ToolCalls: calls, Usage: usage, CostUSD: payload.Usage.Cost}, nil
 	}
 	answer, err := parseJSONObject(message.Content)
 	if err != nil {
@@ -181,28 +173,12 @@ func parseOpenRouterResponse(data []byte) (ModelResponse, error) {
 		if choice.FinishReason == "length" {
 			detail = "model output reached the token limit before completing valid JSON"
 		}
-		return ModelResponse{OutputError: detail, Usage: usage, CostUSD: payload.Usage.Cost}, nil
+		return agent.ModelResponse{OutputError: detail, Usage: usage, CostUSD: payload.Usage.Cost}, nil
 	}
-	reasoning, _ := answer["reasoning"].(string)
-	if nested, ok := answer["answer"].(map[string]any); ok {
-		answer = nested
-	}
-	return ModelResponse{Final: answer, Reasoning: reasoning, Usage: usage, CostUSD: payload.Usage.Cost}, nil
+	return agent.ModelResponse{Final: answer, Usage: usage, CostUSD: payload.Usage.Cost}, nil
 }
 
-func answerEnvelopeSchema(answer map[string]any) map[string]any {
-	return map[string]any{
-		"type": "object",
-		"properties": map[string]any{
-			"answer":    answer,
-			"reasoning": map[string]any{"type": "string"},
-		},
-		"required":             []any{"answer", "reasoning"},
-		"additionalProperties": false,
-	}
-}
-
-func toolDefinitions(tools []Tool) []map[string]any {
+func toolDefinitions(tools []agent.Tool) []map[string]any {
 	definitions := make([]map[string]any, 0, len(tools))
 	for _, tool := range tools {
 		definitions = append(definitions, map[string]any{"type": "function", "function": map[string]any{"name": tool.Name(), "description": tool.Description(), "parameters": tool.Schema()}})

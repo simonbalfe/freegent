@@ -70,7 +70,7 @@ func handleJob(writer http.ResponseWriter, request *http.Request, store *Postgre
 }
 
 func handleJobsJSON(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
-	jobs, err := store.List(50)
+	jobs, err := store.list()
 	if err != nil {
 		writeJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -98,9 +98,9 @@ func handleJobJSON(writer http.ResponseWriter, request *http.Request, store *Pos
 			writeJSON(writer, http.StatusBadRequest, map[string]string{"error": "offset must be a non-negative integer"})
 			return
 		}
-		job, err = store.GetPage(request.PathValue("id"), limit, offset)
+		job, err = store.get(request.PathValue("id"), limit, offset)
 	} else {
-		job, err = store.Get(request.PathValue("id"))
+		job, err = store.get(request.PathValue("id"), 0, 0)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		writeJSON(writer, http.StatusNotFound, map[string]string{"error": "job not found"})
@@ -149,14 +149,10 @@ func decodeJobRequest(writer http.ResponseWriter, request *http.Request) (APIReq
 	if err := decoder.Decode(&input); err != nil {
 		return APIRequest{}, nil, err
 	}
-	rows := input.Rows
-	if len(rows) == 0 {
-		rows = []map[string]any{input.Input}
-	}
 	if err := validateAPIRequest(input); err != nil {
 		return APIRequest{}, nil, err
 	}
-	return input, rows, nil
+	return input, input.Rows, nil
 }
 
 func decodeMultipartJobForm(request *http.Request) (APIRequest, []map[string]any, error) {
@@ -187,14 +183,11 @@ func decodeMultipartJobForm(request *http.Request) (APIRequest, []map[string]any
 		return APIRequest{}, nil, errors.New("upload a CSV or provide at least one JSON row")
 	}
 	input := APIRequest{
-		Name:            name,
-		Instructions:    request.FormValue("instructions"),
-		Template:        request.FormValue("template"),
-		Schema:          json.RawMessage(request.FormValue("schema")),
-		Rows:            rows,
-		Model:           request.FormValue("model"),
-		MaxSteps:        5,
-		MaxOutputTokens: 1500,
+		Name:         name,
+		Instructions: request.FormValue("instructions"),
+		Template:     request.FormValue("template"),
+		Schema:       json.RawMessage(request.FormValue("schema")),
+		Rows:         rows,
 	}
 	if err := validateAPIRequest(input); err != nil {
 		return APIRequest{}, nil, err
@@ -241,6 +234,9 @@ func parseCSVRows(reader io.Reader) ([]map[string]any, error) {
 func validateAPIRequest(input APIRequest) error {
 	if input.Instructions == "" || input.Template == "" || !json.Valid(input.Schema) {
 		return errors.New("instructions, template, and a valid schema are required")
+	}
+	if len(input.Rows) == 0 {
+		return errors.New("at least one row is required")
 	}
 	_, err := agent.CompileOutputSchema(input.Schema)
 	return err

@@ -10,10 +10,6 @@ import (
 	"github.com/simonbalfe/freegent/internal/agent"
 )
 
-type Tool = agent.Tool
-type ToolResult = agent.ToolResult
-type FetchAttempt = agent.FetchAttempt
-
 type apifyTool struct {
 	name        string
 	description string
@@ -28,33 +24,33 @@ func (t apifyTool) Name() string           { return t.name }
 func (t apifyTool) Description() string    { return t.description }
 func (t apifyTool) Schema() map[string]any { return t.schema }
 
-func (t apifyTool) Run(ctx context.Context, input map[string]any) (ToolResult, error) {
+func (t apifyTool) Run(ctx context.Context, input map[string]any) (agent.ToolResult, error) {
 	actorInput, err := t.input(input)
 	if err != nil {
-		return ToolResult{}, err
+		return agent.ToolResult{}, err
 	}
 	actor := t.actor()
 	result, err := runApifyActor(ctx, t.token, actor, actorInput)
 	if err != nil {
-		return ToolResult{}, err
+		return agent.ToolResult{}, err
 	}
 	output, urls := t.output(result.Items, input)
 	encoded, err := json.Marshal(output)
 	if err != nil {
-		return ToolResult{}, err
+		return agent.ToolResult{}, err
 	}
-	return ToolResult{
+	return agent.ToolResult{
 		Text:     bounded(string(encoded)),
 		URLs:     urls,
 		SeenURLs: urls,
 		Provider: "apify:" + actor,
-		Attempts: []FetchAttempt{{Provider: "apify:" + actor, Outcome: strings.ToLower(result.Status), DurationMS: result.DurationMS, Detail: fmt.Sprintf("run %s, dataset %s, %d items", result.RunID, result.DatasetID, len(result.Items))}},
+		Attempts: []agent.FetchAttempt{{Provider: "apify:" + actor, Outcome: strings.ToLower(result.Status), DurationMS: result.DurationMS, Detail: fmt.Sprintf("run %s, dataset %s, %d items", result.RunID, result.DatasetID, len(result.Items))}},
 		CostUSD:  result.CostUSD,
 	}, nil
 }
 
-func Tools(token string) []Tool {
-	return []Tool{
+func Tools(token string) []agent.Tool {
+	return []agent.Tool{
 		linkedinProfileTool(token),
 		linkedinPostsTool(token),
 		linkedinReactionsTool(token),
@@ -64,7 +60,7 @@ func Tools(token string) []Tool {
 	}
 }
 
-func linkedinProfileTool(token string) Tool {
+func linkedinProfileTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_profile",
 		description: "Get a person's LinkedIn profile as structured data: name, headline, location, about, experience, follower count, and connection count. Use this instead of fetching LinkedIn pages. The URL must come from the input row or gathered evidence. Costs credits, so call once per person.",
@@ -109,7 +105,7 @@ func linkedinProfileTool(token string) Tool {
 	}
 }
 
-func linkedinPostsTool(token string) Tool {
+func linkedinPostsTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_posts",
 		description: "Get recent LinkedIn posts for a person or company: text, date, engagement counts, and post URLs. The profile URL must come from the input row or gathered evidence. Costs credits, so keep maxPosts small.",
@@ -149,7 +145,7 @@ func linkedinPostsTool(token string) Tool {
 	}
 }
 
-func linkedinReactionsTool(token string) Tool {
+func linkedinReactionsTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_post_reactions",
 		description: "Get people who reacted to a LinkedIn post, including reaction type, name, position, and profile URL. The post URL must come from the input row or gathered evidence. Costs credits, so keep maxReactions small.",
@@ -183,7 +179,7 @@ func linkedinReactionsTool(token string) Tool {
 	}
 }
 
-func linkedinPeopleTool(token string) Tool {
+func linkedinPeopleTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_find_people",
 		description: "Find people at a company through LinkedIn employee search, filtered by title or query. Returns name, title, location, profile URL, and optionally work email. Pass an exact company name or a verified LinkedIn company URL. Costs credits, especially with findEmails.",
@@ -239,7 +235,7 @@ func linkedinPeopleTool(token string) Tool {
 	}
 }
 
-func linkedinCompanyTool(token string) Tool {
+func linkedinCompanyTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_company",
 		description: "Get a company's LinkedIn firmographics: exact employee count, size range, industry, founded year, headquarters, followers, website, and description. Pass the exact company name and let the actor resolve it. A URL is accepted only when it came from the input row or gathered evidence. Costs credits, so call once per company.",
@@ -308,7 +304,7 @@ func linkedinCompanyTool(token string) Tool {
 	}
 }
 
-func crunchbaseCompanyTool(token string) Tool {
+func crunchbaseCompanyTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "crunchbase_company",
 		description: "Fallback only. Get Crunchbase funding and firmographics including total funding, latest round, investors, founders, employee range, headquarters, founded year, and IPO status. Pass a verified Crunchbase organization URL or the exact company name. Costs credits, so call at most once.",

@@ -79,7 +79,9 @@ OpenExtract is stateless.
 | Route | Purpose |
 |---|---|
 | `GET /health` | Check API and database health |
+| `GET /jobs` | List recent jobs |
 | `POST /jobs` | Submit JSON rows or a CSV |
 | `GET /jobs/{id}` | Read job state |
+| `GET /jobs/{id}/stats` | Read whole-job usage and cost statistics |
 | `GET /jobs/{id}/results.csv` | Download enriched CSV output |
 | `/dashboard` | Embedded React spreadsheet with research output columns and a separate row analytics view |

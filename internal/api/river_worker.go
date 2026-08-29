@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/simonbalfe/freegent/internal/agent"
 	"github.com/simonbalfe/freegent/internal/config"
 )
 
@@ -48,7 +48,7 @@ func (w *OperationWorker) Work(ctx context.Context, job *river.Job[OperationArgs
 	if done {
 		return nil
 	}
-	event := func(event AgentEvent) {
+	event := func(event agent.AgentEvent) {
 		if err := w.store.appendOperationEvent(ctx, job.Args, event.Message); err != nil {
 			fmt.Fprintf(os.Stderr, "operation event persistence failed job=%s row=%d error=%v\n", job.Args.JobID, job.Args.RowIndex+1, err)
 		}
@@ -90,7 +90,7 @@ func permanentOperationError(message string) bool {
 
 func RunWorker(args []string) {
 	flags := flag.NewFlagSet("freegent worker", flag.ExitOnError)
-	concurrency := flags.Int("concurrency", workerConcurrency(), "maximum concurrent research operations")
+	concurrency := flags.Int("concurrency", 10, "maximum concurrent research operations")
 	timeout := flags.Duration("timeout", 15*time.Minute, "maximum duration for one research operation")
 	if err := flags.Parse(args); err != nil {
 		panic(err)
@@ -134,16 +134,4 @@ func RunWorker(args []string) {
 	}
 	fmt.Fprintf(os.Stderr, "freegent worker started concurrency=%d timeout=%s\n", *concurrency, timeout.String())
 	<-client.Stopped()
-}
-
-func workerConcurrency() int {
-	raw := os.Getenv("FREEGENT_WORKER_CONCURRENCY")
-	if raw == "" {
-		return 10
-	}
-	value, err := strconv.Atoi(raw)
-	if err != nil || value < 1 {
-		return 10
-	}
-	return value
 }

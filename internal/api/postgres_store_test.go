@@ -7,6 +7,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/simonbalfe/freegent/internal/agent"
+	"github.com/simonbalfe/freegent/internal/config"
 )
 
 func TestParseCSVRows(t *testing.T) {
@@ -59,6 +62,15 @@ func TestDecodeJobRequestAcceptsMultipartCSV(t *testing.T) {
 	}
 }
 
+func TestDecodeJobRequestRejectsLegacyInput(t *testing.T) {
+	request := httptest.NewRequest(http.MethodPost, "/jobs", strings.NewReader(`{"instructions":"Research.","template":"Research {{company}}.","schema":{"answer":"string"},"input":{"company":"Linear"}}`))
+	request.Header.Set("Content-Type", "application/json")
+	_, _, err := decodeJobRequest(httptest.NewRecorder(), request)
+	if err == nil || !strings.Contains(err.Error(), "unknown field \"input\"") {
+		t.Fatalf("legacy input error = %v", err)
+	}
+}
+
 func TestPermanentOperationError(t *testing.T) {
 	for _, message := range []string{
 		"OPENROUTER_API_KEY is not set",
@@ -79,13 +91,13 @@ func TestAccumulateDashboardStats(t *testing.T) {
 	stats := DashboardStats{}
 	models := map[string]*DashboardModelStats{}
 	accumulateDashboardStats(&stats, models, "completed", APIResult{
-		Model: "example/model", Tokens: TokenUsage{Input: 100, Output: 20},
-		Costs:    CostUsage{OpenRouterUSD: 0.01, OpenRouterRecorded: true, ApifyUSD: 0.03, ApifyRuns: 1},
-		AgentLog: []Step{{Kind: "tool"}}, Sources: []string{"https://example.com"}, DurationMS: 500,
+		Model: "example/model", Tokens: agent.TokenUsage{Input: 100, Output: 20},
+		Costs:    agent.CostUsage{OpenRouterUSD: 0.01, OpenRouterRecorded: true, ApifyUSD: 0.03, ApifyRuns: 1},
+		AgentLog: []agent.Step{{Kind: "tool"}}, Sources: []string{"https://example.com"},
 	})
 	accumulateDashboardStats(&stats, models, "failed", APIResult{
-		Model: "example/model", Tokens: TokenUsage{Input: 50, Output: 5},
-		Evidence: []Evidence{{Provider: "apify:example~actor"}, {Provider: "serper", Attempts: []FetchAttempt{{Provider: "serper", Outcome: "ok"}}}}, DurationMS: 250,
+		Model: "example/model", Tokens: agent.TokenUsage{Input: 50, Output: 5},
+		Evidence: []agent.Evidence{{Provider: "apify:example~actor"}, {Provider: "serper", Attempts: []agent.FetchAttempt{{Provider: "serper", Outcome: "ok"}}}},
 	})
 	model := models["example/model"]
 	if stats.Completed != 1 || stats.Failed != 1 || stats.Tokens.Input != 150 || stats.Costs.OpenRouterUSD != 0.01 || stats.Costs.ApifyUSD != 0.03 || stats.UnpricedApifyRuns != 1 || stats.SerperQueries != 1 {
@@ -96,6 +108,21 @@ func TestAccumulateDashboardStats(t *testing.T) {
 	}
 	if model == nil || model.InputTokens != 150 || model.UnpricedInputTokens != 50 || model.OpenRouterUSD != 0.01 {
 		t.Fatalf("unexpected model stats: %+v", model)
+	}
+}
+
+func TestDefaultToolsAreProviderGated(t *testing.T) {
+	if tools := defaultTools(config.Providers{}); len(tools) != 2 {
+		t.Fatalf("web-only tool count = %d, want 2", len(tools))
+	}
+	tools := defaultTools(config.Providers{ApifyAPIToken: "secret"})
+	if len(tools) != 8 {
+		t.Fatalf("enrichment tool count = %d, want 8", len(tools))
+	}
+	for _, name := range []string{"linkedin_profile", "linkedin_posts", "linkedin_post_reactions", "linkedin_find_people", "linkedin_company", "crunchbase_company"} {
+		if tools[name] == nil {
+			t.Fatalf("missing %s", name)
+		}
 	}
 }
 

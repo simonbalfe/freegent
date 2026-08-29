@@ -5,6 +5,8 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"testing"
+
+	"github.com/simonbalfe/freegent/internal/agent"
 )
 
 func TestCSVExportAddsOneAnswerColumn(t *testing.T) {
@@ -25,10 +27,9 @@ func TestCSVExportAddsOneAnswerColumn(t *testing.T) {
 						"fit":     "high",
 						"details": map[string]any{"segment": "design"},
 					},
-					Sources:    []string{"https://figma.com/"},
-					Tokens:     TokenUsage{Input: 100, Output: 20},
-					DurationMS: 750,
-					Model:      "test-model",
+					Sources: []string{"https://figma.com/"},
+					Tokens:  agent.TokenUsage{Input: 100, Output: 20},
+					Model:   "test-model",
 				},
 			},
 		},

@@ -22,6 +22,21 @@ func TestMalformedModelJSONReportsOutputError(t *testing.T) {
 	}
 }
 
+func TestDirectAnswerJSON(t *testing.T) {
+	payload := map[string]any{
+		"choices": []any{map[string]any{"message": map[string]any{"content": `{"company":"Notion"}`}}},
+		"usage":   map[string]any{},
+	}
+	data, _ := json.Marshal(payload)
+	response, err := parseOpenRouterResponse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.Final["company"] != "Notion" {
+		t.Fatalf("direct answer = %#v", response.Final)
+	}
+}
+
 func TestFinalizerOutputTokenLimit(t *testing.T) {
 	model := OpenRouterModel{MaxOutputTokens: 1500}
 	if got := model.outputTokenLimit(false); got != 8000 {

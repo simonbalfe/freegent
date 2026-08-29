@@ -105,7 +105,7 @@ func TestRemoteJobSubmissionAndPolling(t *testing.T) {
 				rows = []map[string]any{{
 					"index":  0,
 					"status": "completed",
-					"result": map[string]any{"runId": "run-1", "result": map[string]any{"answer": "done"}},
+					"result": map[string]any{"result": map[string]any{"answer": "done"}},
 				}}
 			}
 			writeTestJSON(writer, http.StatusOK, map[string]any{"id": "job-1", "status": status, "rows": rows})

@@ -7,22 +7,19 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"maps"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/simonbalfe/freegent/internal/agent"
 	"github.com/simonbalfe/freegent/internal/config"
 	"github.com/simonbalfe/freegent/internal/openrouter"
-	"github.com/simonbalfe/freegent/internal/toolset"
+	"github.com/simonbalfe/freegent/internal/tools/apify"
+	"github.com/simonbalfe/freegent/internal/tools/fetch"
+	"github.com/simonbalfe/freegent/internal/tools/search"
 )
-
-type Step = agent.Step
-type Evidence = agent.Evidence
-type FetchAttempt = agent.FetchAttempt
-type TokenUsage = agent.TokenUsage
-type CostUsage = agent.CostUsage
-type AgentEvent = agent.AgentEvent
 
 type APIRequest struct {
 	Name            string           `json:"name"`
@@ -30,27 +27,20 @@ type APIRequest struct {
 	Template        string           `json:"template"`
 	Schema          json.RawMessage  `json:"schema"`
 	Rows            []map[string]any `json:"rows"`
-	Input           map[string]any   `json:"input"`
 	Model           string           `json:"model"`
 	MaxSteps        int              `json:"maxSteps"`
 	MaxOutputTokens int              `json:"maxOutputTokens"`
-	Require         string           `json:"require"`
-	Verbose         bool             `json:"verbose,omitempty"`
 }
 
 type APIResult struct {
-	RunID      string         `json:"runId"`
-	Result     map[string]any `json:"result"`
-	Reasoning  string         `json:"reasoning,omitempty"`
-	Sources    []string       `json:"sources"`
-	AgentLog   []Step         `json:"agentLog"`
-	Evidence   []Evidence     `json:"evidence"`
-	Tokens     TokenUsage     `json:"tokens"`
-	Costs      CostUsage      `json:"costs"`
-	DurationMS int64          `json:"durationMs"`
-	Model      string         `json:"model"`
-	Skipped    bool           `json:"skipped,omitempty"`
-	Error      string         `json:"error,omitempty"`
+	Result   map[string]any   `json:"result"`
+	Sources  []string         `json:"sources"`
+	AgentLog []agent.Step     `json:"agentLog"`
+	Evidence []agent.Evidence `json:"evidence"`
+	Tokens   agent.TokenUsage `json:"tokens"`
+	Costs    agent.CostUsage  `json:"costs"`
+	Model    string           `json:"model"`
+	Error    string           `json:"error,omitempty"`
 }
 
 func Serve(args []string) {
@@ -97,33 +87,24 @@ func Serve(args []string) {
 	}
 }
 
-func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(AgentEvent), cache operationCache, providers config.Providers) APIResult {
-	started := time.Now()
-	runID := newRunID()
+func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(agent.AgentEvent), cache operationCache, providers config.Providers) APIResult {
 	modelName := request.Model
 	if modelName == "" {
 		modelName = providers.OpenRouterModel
 	}
-	result := APIResult{RunID: runID, Result: nil, Sources: []string{}, AgentLog: []Step{}, Evidence: []Evidence{}, Model: modelName}
+	result := APIResult{Result: nil, Sources: []string{}, AgentLog: []agent.Step{}, Evidence: []agent.Evidence{}, Model: modelName}
 	row := agent.Row{}
 	for key, value := range values {
 		row[key] = fmt.Sprint(value)
 	}
-	if request.Require != "" && row[request.Require] == "" {
-		result.Skipped = true
-		result.DurationMS = time.Since(started).Milliseconds()
-		return result
-	}
 	key := providers.OpenRouterAPIKey
 	if key == "" {
 		result.Error = "OPENROUTER_API_KEY is not set"
-		result.DurationMS = time.Since(started).Milliseconds()
 		return result
 	}
 	compiledSchema, err := agent.CompileOutputSchema(request.Schema)
 	if err != nil {
 		result.Error = err.Error()
-		result.DurationMS = time.Since(started).Milliseconds()
 		return result
 	}
 	action := agent.Action{
@@ -136,25 +117,39 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 	if maxSteps < 1 {
 		maxSteps = 5
 	}
-	tools := toolset.Default(providers)
+	tools := defaultTools(providers)
 	for name, tool := range tools {
 		tools[name] = cachedTool{Tool: tool, cache: cache}
 	}
-	toolList := toolset.List(tools)
+	toolList := make([]agent.Tool, 0, len(tools))
+	for _, name := range slices.Sorted(maps.Keys(tools)) {
+		toolList = append(toolList, tools[name])
+	}
 	model := openrouter.OpenRouterModel{APIKey: key, Model: modelName, Client: &http.Client{Timeout: 150 * time.Second}, Tools: toolList, MaxOutputTokens: request.MaxOutputTokens}
-	runner := agent.Agent{Model: newCachedModel(model, cache, modelName, request.MaxOutputTokens, toolList), Tools: tools, MaxSteps: maxSteps, Verbose: request.Verbose, Event: event}
+	runner := agent.Agent{Model: newCachedModel(model, cache, modelName, request.MaxOutputTokens, toolList), Tools: tools, MaxSteps: maxSteps, Event: event}
 	run, err := runner.Run(ctx, action, row)
-	result.DurationMS = time.Since(started).Milliseconds()
-	result.Result, result.Reasoning, result.Sources, result.AgentLog, result.Evidence, result.Tokens, result.Costs = run.Answer, run.Reasoning, run.Sources, run.Steps, run.Evidence, run.Tokens, run.Costs
+	result.Result, result.Sources, result.AgentLog, result.Evidence, result.Tokens, result.Costs = run.Answer, run.Sources, run.Steps, run.Evidence, run.Tokens, run.Costs
 	if err != nil {
 		result.Result = nil
-		result.Reasoning = ""
 		result.Error = err.Error()
 	}
 	return result
 }
 
-func newRunID() string {
+func defaultTools(providers config.Providers) map[string]agent.Tool {
+	tools := map[string]agent.Tool{
+		"web_search": search.New(providers.SerperAPIKey, providers.ExaAPIKey, providers.TavilyAPIKey),
+		"fetch_page": fetch.New(providers.OpenExtractURL, providers.ExaAPIKey, providers.TavilyAPIKey),
+	}
+	if providers.ApifyAPIToken != "" {
+		for _, tool := range apify.Tools(providers.ApifyAPIToken) {
+			tools[tool.Name()] = tool
+		}
+	}
+	return tools
+}
+
+func newJobID() string {
 	bytes := make([]byte, 16)
 	if _, err := rand.Read(bytes); err != nil {
 		return fmt.Sprintf("run-%d", time.Now().UnixNano())

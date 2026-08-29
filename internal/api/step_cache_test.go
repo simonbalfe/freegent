@@ -118,9 +118,9 @@ func TestOperationCacheDoesNotStoreErrors(t *testing.T) {
 	}
 }
 
-func memoryOperationCache() (operationCache, *[]AgentEvent) {
+func memoryOperationCache() (operationCache, *[]agent.AgentEvent) {
 	values := map[string]json.RawMessage{}
-	events := []AgentEvent{}
+	events := []agent.AgentEvent{}
 	return operationCache{
 		load: func(_ context.Context, key string) (json.RawMessage, bool, error) {
 			value, ok := values[key]
@@ -133,7 +133,7 @@ func memoryOperationCache() (operationCache, *[]AgentEvent) {
 			values[key] = append(json.RawMessage(nil), value...)
 			return append(json.RawMessage(nil), value...), nil
 		},
-		event: func(event AgentEvent) {
+		event: func(event agent.AgentEvent) {
 			events = append(events, event)
 		},
 	}, &events

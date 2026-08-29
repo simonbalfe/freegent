@@ -58,7 +58,7 @@ func ResearchInstructions(userInstructions string, schema string) string {
 		researchSystemPrompt,
 		businessFieldRules,
 		"Task-specific rules:\n" + strings.TrimSpace(userInstructions),
-		"Return a JSON object with exactly two fields: answer, containing the requested schema, and reasoning, containing one or two sentences naming the deciding sources. Follow the answer schema exactly.\nAnswer schema: " + schema,
+		"Return only a JSON object matching the answer schema exactly.\nAnswer schema: " + schema,
 	}
 	return strings.Join(parts, "\n\n")
 }

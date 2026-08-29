@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"mime"
 	"net/http"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -22,7 +23,7 @@ type csvExportColumn struct {
 }
 
 func handleJobCSV(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
-	job, err := store.GetPage(request.PathValue("id"), csvExportPageSize, 0)
+	job, err := store.get(request.PathValue("id"), csvExportPageSize, 0)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeJSON(writer, http.StatusNotFound, map[string]string{"error": "job not found"})
 		return
@@ -41,7 +42,7 @@ func handleJobCSV(writer http.ResponseWriter, request *http.Request, store *Post
 	offset := 0
 	for {
 		if offset > 0 {
-			job, err = store.GetPage(request.PathValue("id"), csvExportPageSize, offset)
+			job, err = store.get(request.PathValue("id"), csvExportPageSize, offset)
 			if err != nil {
 				return
 			}
@@ -66,11 +67,7 @@ func csvExportColumns(job DashboardJob) ([]csvExportColumn, csvExportColumn) {
 			inputKeys[key] = true
 		}
 	}
-	sortedInputKeys := make([]string, 0, len(inputKeys))
-	for key := range inputKeys {
-		sortedInputKeys = append(sortedInputKeys, key)
-	}
-	sort.Strings(sortedInputKeys)
+	sortedInputKeys := slices.Sorted(maps.Keys(inputKeys))
 	usedHeaders := map[string]bool{}
 	inputColumns := make([]csvExportColumn, 0, len(sortedInputKeys))
 	for _, key := range sortedInputKeys {

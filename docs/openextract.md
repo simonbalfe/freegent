@@ -17,8 +17,3 @@ Set `OPENEXTRACT_PROXY_URL` to a standard HTTP, HTTPS, SOCKS4, or SOCKS5 proxy U
 OpenExtract has no authentication or private-network URL filtering. Keep the service on a private network or put it behind an authenticated gateway.
 
 See the public standalone repository for runtime, API, environment, development, and extraction-ladder documentation.
-
-Related research:
-
-- [OpenExtract context selection](research/openextract-context-selection.md)
-- [ZenRows managed extraction comparison](research/zenrows.md)

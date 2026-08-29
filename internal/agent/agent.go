@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 )
 
 const maxSuccessfulToolCalls = 6
@@ -14,7 +13,6 @@ type Agent struct {
 	Model    Model
 	Tools    map[string]Tool
 	MaxSteps int
-	Verbose  bool
 	Event    func(AgentEvent)
 }
 
@@ -52,7 +50,7 @@ func (a Agent) Run(ctx context.Context, action Action, row Row) (RunResult, erro
 			if err := action.Validator.Validate(response.Final); err == nil {
 				a.tracef("model returned schema-valid final answer")
 				steps = append(steps, Step{Kind: "answer"})
-				return RunResult{Answer: response.Final, Reasoning: response.Reasoning, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, nil
+				return RunResult{Answer: response.Final, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, nil
 			}
 			a.tracef("model returned invalid final answer; finalizing from %d evidence items", len(evidence))
 			return a.finalize(ctx, task, action, ledger, evidence, steps, tokens, costs)
@@ -151,7 +149,7 @@ func (a Agent) finalize(ctx context.Context, task string, action Action, ledger 
 			return RunResult{Answer: nil, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, fmt.Errorf("final answer failed schema validation: %w", err)
 		}
 		steps = append(steps, Step{Kind: "finalize"})
-		return RunResult{Answer: response.Final, Reasoning: response.Reasoning, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, nil
+		return RunResult{Answer: response.Final, Sources: ledger.sources(), Evidence: evidence, Steps: steps, Tokens: tokens, Costs: costs}, nil
 	}
 	panic("unreachable")
 }
@@ -176,8 +174,5 @@ func (a Agent) tracef(format string, args ...any) {
 	message := fmt.Sprintf(format, args...)
 	if a.Event != nil {
 		a.Event(AgentEvent{Message: message})
-	}
-	if a.Verbose {
-		fmt.Fprintln(os.Stderr, "[agent] "+message)
 	}
 }
