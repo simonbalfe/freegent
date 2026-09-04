@@ -2,9 +2,26 @@ package agent
 
 import (
 	"context"
+	"errors"
 
 	"github.com/simonbalfe/freegent/internal/openextract"
 )
+
+type permanentError struct {
+	err error
+}
+
+func (e permanentError) Error() string { return e.err.Error() }
+func (e permanentError) Unwrap() error { return e.err }
+
+func Permanent(err error) error {
+	return permanentError{err: err}
+}
+
+func IsPermanent(err error) bool {
+	var target permanentError
+	return errors.As(err, &target)
+}
 
 type Row map[string]string
 
@@ -64,6 +81,7 @@ type Tool interface {
 	Name() string
 	Description() string
 	Schema() map[string]any
+	GuardedURL(map[string]any) string
 	Run(context.Context, map[string]any) (ToolResult, error)
 }
 
@@ -84,10 +102,13 @@ type Step struct {
 }
 
 type CostUsage struct {
-	OpenRouterUSD      float64 `json:"openRouterUsd"`
-	ApifyUSD           float64 `json:"apifyUsd"`
-	OpenRouterRecorded bool    `json:"openRouterRecorded"`
-	ApifyRuns          int     `json:"apifyRuns"`
+	OpenRouterUSD         float64 `json:"openRouterUsd"`
+	ApifyUSD              float64 `json:"apifyUsd"`
+	OpenRouterRecorded    bool    `json:"openRouterRecorded"`
+	ProviderUsageRecorded bool    `json:"providerUsageRecorded"`
+	ApifyRuns             int     `json:"apifyRuns"`
+	UnpricedApifyRuns     int     `json:"unpricedApifyRuns"`
+	SerperQueries         int     `json:"serperQueries"`
 }
 
 type RunResult struct {

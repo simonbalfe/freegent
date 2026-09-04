@@ -23,7 +23,7 @@ type csvExportColumn struct {
 }
 
 func handleJobCSV(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
-	job, err := store.get(request.PathValue("id"), csvExportPageSize, 0)
+	job, err := store.get(request.Context(), request.PathValue("id"), csvExportPageSize, 0)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeJSON(writer, http.StatusNotFound, map[string]string{"error": "job not found"})
 		return
@@ -42,7 +42,7 @@ func handleJobCSV(writer http.ResponseWriter, request *http.Request, store *Post
 	offset := 0
 	for {
 		if offset > 0 {
-			job, err = store.get(request.PathValue("id"), csvExportPageSize, offset)
+			job, err = store.get(request.Context(), request.PathValue("id"), csvExportPageSize, offset)
 			if err != nil {
 				return
 			}

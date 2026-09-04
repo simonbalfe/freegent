@@ -83,7 +83,11 @@ func (m OpenRouterModel) chat(ctx context.Context, messages []agent.Message, act
 		return agent.ModelResponse{}, err
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return agent.ModelResponse{}, fmt.Errorf("OpenRouter %s: %s", response.Status, string(data))
+		err := fmt.Errorf("OpenRouter %s: %s", response.Status, string(data))
+		if response.StatusCode >= 400 && response.StatusCode < 500 && response.StatusCode != http.StatusRequestTimeout && response.StatusCode != http.StatusConflict && response.StatusCode != http.StatusTooManyRequests {
+			return agent.ModelResponse{}, agent.Permanent(err)
+		}
+		return agent.ModelResponse{}, err
 	}
 	return parseOpenRouterResponse(data)
 }

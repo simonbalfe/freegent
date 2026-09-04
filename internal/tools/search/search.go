@@ -34,6 +34,8 @@ func (Tool) Schema() map[string]any {
 	return objectSchema(map[string]any{"query": map[string]any{"type": "string"}, "max_results": map[string]any{"type": "integer", "minimum": 1, "maximum": 8}}, []string{"query"})
 }
 
+func (Tool) GuardedURL(map[string]any) string { return "" }
+
 type SearchHit struct {
 	Title   string `json:"title"`
 	URL     string `json:"url"`

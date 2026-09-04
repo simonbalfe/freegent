@@ -56,6 +56,14 @@ func (Tool) Schema() map[string]any {
 	}
 }
 
+func (Tool) GuardedURL(input map[string]any) string {
+	value := strings.TrimSpace(stringValue(input["url"]))
+	if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
+		return value
+	}
+	return ""
+}
+
 func (tool Tool) Run(ctx context.Context, input map[string]any) (agent.ToolResult, error) {
 	rawURL := strings.TrimSpace(stringValue(input["url"]))
 	target, err := url.ParseRequestURI(rawURL)

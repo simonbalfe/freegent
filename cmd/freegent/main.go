@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/simonbalfe/freegent/internal/api"
@@ -17,5 +18,8 @@ func main() {
 		api.RunWorker(args[1:])
 		return
 	}
-	cli.Run(args)
+	if err := cli.Run(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }

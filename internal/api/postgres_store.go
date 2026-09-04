@@ -16,6 +16,7 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivermigrate"
+	"github.com/simonbalfe/freegent/internal/agent"
 )
 
 const postgresJobSchema = `
@@ -50,14 +51,19 @@ CREATE TABLE IF NOT EXISTS job_events (
 	job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
 	row_number INTEGER NOT NULL DEFAULT 0,
 	at TIMESTAMPTZ NOT NULL,
+	kind TEXT NOT NULL DEFAULT '',
+	tool TEXT NOT NULL DEFAULT '',
 	message TEXT NOT NULL
 );
+ALTER TABLE job_events ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT '';
+ALTER TABLE job_events ADD COLUMN IF NOT EXISTS tool TEXT NOT NULL DEFAULT '';
 CREATE INDEX IF NOT EXISTS jobs_created_at_idx ON jobs(created_at DESC);
 CREATE INDEX IF NOT EXISTS job_rows_status_idx ON job_rows(status, job_id, row_index);
 CREATE INDEX IF NOT EXISTS job_events_job_id_idx ON job_events(job_id, id);
 `
 
 const operationInsertChunk = 1000
+const serperUSDPerQuery = 0.001
 
 type OperationArgs struct {
 	JobID    string `json:"job_id" river:"unique"`
@@ -188,7 +194,7 @@ func (s *PostgresStore) Start(ctx context.Context, request APIRequest, rows []ma
 	}
 	if _, err := tx.Exec(
 		ctx,
-		`INSERT INTO job_events (job_id, row_number, at, message) VALUES ($1, 0, NOW(), 'Job queued')`,
+		`INSERT INTO job_events (job_id, row_number, at, kind, message) VALUES ($1, 0, NOW(), 'job_queued', 'Job queued')`,
 		id,
 	); err != nil {
 		return "", err
@@ -211,8 +217,8 @@ func (s *PostgresStore) Start(ctx context.Context, request APIRequest, rows []ma
 	return id, nil
 }
 
-func (s *PostgresStore) get(id string, limit int, offset int) (DashboardJob, error) {
-	job, err := s.GetSummary(id)
+func (s *PostgresStore) get(ctx context.Context, id string, limit int, offset int) (DashboardJob, error) {
+	job, err := s.GetSummary(ctx, id)
 	if err != nil {
 		return DashboardJob{}, err
 	}
@@ -223,7 +229,7 @@ func (s *PostgresStore) get(id string, limit int, offset int) (DashboardJob, err
 		rowQuery += ` LIMIT $2 OFFSET $3`
 		rowArgs = append(rowArgs, limit, offset)
 	}
-	rows, err := s.pool.Query(context.Background(), rowQuery, rowArgs...)
+	rows, err := s.pool.Query(ctx, rowQuery, rowArgs...)
 	if err != nil {
 		return DashboardJob{}, err
 	}
@@ -253,21 +259,21 @@ func (s *PostgresStore) get(id string, limit int, offset int) (DashboardJob, err
 	if err := rows.Err(); err != nil {
 		return DashboardJob{}, err
 	}
-	eventQuery := `SELECT at, row_number, message FROM job_events WHERE job_id = $1 ORDER BY id`
+	eventQuery := `SELECT at, row_number, kind, tool, message FROM job_events WHERE job_id = $1 ORDER BY id`
 	if limit > 0 {
-		eventQuery = `SELECT at, row_number, message FROM (
-		 SELECT id, at, row_number, message FROM job_events
+		eventQuery = `SELECT at, row_number, kind, tool, message FROM (
+		 SELECT id, at, row_number, kind, tool, message FROM job_events
 		 WHERE job_id = $1 ORDER BY id DESC LIMIT 200
 		) recent_events ORDER BY id`
 	}
-	events, err := s.pool.Query(context.Background(), eventQuery, id)
+	events, err := s.pool.Query(ctx, eventQuery, id)
 	if err != nil {
 		return DashboardJob{}, err
 	}
 	defer events.Close()
 	for events.Next() {
 		var event DashboardEvent
-		if err := events.Scan(&event.At, &event.Row, &event.Message); err != nil {
+		if err := events.Scan(&event.At, &event.Row, &event.Kind, &event.Tool, &event.Message); err != nil {
 			return DashboardJob{}, err
 		}
 		job.Events = append(job.Events, event)
@@ -275,11 +281,11 @@ func (s *PostgresStore) get(id string, limit int, offset int) (DashboardJob, err
 	return job, events.Err()
 }
 
-func (s *PostgresStore) GetSummary(id string) (DashboardJob, error) {
+func (s *PostgresStore) GetSummary(ctx context.Context, id string) (DashboardJob, error) {
 	var job DashboardJob
 	var requestJSON []byte
 	err := s.pool.QueryRow(
-		context.Background(),
+		ctx,
 		`SELECT id, name, request_json, status, total, completed, created_at, latest_event
 		 FROM jobs WHERE id = $1`,
 		id,
@@ -307,9 +313,9 @@ func (s *PostgresStore) GetSummary(id string) (DashboardJob, error) {
 	return job, nil
 }
 
-func (s *PostgresStore) list() ([]DashboardJob, error) {
+func (s *PostgresStore) list(ctx context.Context) ([]DashboardJob, error) {
 	rows, err := s.pool.Query(
-		context.Background(),
+		ctx,
 		`SELECT id, name, status, total, completed, created_at, latest_event
 		 FROM jobs ORDER BY created_at DESC LIMIT 50`,
 	)
@@ -378,6 +384,8 @@ func (s *PostgresStore) Stats(ctx context.Context, id string) (DashboardStats, e
 		stats.Models = append(stats.Models, *model)
 	}
 	sort.Slice(stats.Models, func(left, right int) bool { return stats.Models[left].Model < stats.Models[right].Model })
+	stats.SerperUSD = float64(stats.SerperQueries) * serperUSDPerQuery
+	stats.RecordedTotalUSD = stats.Costs.OpenRouterUSD + stats.Costs.ApifyUSD + stats.SerperUSD
 	return stats, nil
 }
 
@@ -396,6 +404,10 @@ func accumulateDashboardStats(stats *DashboardStats, models map[string]*Dashboar
 	stats.Costs.OpenRouterUSD += result.Costs.OpenRouterUSD
 	stats.Costs.ApifyUSD += result.Costs.ApifyUSD
 	stats.Costs.ApifyRuns += result.Costs.ApifyRuns
+	if result.Costs.ProviderUsageRecorded {
+		stats.UnpricedApifyRuns += result.Costs.UnpricedApifyRuns
+		stats.SerperQueries += result.Costs.SerperQueries
+	}
 	if result.Model != "" || result.Tokens.Input+result.Tokens.Output > 0 {
 		model := models[result.Model]
 		if model == nil {
@@ -411,23 +423,23 @@ func accumulateDashboardStats(stats *DashboardStats, models map[string]*Dashboar
 			model.UnpricedOutputTokens += result.Tokens.Output
 		}
 	}
-	if result.Costs.ApifyRuns == 0 {
+	if !result.Costs.ProviderUsageRecorded {
 		for _, evidence := range result.Evidence {
 			if strings.HasPrefix(evidence.Provider, "apify:") {
 				stats.UnpricedApifyRuns++
 			}
 		}
-	}
-	for _, evidence := range result.Evidence {
-		counted := false
-		for _, attempt := range evidence.Attempts {
-			if attempt.Provider == "serper" && (attempt.Outcome == "ok" || attempt.Outcome == "empty") {
-				stats.SerperQueries++
-				counted = true
+		for _, evidence := range result.Evidence {
+			counted := false
+			for _, attempt := range evidence.Attempts {
+				if attempt.Provider == "serper" && (attempt.Outcome == "ok" || attempt.Outcome == "empty") {
+					stats.SerperQueries++
+					counted = true
+				}
 			}
-		}
-		if evidence.Provider == "serper" && !counted && len(evidence.Attempts) == 0 {
-			stats.SerperQueries++
+			if evidence.Provider == "serper" && !counted && len(evidence.Attempts) == 0 {
+				stats.SerperQueries++
+			}
 		}
 	}
 }
@@ -508,21 +520,23 @@ func (s *PostgresStore) beginOperation(
 	return request, input, false, nil
 }
 
-func (s *PostgresStore) appendOperationEvent(ctx context.Context, args OperationArgs, message string) error {
+func (s *PostgresStore) appendOperationEvent(ctx context.Context, args OperationArgs, event agent.AgentEvent) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
-	if _, err := tx.Exec(ctx, `UPDATE jobs SET latest_event = $2 WHERE id = $1`, args.JobID, message); err != nil {
+	if _, err := tx.Exec(ctx, `UPDATE jobs SET latest_event = $2 WHERE id = $1`, args.JobID, event.Message); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(
 		ctx,
-		`INSERT INTO job_events (job_id, row_number, at, message) VALUES ($1, $2, NOW(), $3)`,
+		`INSERT INTO job_events (job_id, row_number, at, kind, tool, message) VALUES ($1, $2, NOW(), $3, $4, $5)`,
 		args.JobID,
 		args.RowIndex+1,
-		message,
+		event.Kind,
+		event.Tool,
+		event.Message,
 	); err != nil {
 		return err
 	}

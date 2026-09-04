@@ -70,7 +70,7 @@ func handleJob(writer http.ResponseWriter, request *http.Request, store *Postgre
 }
 
 func handleJobsJSON(writer http.ResponseWriter, request *http.Request, store *PostgresStore) {
-	jobs, err := store.list()
+	jobs, err := store.list(request.Context())
 	if err != nil {
 		writeJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -82,7 +82,7 @@ func handleJobJSON(writer http.ResponseWriter, request *http.Request, store *Pos
 	var job DashboardJob
 	var err error
 	if request.URL.Query().Get("summary") == "1" {
-		job, err = store.GetSummary(request.PathValue("id"))
+		job, err = store.GetSummary(request.Context(), request.PathValue("id"))
 	} else if rawLimit := request.URL.Query().Get("limit"); rawLimit != "" {
 		limit, parseError := strconv.Atoi(rawLimit)
 		if parseError != nil || limit < 1 {
@@ -98,9 +98,9 @@ func handleJobJSON(writer http.ResponseWriter, request *http.Request, store *Pos
 			writeJSON(writer, http.StatusBadRequest, map[string]string{"error": "offset must be a non-negative integer"})
 			return
 		}
-		job, err = store.get(request.PathValue("id"), limit, offset)
+		job, err = store.get(request.Context(), request.PathValue("id"), limit, offset)
 	} else {
-		job, err = store.get(request.PathValue("id"), 0, 0)
+		job, err = store.get(request.Context(), request.PathValue("id"), 0, 0)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		writeJSON(writer, http.StatusNotFound, map[string]string{"error": "job not found"})

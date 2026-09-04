@@ -13,7 +13,10 @@ type Costs = {
   readonly openRouterUSD: number;
   readonly apifyUSD: number;
   readonly openRouterRecorded: boolean;
+  readonly providerUsageRecorded: boolean;
   readonly apifyRuns: number;
+  readonly unpricedApifyRuns: number;
+  readonly serperQueries: number;
 };
 
 type Step = {
@@ -42,6 +45,8 @@ type JobRow = {
 type JobEvent = {
   readonly at: string;
   readonly row: number;
+  readonly kind: string;
+  readonly tool: string;
   readonly message: string;
 };
 
@@ -80,6 +85,8 @@ type JobStats = {
   readonly costs: Costs;
   readonly unpricedApifyRuns: number;
   readonly serperQueries: number;
+  readonly serperUSD: number;
+  readonly recordedTotalUSD: number;
   readonly models: readonly ModelStats[];
 };
 
@@ -154,7 +161,10 @@ function parseResult(value: unknown): Result {
       openRouterUSD: number(costData.openRouterUsd),
       apifyUSD: number(costData.apifyUsd),
       openRouterRecorded: bool(costData.openRouterRecorded),
+      providerUsageRecorded: bool(costData.providerUsageRecorded),
       apifyRuns: number(costData.apifyRuns),
+      unpricedApifyRuns: number(costData.unpricedApifyRuns),
+      serperQueries: number(costData.serperQueries),
     },
     model: text(data.model),
     error: text(data.error),
@@ -190,10 +200,15 @@ function parseJobStats(value: unknown): JobStats {
       openRouterUSD: number(costs.openRouterUsd),
       apifyUSD: number(costs.apifyUsd),
       openRouterRecorded: bool(costs.openRouterRecorded),
+      providerUsageRecorded: bool(costs.providerUsageRecorded),
       apifyRuns: number(costs.apifyRuns),
+      unpricedApifyRuns: number(costs.unpricedApifyRuns),
+      serperQueries: number(costs.serperQueries),
     },
     unpricedApifyRuns: number(data.unpricedApifyRuns),
     serperQueries: number(data.serperQueries),
+    serperUSD: number(data.serperUsd),
+    recordedTotalUSD: number(data.recordedTotalUsd),
     models: array(data.models).map(parseModelStats),
   };
 }
@@ -210,7 +225,7 @@ function parseRow(value: unknown): JobRow {
 
 function parseEvent(value: unknown): JobEvent {
   const data = object(value);
-  return { at: text(data.at), row: number(data.row), message: text(data.message) };
+  return { at: text(data.at), row: number(data.row), kind: text(data.kind), tool: text(data.tool), message: text(data.message) };
 }
 
 function parseJob(value: unknown): Job {
@@ -290,15 +305,22 @@ function formatTime(value: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleTimeString();
 }
 
-function eventMessage(message: string): string {
-  if (message.startsWith("run start")) return "Agent started research";
-  const requested = message.match(/model requested tool=([^ ]+)/)?.[1];
-  if (requested !== undefined) return `Agent selected ${requested}`;
-  const completed = message.match(/tool=([^ ]+).*completed/)?.[1];
-  if (completed !== undefined) return `${completed} completed`;
-  if (message.includes("schema-valid final answer")) return "Answer passed schema validation";
-  if (message.startsWith("finalizer start")) return "Agent is finalizing the answer";
-  return message;
+function eventMessage(event: JobEvent): string {
+  if (event.kind === "run_start") return "Agent started research";
+  if (event.kind === "tool_requested") return `Agent selected ${event.tool}`;
+  if (event.kind === "tool_completed") return `${event.tool} completed`;
+  if (event.kind === "answer_valid") return "Answer passed schema validation";
+  if (event.kind === "finalizer_start") return "Agent is finalizing the answer";
+  if (event.kind === "") {
+    if (event.message.startsWith("run start")) return "Agent started research";
+    const requested = event.message.match(/model requested tool=([^ ]+)/)?.[1];
+    if (requested !== undefined) return `Agent selected ${requested}`;
+    const completed = event.message.match(/tool=([^ ]+).*completed/)?.[1];
+    if (completed !== undefined) return `${completed} completed`;
+    if (event.message.includes("schema-valid final answer")) return "Answer passed schema validation";
+    if (event.message.startsWith("finalizer start")) return "Agent is finalizing the answer";
+  }
+  return event.message;
 }
 
 function statusClass(status: string): string {
@@ -418,7 +440,7 @@ function RowAnalytics({ row, events }: {
           <section className="flex min-h-0 flex-col">
             <h3 className="m-0 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-extrabold tracking-wide text-slate-500 uppercase">Activity</h3>
             <div className="min-h-0 flex-1 overflow-auto">
-              {events.map((event, index) => <p className="m-0 border-b border-slate-100 px-3 py-2" key={`${event.at}-${index}`}><small className="mr-2 text-slate-500">{formatTime(event.at)}</small>{eventMessage(event.message)}</p>)}
+              {events.map((event, index) => <p className="m-0 border-b border-slate-100 px-3 py-2" key={`${event.at}-${index}`}><small className="mr-2 text-slate-500">{formatTime(event.at)}</small>{eventMessage(event)}</p>)}
               {events.length === 0 && <p className="m-0 p-3 text-slate-500">No activity.</p>}
             </div>
           </section>
@@ -571,11 +593,11 @@ function DetailedStats({ job, onClose }: {
     };
   }) ?? [];
   const estimatedOpenRouter = estimates.reduce((sum, model) => sum + model.estimate, 0);
-  const serperCost = (stats?.serperQueries ?? 0) * 0.001;
+  const serperCost = stats?.serperUSD ?? 0;
   const missingModels = estimates.filter((model) => model.missingPrice).length;
   const openRouterCost = (stats?.costs.openRouterUSD ?? 0) + estimatedOpenRouter;
   const apifyCost = stats?.costs.apifyUSD ?? 0;
-  const totalCost = openRouterCost + apifyCost + serperCost;
+  const totalCost = (stats?.recordedTotalUSD ?? 0) + estimatedOpenRouter;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/30 p-4" role="dialog" aria-modal="true" aria-labelledby="stats-title" onMouseDown={(event) => {

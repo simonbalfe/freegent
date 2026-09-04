@@ -2,12 +2,20 @@ package api
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/simonbalfe/freegent/internal/agent"
 	"github.com/simonbalfe/freegent/internal/config"
 )
@@ -72,18 +80,72 @@ func TestDecodeJobRequestRejectsLegacyInput(t *testing.T) {
 }
 
 func TestPermanentOperationError(t *testing.T) {
-	for _, message := range []string{
-		"OPENROUTER_API_KEY is not set",
-		"URL must use http or https",
-		"fetch_page: OpenExtract could not extract the URL: Response appears to be a JavaScript shell or block page",
-		"401 Unauthorized",
-	} {
-		if !permanentOperationError(message) {
-			t.Fatalf("expected permanent error for %q", message)
-		}
+	err := agent.Permanent(errors.New("invalid output schema"))
+	if !agent.IsPermanent(err) {
+		t.Fatal("expected typed permanent error")
 	}
-	if permanentOperationError("provider returned 429") {
+	if agent.IsPermanent(errors.New("provider returned 429")) {
 		t.Fatal("expected provider rate limit to be retryable")
+	}
+}
+
+func TestPostgresStoreLifecycle(t *testing.T) {
+	databaseURL := os.Getenv("FREEGENT_TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("FREEGENT_TEST_DATABASE_URL is required")
+	}
+	ctx := context.Background()
+	admin, err := pgx.Connect(ctx, databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema := "freegent_test_" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	if _, err := admin.Exec(ctx, "CREATE SCHEMA "+pgx.Identifier{schema}.Sanitize()); err != nil {
+		admin.Close(ctx)
+		t.Fatal(err)
+	}
+	parsedURL, err := url.Parse(databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	query := parsedURL.Query()
+	query.Set("search_path", schema)
+	parsedURL.RawQuery = query.Encode()
+	store, err := OpenPostgresStore(ctx, parsedURL.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		store.Close()
+		_, _ = admin.Exec(context.Background(), "DROP SCHEMA "+pgx.Identifier{schema}.Sanitize()+" CASCADE")
+		_ = admin.Close(context.Background())
+	})
+
+	request := APIRequest{Instructions: "Research.", Template: "{{company}}", Schema: json.RawMessage(`{"answer":"string"}`)}
+	id, err := store.Start(ctx, request, []map[string]any{{"company": "Linear"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	args := OperationArgs{JobID: id, RowIndex: 0}
+	storedRequest, input, done, err := store.beginOperation(ctx, args, 1)
+	if err != nil || done || storedRequest.Template != request.Template || input["company"] != "Linear" {
+		t.Fatalf("begin operation = request=%+v input=%+v done=%v error=%v", storedRequest, input, done, err)
+	}
+	if err := store.retryOperation(ctx, args, APIResult{Error: "temporary failure"}, 1); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, done, err = store.beginOperation(ctx, args, 2); err != nil || done {
+		t.Fatalf("retry begin = done=%v error=%v", done, err)
+	}
+	if err := store.completeOperation(ctx, args, APIResult{Result: map[string]any{"answer": "done"}}); err != nil {
+		t.Fatal(err)
+	}
+	job, err := store.get(ctx, id, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if job.Status != "completed" || job.Completed != 1 || len(job.Rows) != 1 || job.Rows[0].Result.Result["answer"] != "done" {
+		t.Fatalf("completed job = %+v", job)
 	}
 }
 
@@ -92,7 +154,10 @@ func TestAccumulateDashboardStats(t *testing.T) {
 	models := map[string]*DashboardModelStats{}
 	accumulateDashboardStats(&stats, models, "completed", APIResult{
 		Model: "example/model", Tokens: agent.TokenUsage{Input: 100, Output: 20},
-		Costs:    agent.CostUsage{OpenRouterUSD: 0.01, OpenRouterRecorded: true, ApifyUSD: 0.03, ApifyRuns: 1},
+		Costs: agent.CostUsage{
+			OpenRouterUSD: 0.01, OpenRouterRecorded: true, ApifyUSD: 0.03, ApifyRuns: 1,
+			ProviderUsageRecorded: true, UnpricedApifyRuns: 1, SerperQueries: 2,
+		},
 		AgentLog: []agent.Step{{Kind: "tool"}}, Sources: []string{"https://example.com"},
 	})
 	accumulateDashboardStats(&stats, models, "failed", APIResult{
@@ -100,7 +165,7 @@ func TestAccumulateDashboardStats(t *testing.T) {
 		Evidence: []agent.Evidence{{Provider: "apify:example~actor"}, {Provider: "serper", Attempts: []agent.FetchAttempt{{Provider: "serper", Outcome: "ok"}}}},
 	})
 	model := models["example/model"]
-	if stats.Completed != 1 || stats.Failed != 1 || stats.Tokens.Input != 150 || stats.Costs.OpenRouterUSD != 0.01 || stats.Costs.ApifyUSD != 0.03 || stats.UnpricedApifyRuns != 1 || stats.SerperQueries != 1 {
+	if stats.Completed != 1 || stats.Failed != 1 || stats.Tokens.Input != 150 || stats.Costs.OpenRouterUSD != 0.01 || stats.Costs.ApifyUSD != 0.03 || stats.UnpricedApifyRuns != 2 || stats.SerperQueries != 3 {
 		t.Fatalf("unexpected aggregate stats: %+v", stats)
 	}
 	if stats.DurationMS != 0 {

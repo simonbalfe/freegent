@@ -2,12 +2,10 @@ package api
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -49,43 +47,21 @@ func (w *OperationWorker) Work(ctx context.Context, job *river.Job[OperationArgs
 		return nil
 	}
 	event := func(event agent.AgentEvent) {
-		if err := w.store.appendOperationEvent(ctx, job.Args, event.Message); err != nil {
+		if err := w.store.appendOperationEvent(ctx, job.Args, event); err != nil {
 			fmt.Fprintf(os.Stderr, "operation event persistence failed job=%s row=%d error=%v\n", job.Args.JobID, job.Args.RowIndex+1, err)
 		}
 	}
-	result := runOneWithEvents(ctx, request, input, event, newOperationCache(w.store, job.Args, event), w.providers)
+	result, runErr := runOneWithEvents(ctx, request, input, event, newOperationCache(w.store, job.Args, event), w.providers)
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	if result.Error != "" && !permanentOperationError(result.Error) && job.Attempt < job.MaxAttempts {
+	if runErr != nil && !agent.IsPermanent(runErr) && job.Attempt < job.MaxAttempts {
 		if err := w.store.retryOperation(ctx, job.Args, result, job.Attempt); err != nil {
 			return err
 		}
-		return errors.New(result.Error)
+		return runErr
 	}
 	return w.store.completeOperation(ctx, job.Args, result)
-}
-
-func permanentOperationError(message string) bool {
-	value := strings.ToLower(message)
-	patterns := []string{
-		"openrouter_api_key is not set",
-		"api key is not set",
-		"url must use http or https",
-		"schema validation",
-		"invalid output schema",
-		"openextract could not extract the url",
-		"unsupported protocol",
-		"401 unauthorized",
-		"404 not found",
-		"410 gone",
-	}
-	for _, pattern := range patterns {
-		if strings.Contains(value, pattern) {
-			return true
-		}
-	}
-	return false
 }
 
 func RunWorker(args []string) {

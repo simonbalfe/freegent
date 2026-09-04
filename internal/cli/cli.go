@@ -65,7 +65,7 @@ Options:
   --detach         Return the job ID without waiting
   --api-url url    API address (default: http://localhost:8080)`
 
-func Run(args []string) {
+func Run(args []string) error {
 	flags := flag.NewFlagSet("freegent", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	csvPath := flags.String("csv", "", "CSV file")
@@ -77,23 +77,23 @@ func Run(args []string) {
 	detach := flags.Bool("detach", false, "submit without waiting")
 	help := flags.Bool("help", false, "show help")
 	if err := flags.Parse(args); err != nil {
-		failCLI(err)
+		return err
 	}
 	if *help || len(args) == 0 {
 		fmt.Println(cliHelp)
-		return
+		return nil
 	}
 	if flags.NArg() != 0 {
-		failCLI(fmt.Errorf("unexpected arguments: %s", strings.Join(flags.Args(), " ")))
+		return fmt.Errorf("unexpected arguments: %s", strings.Join(flags.Args(), " "))
 	}
 	if (*csvPath == "") == (*rowValue == "") {
-		failCLI(errors.New("provide exactly one of --csv or --row"))
+		return errors.New("provide exactly one of --csv or --row")
 	}
 	if strings.TrimSpace(*prompt) == "" {
-		failCLI(errors.New("--prompt is required"))
+		return errors.New("--prompt is required")
 	}
 	if !json.Valid([]byte(*schemaValue)) {
-		failCLI(errors.New("--schema must be valid JSON"))
+		return errors.New("--schema must be valid JSON")
 	}
 
 	resolvedAPIURL := firstNonEmpty(*apiURL, os.Getenv("FREEGENT_API_URL"), "http://localhost:8080")
@@ -105,45 +105,44 @@ func Run(args []string) {
 	} else {
 		request, requestError := buildRowRequest(*rowValue, *instructions, *prompt, *schemaValue)
 		if requestError != nil {
-			failCLI(requestError)
+			return requestError
 		}
 		jobID, err = submitRemoteJob(ctx, resolvedAPIURL, request)
 	}
 	if err != nil {
-		failCLI(err)
+		return err
 	}
 
 	dashboardURL := strings.TrimRight(resolvedAPIURL, "/") + "/dashboard/jobs/" + jobID
 	downloadURL := strings.TrimRight(resolvedAPIURL, "/") + "/jobs/" + jobID + "/results.csv"
 	if *detach {
-		printJSON(map[string]any{
+		return printJSON(map[string]any{
 			"jobId":     jobID,
 			"status":    "queued",
 			"dashboard": dashboardURL,
 			"download":  downloadURL,
 		})
-		return
 	}
 
 	fmt.Fprintf(os.Stderr, "job %s · %s\n", jobID, dashboardURL)
 	job, err := waitRemoteJob(ctx, resolvedAPIURL, jobID)
 	if err != nil {
-		failCLI(err)
+		return err
 	}
 	if *csvPath != "" {
 		if err := downloadRemoteCSV(ctx, resolvedAPIURL, jobID, os.Stdout); err != nil {
-			failCLI(err)
+			return err
 		}
-		return
+		return nil
 	}
 	if len(job.Rows) != 1 {
-		failCLI(fmt.Errorf("API returned %d rows for a single-row request", len(job.Rows)))
+		return fmt.Errorf("API returned %d rows for a single-row request", len(job.Rows))
 	}
 	result := job.Rows[0].Result
 	if result.Error != "" {
-		failCLI(errors.New(result.Error))
+		return errors.New(result.Error)
 	}
-	printJSON(result.Result)
+	return printJSON(result.Result)
 }
 
 func buildRowRequest(rowValue, instructions, prompt, schemaValue string) (APIRequest, error) {
@@ -316,17 +315,13 @@ func downloadRemoteCSV(ctx context.Context, baseURL, jobID string, output io.Wri
 	return err
 }
 
-func printJSON(value any) {
+func printJSON(value any) error {
 	encoded, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
-		failCLI(err)
+		return err
 	}
 	fmt.Println(string(encoded))
-}
-
-func failCLI(err error) {
-	fmt.Fprintln(os.Stderr, err)
-	os.Exit(1)
+	return nil
 }
 
 func firstNonEmpty(values ...string) string {

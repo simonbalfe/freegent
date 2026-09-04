@@ -15,6 +15,7 @@ type apifyTool struct {
 	description string
 	schema      map[string]any
 	token       string
+	urlField    string
 	actor       func() string
 	input       func(map[string]any) (map[string]any, error)
 	output      func([]map[string]any, map[string]any) (any, []string)
@@ -23,6 +24,14 @@ type apifyTool struct {
 func (t apifyTool) Name() string           { return t.name }
 func (t apifyTool) Description() string    { return t.description }
 func (t apifyTool) Schema() map[string]any { return t.schema }
+
+func (t apifyTool) GuardedURL(input map[string]any) string {
+	value := strings.TrimSpace(stringValue(input[t.urlField]))
+	if isHTTPURL(value) {
+		return value
+	}
+	return ""
+}
 
 func (t apifyTool) Run(ctx context.Context, input map[string]any) (agent.ToolResult, error) {
 	actorInput, err := t.input(input)
@@ -63,6 +72,7 @@ func Tools(token string) []agent.Tool {
 func linkedinProfileTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_profile",
+		urlField:    "url",
 		description: "Get a person's LinkedIn profile as structured data: name, headline, location, about, experience, follower count, and connection count. Use this instead of fetching LinkedIn pages. The URL must come from the input row or gathered evidence. Costs credits, so call once per person.",
 		schema:      objectSchema(map[string]any{"url": map[string]any{"type": "string", "format": "uri"}}, []string{"url"}),
 		token:       token,
@@ -108,6 +118,7 @@ func linkedinProfileTool(token string) agent.Tool {
 func linkedinPostsTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_posts",
+		urlField:    "profileUrl",
 		description: "Get recent LinkedIn posts for a person or company: text, date, engagement counts, and post URLs. The profile URL must come from the input row or gathered evidence. Costs credits, so keep maxPosts small.",
 		token:       token,
 		schema: objectSchema(map[string]any{
@@ -148,6 +159,7 @@ func linkedinPostsTool(token string) agent.Tool {
 func linkedinReactionsTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_post_reactions",
+		urlField:    "postUrl",
 		description: "Get people who reacted to a LinkedIn post, including reaction type, name, position, and profile URL. The post URL must come from the input row or gathered evidence. Costs credits, so keep maxReactions small.",
 		token:       token,
 		schema: objectSchema(map[string]any{
@@ -182,6 +194,7 @@ func linkedinReactionsTool(token string) agent.Tool {
 func linkedinPeopleTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_find_people",
+		urlField:    "company",
 		description: "Find people at a company through LinkedIn employee search, filtered by title or query. Returns name, title, location, profile URL, and optionally work email. Pass an exact company name or a verified LinkedIn company URL. Costs credits, especially with findEmails.",
 		token:       token,
 		schema: objectSchema(map[string]any{
@@ -238,6 +251,7 @@ func linkedinPeopleTool(token string) agent.Tool {
 func linkedinCompanyTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "linkedin_company",
+		urlField:    "company",
 		description: "Get a company's LinkedIn firmographics: exact employee count, size range, industry, founded year, headquarters, followers, website, and description. Pass the exact company name and let the actor resolve it. A URL is accepted only when it came from the input row or gathered evidence. Costs credits, so call once per company.",
 		schema:      objectSchema(map[string]any{"company": map[string]any{"type": "string"}}, []string{"company"}),
 		token:       token,
@@ -307,6 +321,7 @@ func linkedinCompanyTool(token string) agent.Tool {
 func crunchbaseCompanyTool(token string) agent.Tool {
 	return apifyTool{
 		name:        "crunchbase_company",
+		urlField:    "company",
 		description: "Fallback only. Get Crunchbase funding and firmographics including total funding, latest round, investors, founders, employee range, headquarters, founded year, and IPO status. Pass a verified Crunchbase organization URL or the exact company name. Costs credits, so call at most once.",
 		schema:      objectSchema(map[string]any{"company": map[string]any{"type": "string"}}, []string{"company"}),
 		token:       token,

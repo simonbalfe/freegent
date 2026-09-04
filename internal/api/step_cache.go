@@ -44,7 +44,7 @@ func (c operationCache) run(ctx context.Context, kind string, input any, output 
 			return fmt.Errorf("decode cached %s: %w", kind, err)
 		}
 		if c.event != nil {
-			c.event(agent.AgentEvent{Message: "replay reused " + kind})
+			c.event(agent.AgentEvent{Kind: "replay_reused", Message: "replay reused " + kind})
 		}
 		return nil
 	}

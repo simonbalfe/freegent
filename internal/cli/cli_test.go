@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -33,6 +34,12 @@ func TestBuildRowRequest(t *testing.T) {
 func TestBuildRowRequestRejectsNonObject(t *testing.T) {
 	if _, err := buildRowRequest(`["Linear"]`, defaultInstructions, "Research.", defaultSchema); err == nil {
 		t.Fatal("expected JSON object error")
+	}
+}
+
+func TestRunReturnsUsageErrors(t *testing.T) {
+	if err := Run([]string{"--row", `{}`}); err == nil || !strings.Contains(err.Error(), "--prompt is required") {
+		t.Fatalf("unexpected CLI error: %v", err)
 	}
 }
 

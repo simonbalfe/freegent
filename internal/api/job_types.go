@@ -25,6 +25,8 @@ type DashboardJob struct {
 type DashboardEvent struct {
 	At      time.Time `json:"at"`
 	Row     int       `json:"row,omitempty"`
+	Kind    string    `json:"kind,omitempty"`
+	Tool    string    `json:"tool,omitempty"`
 	Message string    `json:"message"`
 }
 
@@ -47,6 +49,8 @@ type DashboardStats struct {
 	Costs             agent.CostUsage       `json:"costs"`
 	UnpricedApifyRuns int                   `json:"unpricedApifyRuns"`
 	SerperQueries     int                   `json:"serperQueries"`
+	SerperUSD         float64               `json:"serperUsd"`
+	RecordedTotalUSD  float64               `json:"recordedTotalUsd"`
 	Models            []DashboardModelStats `json:"models"`
 }
 

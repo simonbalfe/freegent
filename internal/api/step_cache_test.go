@@ -42,6 +42,7 @@ func (*replayTestTool) Description() string { return "search the web" }
 func (*replayTestTool) Schema() map[string]any {
 	return map[string]any{"query": map[string]any{"type": "string"}}
 }
+func (*replayTestTool) GuardedURL(map[string]any) string { return "" }
 func (t *replayTestTool) Run(context.Context, map[string]any) (agent.ToolResult, error) {
 	t.calls++
 	return agent.ToolResult{Text: "Acme builds workflow tools.", URLs: []string{"https://acme.example"}}, nil

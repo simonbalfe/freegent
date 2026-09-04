@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"maps"
@@ -87,7 +88,7 @@ func Serve(args []string) {
 	}
 }
 
-func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(agent.AgentEvent), cache operationCache, providers config.Providers) APIResult {
+func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(agent.AgentEvent), cache operationCache, providers config.Providers) (APIResult, error) {
 	modelName := request.Model
 	if modelName == "" {
 		modelName = providers.OpenRouterModel
@@ -100,12 +101,12 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 	key := providers.OpenRouterAPIKey
 	if key == "" {
 		result.Error = "OPENROUTER_API_KEY is not set"
-		return result
+		return result, agent.Permanent(errors.New(result.Error))
 	}
 	compiledSchema, err := agent.CompileOutputSchema(request.Schema)
 	if err != nil {
 		result.Error = err.Error()
-		return result
+		return result, agent.Permanent(err)
 	}
 	action := agent.Action{
 		Instructions:          agent.ResearchInstructions(request.Instructions, string(compiledSchema.Canonical)),
@@ -133,7 +134,7 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 		result.Result = nil
 		result.Error = err.Error()
 	}
-	return result
+	return result, err
 }
 
 func defaultTools(providers config.Providers) map[string]agent.Tool {

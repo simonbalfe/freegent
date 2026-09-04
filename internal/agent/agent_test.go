@@ -16,6 +16,10 @@ type stubTool struct {
 func (t stubTool) Name() string         { return t.name }
 func (stubTool) Description() string    { return "test tool" }
 func (stubTool) Schema() map[string]any { return map[string]any{} }
+func (stubTool) GuardedURL(input map[string]any) string {
+	value, _ := input["url"].(string)
+	return value
+}
 func (t stubTool) Run(context.Context, map[string]any) (ToolResult, error) {
 	return ToolResult{Text: "Acme builds workflow tools.", URLs: []string{"https://acme.example/about"}, CostUSD: t.costUSD}, nil
 }
@@ -24,9 +28,10 @@ type countingTool struct {
 	calls int
 }
 
-func (*countingTool) Name() string           { return "web_search" }
-func (*countingTool) Description() string    { return "test tool" }
-func (*countingTool) Schema() map[string]any { return map[string]any{} }
+func (*countingTool) Name() string                     { return "web_search" }
+func (*countingTool) Description() string              { return "test tool" }
+func (*countingTool) Schema() map[string]any           { return map[string]any{} }
+func (*countingTool) GuardedURL(map[string]any) string { return "" }
 func (t *countingTool) Run(context.Context, map[string]any) (ToolResult, error) {
 	t.calls++
 	return ToolResult{Text: "Acme builds workflow tools.", URLs: []string{"https://acme.example/about"}}, nil
@@ -289,16 +294,21 @@ func TestAgentRecoversFromFabricatedEnrichmentURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	model := &fabricatedURLModel{}
+	events := []AgentEvent{}
 	result, err := (Agent{
 		Model:    model,
 		Tools:    map[string]Tool{"linkedin_profile": stubTool{name: "linkedin_profile"}},
 		MaxSteps: 2,
+		Event:    func(event AgentEvent) { events = append(events, event) },
 	}).Run(context.Background(), Action{Instructions: "Research.", Template: "Research.", Validator: schema}, Row{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if model.calls != 2 || !model.sawRejection || result.Answer["name"] != "Acme" || len(result.Evidence) != 0 || len(result.Steps) != 2 || result.Steps[0].Kind != "rejected" {
 		t.Fatalf("agent did not recover from rejected URL: model=%+v result=%+v", model, result)
+	}
+	if len(events) < 3 || events[1].Kind != "tool_requested" || events[1].Tool != "linkedin_profile" || events[2].Kind != "tool_rejected" {
+		t.Fatalf("unexpected structured events: %+v", events)
 	}
 }
 
@@ -307,6 +317,10 @@ type deadPageTool struct{}
 func (deadPageTool) Name() string           { return "fetch_page" }
 func (deadPageTool) Description() string    { return "test tool" }
 func (deadPageTool) Schema() map[string]any { return map[string]any{} }
+func (deadPageTool) GuardedURL(input map[string]any) string {
+	value, _ := input["url"].(string)
+	return value
+}
 func (deadPageTool) Run(context.Context, map[string]any) (ToolResult, error) {
 	return ToolResult{}, errors.New("OpenExtract could not extract the URL: HTTP 404")
 }
