@@ -1,0 +1,7 @@
+When these fields are requested:
+- Prefer current company-owned evidence over secondary sources. Never use a secondary source to narrow a field when company-owned evidence says the product serves broader or multiple segments.
+- b2b_software is true when the vendor sells software to businesses or organizations, even when its product serves consumer brands or is described as B2C. It is false only when the offering is not software or is sold primarily to individual consumers.
+- category and positioning must follow the company's current description of the whole product. Do not substitute one feature, a legacy category, or a marketing slogan.
+- target_customer must identify a useful business segment and buyer or user function when the evidence supports them. Do not copy a slogan, infer demographics, or invent a primary segment. For horizontal products, state the broad company scope and the supported buyer or user functions. Do not answer only businesses, teams, enterprise, organizations, developers, or marketers.
+- source_url should be the company-owned page that supports the most classification fields. Do not select a pricing page solely because pricing was requested. Use LinkedIn only when a suitable company-owned source is unavailable or inaccessible.
+- public_pricing is true only when actual prices are publicly visible without requesting a quote. It is false for contact-sales or quote-only pricing and null when the evidence cannot establish either case.

@@ -47,6 +47,7 @@ One `fetch_page` call tries OpenExtract, then Exa, then Tavily until one returns
 An invalid answer or transient finalizer request failure gets one local finalizer retry. Research tools are not repeated.
 Each row reuses identical tool results and finalizes after six successful tool calls.
 Shared business-field instructions prefer current company-owned evidence, reject slogan-based customer segments, and use current whole-product categories.
+Stable agent instructions live in `internal/agent/prompts/*.md` and are embedded into the binary at build time.
 
 ## Durable replay
 
