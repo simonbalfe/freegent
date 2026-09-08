@@ -48,21 +48,25 @@ Optional:
 
 Never commit `.env`.
 
-### ChatGPT subscription authentication
+### Codex mode
 
-Enable device code authorization under ChatGPT **Settings → Security and login**. Then authenticate the Compose worker:
+Codex mode uses a ChatGPT subscription directly. It does not need an OpenRouter or OpenAI API key.
+
+For a new install, run the installer, enter `codex` when asked for the model provider, and complete the browser login.
+
+To switch an existing install:
+
+1. Set `FREEGENT_MODEL_PROVIDER=codex` in `~/freegent/.env`.
+2. Enable device code authorization under ChatGPT **Settings → Security and login**.
+3. Run:
 
 ```bash
+cd ~/freegent
 docker compose run --rm --no-deps worker auth
+docker compose up -d --force-recreate worker
 ```
 
-Open the displayed URL, enter the device code, and wait for Freegent to save the credentials. Set this value in `.env`:
-
-```dotenv
-FREEGENT_MODEL_PROVIDER=codex
-```
-
-Restart the worker with `docker compose up -d --force-recreate worker`. The credentials live in the `freegent_codex_auth` Docker volume, are stored with mode `0600`, and are refreshed by the worker. Freegent calls the ChatGPT Codex Responses backend directly. It does not require an OpenAI API key or the Codex app server.
+Open the displayed URL and enter the device code. Freegent stores the credentials in the private `freegent_codex_auth` Docker volume and refreshes them automatically. `CODEX_MODEL` optionally changes the model from its `gpt-5.6-sol` default.
 
 The direct ChatGPT Codex endpoint is not the public OpenAI API contract and may change.
 

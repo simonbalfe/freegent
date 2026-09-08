@@ -79,7 +79,7 @@ curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh
 ```
 
 Enter your keys when asked. The installer starts Freegent and installs the `freegent` command.
-It stops before starting Docker unless model authentication and at least one Serper, Exa, or Tavily search key are present. OpenRouter remains the default model provider. See the [setup guide](docs/setup.md#chatgpt-subscription-authentication) to use a ChatGPT subscription directly.
+To use your ChatGPT subscription, enter `codex` when the installer asks for the model provider, then complete the device login in your browser. No OpenRouter or OpenAI API key is needed. You still need at least one Serper, Exa, or Tavily search key.
 The installer pulls prebuilt images and extracts the native CLI, Compose file, and agent skill. It does not clone the repository or require Go.
 
 Check that it worked:
@@ -87,6 +87,8 @@ Check that it worked:
 ```bash
 freegent --help
 ```
+
+Already installed with OpenRouter? Switch to Codex with the three commands in the [Codex mode guide](docs/setup.md#codex-mode).
 
 ## Dashboard
 
