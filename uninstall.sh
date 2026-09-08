@@ -7,20 +7,20 @@ project_name="${COMPOSE_PROJECT_NAME:-$(basename "$install_dir")}"
 
 if command -v docker >/dev/null 2>&1; then
   if ! docker info >/dev/null 2>&1; then
-    echo "Docker is not running. Open Docker Desktop and run this command again."
-    exit 1
-  fi
-  if [ -f "$install_dir/compose.yaml" ]; then
-    credential_dir="$(mktemp -d)"
-    if docker compose -f "$install_dir/compose.yaml" run --rm --no-deps --entrypoint sh worker -c 'test -s "$FREEGENT_CODEX_AUTH_FILE"' \
-      && docker compose -f "$install_dir/compose.yaml" run --rm --no-deps -T --entrypoint sh worker -c 'cat "$FREEGENT_CODEX_AUTH_FILE"' > "$credential_dir/codex-auth.json"; then
-      install -m 0600 "$credential_dir/codex-auth.json" "$install_dir/codex-auth.json"
+    echo "Docker is not running. Removing native files; Docker resources may remain."
+  elif [ -f "$install_dir/compose.yaml" ]; then
+    if [ ! -s "$install_dir/codex-auth.json" ]; then
+      credential_dir="$(mktemp -d)"
+      if docker compose -f "$install_dir/compose.yaml" run --rm --no-deps --entrypoint sh worker -c 'test -s "$FREEGENT_CODEX_AUTH_FILE"' \
+        && docker compose -f "$install_dir/compose.yaml" run --rm --no-deps -T --entrypoint sh worker -c 'cat "$FREEGENT_CODEX_AUTH_FILE"' > "$credential_dir/codex-auth.json"; then
+        install -m 0600 "$credential_dir/codex-auth.json" "$install_dir/codex-auth.json"
+      fi
+      rm -rf "$credential_dir"
     fi
-    rm -rf "$credential_dir"
     echo "Removing Freegent containers, volumes, and networks"
-    docker compose -f "$install_dir/compose.yaml" down --volumes --remove-orphans
+    docker compose -f "$install_dir/compose.yaml" down --volumes --remove-orphans || echo "Warning: some Compose resources could not be removed."
     while IFS= read -r volume_name; do
-      [ -z "$volume_name" ] || docker volume rm "$volume_name"
+      [ -z "$volume_name" ] || docker volume rm "$volume_name" || echo "Warning: volume $volume_name could not be removed."
     done < <(docker volume ls -q --filter "label=com.docker.compose.project=$project_name")
     docker image rm "$api_image" >/dev/null 2>&1 || true
   fi
