@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +13,7 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/simonbalfe/freegent/internal/agent"
+	"github.com/simonbalfe/freegent/internal/codex"
 	"github.com/simonbalfe/freegent/internal/config"
 )
 
@@ -19,6 +21,8 @@ type OperationWorker struct {
 	river.WorkerDefaults[OperationArgs]
 	store     *PostgresStore
 	providers config.Providers
+	codexAuth *codex.TokenSource
+	client    *http.Client
 }
 
 func (w *OperationWorker) NextRetry(job *river.Job[OperationArgs]) time.Time {
@@ -51,7 +55,7 @@ func (w *OperationWorker) Work(ctx context.Context, job *river.Job[OperationArgs
 			fmt.Fprintf(os.Stderr, "operation event persistence failed job=%s row=%d error=%v\n", job.Args.JobID, job.Args.RowIndex+1, err)
 		}
 	}
-	result, runErr := runOneWithEvents(ctx, request, input, event, newOperationCache(w.store, job.Args, event), w.providers)
+	result, runErr := runOneWithEvents(ctx, request, input, event, newOperationCache(w.store, job.Args, event), w.providers, w.codexAuth, w.client)
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -89,9 +93,26 @@ func RunWorker(args []string) {
 	}
 	defer store.Close()
 	providers := config.LoadProviders()
+	httpClient := &http.Client{Timeout: 150 * time.Second}
+	var codexAuth *codex.TokenSource
+	if providers.ModelProvider == "codex" {
+		authFile := providers.CodexAuthFile
+		if authFile == "" {
+			authFile, err = codex.DefaultAuthPath()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "freegent Codex auth path failed: %v\n", err)
+				return
+			}
+		}
+		codexAuth, err = codex.NewTokenSource(authFile, httpClient)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "freegent Codex authentication failed: %v; run freegent auth\n", err)
+			return
+		}
+	}
 	workers := river.NewWorkers()
-	river.AddWorker(workers, &OperationWorker{store: store, providers: providers})
-	client, err := river.NewClient(riverpgxv5.New(store.pool), &river.Config{
+	river.AddWorker(workers, &OperationWorker{store: store, providers: providers, codexAuth: codexAuth, client: httpClient})
+	queue, err := river.NewClient(riverpgxv5.New(store.pool), &river.Config{
 		JobTimeout:           *timeout,
 		RescueStuckJobsAfter: *timeout + time.Minute,
 		SoftStopTimeout:      30 * time.Second,
@@ -104,10 +125,10 @@ func RunWorker(args []string) {
 		fmt.Fprintf(os.Stderr, "freegent worker queue failed: %v\n", err)
 		return
 	}
-	if err := client.Start(ctx); err != nil {
+	if err := queue.Start(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "freegent worker start failed: %v\n", err)
 		return
 	}
 	fmt.Fprintf(os.Stderr, "freegent worker started concurrency=%d timeout=%s\n", *concurrency, timeout.String())
-	<-client.Stopped()
+	<-queue.Stopped()
 }

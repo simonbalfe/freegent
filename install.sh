@@ -52,6 +52,25 @@ has_env_value() {
   ' .env
 }
 
+env_value() {
+  local key="$1"
+  awk -v key="$key" '
+    $0 ~ "^[[:space:]]*" key "[[:space:]]*=" {
+      line = $0
+      sub(/\r$/, "", line)
+      sub("^[[:space:]]*" key "[[:space:]]*=[[:space:]]*", "", line)
+      sub(/[[:space:]]+#.*$/, "", line)
+      sub(/^[[:space:]]+/, "", line)
+      sub(/[[:space:]]+$/, "", line)
+      if ((line ~ /^".*"$/) || (line ~ /^'\''.*'\''$/)) {
+        line = substr(line, 2, length(line) - 2)
+      }
+      value = line
+    }
+    END { print value }
+  ' .env
+}
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "Docker is required. Install Docker Desktop and run this script again."
   exit 1
@@ -108,21 +127,27 @@ cd "$install_dir"
 
 if [ -f .env ] \
   && [ "${FREEGENT_REFRESH_KEYS:-0}" != "1" ] \
-  && has_env_value OPENROUTER_API_KEY \
+  && { has_env_value OPENROUTER_API_KEY \
+    || [ "$(env_value FREEGENT_MODEL_PROVIDER)" = "codex" ]; } \
   && { has_env_value SERPER_API_KEY \
     || has_env_value EXA_API_KEY \
     || has_env_value TAVILY_API_KEY; }; then
   echo "Keeping existing .env"
 else
   echo
-  echo "Enter an OpenRouter key and one search key. Input is hidden."
+  echo "Choose model access and enter one search key. Secret input is hidden."
+  model_provider="${FREEGENT_MODEL_PROVIDER:-}"
   openrouter_key="${FREEGENT_OPENROUTER_API_KEY:-}"
   serper_key="${FREEGENT_SERPER_API_KEY:-}"
   exa_key="${FREEGENT_EXA_API_KEY:-}"
   tavily_key="${FREEGENT_TAVILY_API_KEY:-}"
   apify_key="${FREEGENT_APIFY_API_TOKEN:-}"
   if [ "${FREEGENT_NONINTERACTIVE:-0}" != "1" ] && [ -r /dev/tty ]; then
-    if [ -z "$openrouter_key" ]; then
+    if [ -z "$model_provider" ]; then
+      read -r -p "Model provider, openrouter or codex [openrouter]: " model_provider </dev/tty
+    fi
+    model_provider="${model_provider:-openrouter}"
+    if [ "$model_provider" = "openrouter" ] && [ -z "$openrouter_key" ]; then
       read -r -s -p "OpenRouter API key: " openrouter_key </dev/tty
       printf '\n' >/dev/tty
     fi
@@ -140,8 +165,13 @@ else
     fi
   fi
 
+  model_provider="${model_provider:-openrouter}"
+
   {
+    printf 'FREEGENT_MODEL_PROVIDER=%s\n' "$model_provider"
     printf 'OPENROUTER_API_KEY=%s\n' "$openrouter_key"
+    printf 'OPENROUTER_MODEL=%s\n' "${FREEGENT_OPENROUTER_MODEL:-deepseek/deepseek-v4-flash}"
+    printf 'CODEX_MODEL=%s\n' "${FREEGENT_CODEX_MODEL:-gpt-5.6-sol}"
     printf 'SERPER_API_KEY=%s\n' "$serper_key"
     printf 'EXA_API_KEY=%s\n' "$exa_key"
     printf 'TAVILY_API_KEY=%s\n' "$tavily_key"
@@ -150,10 +180,21 @@ else
   chmod 600 .env
 fi
 
-if ! has_env_value OPENROUTER_API_KEY; then
-  echo "OPENROUTER_API_KEY is required. Run again and provide it."
-  exit 1
-fi
+model_provider="$(env_value FREEGENT_MODEL_PROVIDER)"
+model_provider="${model_provider:-openrouter}"
+case "$model_provider" in
+  openrouter)
+    if ! has_env_value OPENROUTER_API_KEY; then
+      echo "OPENROUTER_API_KEY is required when FREEGENT_MODEL_PROVIDER=openrouter."
+      exit 1
+    fi
+    ;;
+  codex) ;;
+  *)
+    echo "FREEGENT_MODEL_PROVIDER must be openrouter or codex."
+    exit 1
+    ;;
+esac
 if ! has_env_value SERPER_API_KEY \
   && ! has_env_value EXA_API_KEY \
   && ! has_env_value TAVILY_API_KEY; then
@@ -163,6 +204,19 @@ fi
 
 echo "Pulling and starting prebuilt Freegent images"
 docker compose pull
+if [ "$model_provider" = "codex" ] \
+  && [ -s "$install_dir/codex-auth.json" ] \
+  && ! docker compose run --rm --no-deps --entrypoint sh worker -c 'test -s "$FREEGENT_CODEX_AUTH_FILE"'; then
+  docker compose run --rm --no-deps -T --entrypoint sh worker -c 'umask 077; cat > "$FREEGENT_CODEX_AUTH_FILE"' < "$install_dir/codex-auth.json"
+fi
+if [ "$model_provider" = "codex" ] \
+  && ! docker compose run --rm --no-deps --entrypoint sh worker -c 'test -s "$FREEGENT_CODEX_AUTH_FILE"'; then
+  if [ "${FREEGENT_NONINTERACTIVE:-0}" = "1" ]; then
+    echo "Codex authentication is missing. Run: cd $install_dir && docker compose run --rm --no-deps worker auth"
+    exit 1
+  fi
+  docker compose run --rm --no-deps worker auth
+fi
 docker compose up -d --force-recreate
 
 mkdir -p "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
@@ -172,13 +226,21 @@ cp SKILL.md "$HOME/.claude/skills/freegent/SKILL.md"
 echo "Waiting for services"
 for attempt in $(seq 1 30); do
   running_services="$(docker compose ps --status running --services)"
+  model_ready=0
+  if [ "$model_provider" = "codex" ]; then
+    if docker compose exec -T worker sh -c 'test -s "$FREEGENT_CODEX_AUTH_FILE"'; then
+      model_ready=1
+    fi
+  elif docker compose exec -T worker sh -c 'test -n "$OPENROUTER_API_KEY"'; then
+    model_ready=1
+  fi
   if curl -fsS "$api_url/health" >/dev/null 2>&1 \
     && curl -fsS "$openextract_url/healthz" >/dev/null 2>&1 \
     && printf '%s\n' "$running_services" | grep -qx postgres \
     && printf '%s\n' "$running_services" | grep -qx api \
     && printf '%s\n' "$running_services" | grep -qx worker \
     && printf '%s\n' "$running_services" | grep -qx openextract \
-    && docker compose exec -T worker sh -c 'test -n "$OPENROUTER_API_KEY"' \
+    && [ "$model_ready" = "1" ] \
     && "$cli_path" --help >/dev/null 2>&1; then
     echo
     echo "Freegent is ready: $api_url/dashboard"

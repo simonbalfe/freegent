@@ -9,7 +9,7 @@ flowchart LR
     DB --> River[River queue]
     River --> Worker[Go worker]
     Worker --> Agent[Agent loop]
-    Agent --> Model[OpenRouter]
+    Agent --> Model[OpenRouter or Codex subscription]
     Agent --> Search[Serper, Exa, Tavily]
     Agent --> Fetch[fetch_page]
     Fetch --> Extract[OpenExtract]
@@ -28,6 +28,7 @@ flowchart LR
 | `internal/api/dashboard` | Vite, React, and Tailwind dashboard source |
 | `internal/config` | Loads provider configuration once at worker startup |
 | `internal/agent` | Runs model and tool calls and validates final answers |
+| `internal/codex` | Authenticates a ChatGPT subscription and calls the Codex Responses backend directly |
 | `internal/tools` | Provides search, page fetching, and optional Apify enrichment |
 | `internal/openextract` | Calls the standalone OpenExtract HTTP API |
 | `ghcr.io/simonbalfe/openextract` | Retrieves and cleans public URLs through the standalone service image |

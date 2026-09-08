@@ -15,7 +15,9 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /freegent ./cmd/freegen
 
 FROM alpine:3.22 AS runtime
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates \
+    && mkdir -p /var/lib/freegent-auth \
+    && chown 65532:65532 /var/lib/freegent-auth
 
 COPY --from=build /freegent /usr/local/bin/freegent
 COPY --from=build /freegent-darwin /opt/freegent/darwin/freegent

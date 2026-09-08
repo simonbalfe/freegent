@@ -7,7 +7,7 @@ You need:
 - macOS or Linux on arm64 or amd64
 - curl
 - Docker with Docker Compose
-- an OpenRouter API key
+- an OpenRouter API key or a ChatGPT subscription with Codex access
 - a Serper, Exa, or Tavily search key
 
 Run:
@@ -34,18 +34,39 @@ Copy `.env.example` to `.env` for manual setup.
 
 Required:
 
-- `OPENROUTER_API_KEY`
+- either `OPENROUTER_API_KEY`, or Codex authentication with `FREEGENT_MODEL_PROVIDER=codex`
 - one of `SERPER_API_KEY`, `EXA_API_KEY`, or `TAVILY_API_KEY`
 
 Optional:
 
 - `OPENROUTER_MODEL` selects the model and defaults to `deepseek/deepseek-v4-flash`
+- `CODEX_MODEL` selects the direct Codex model and defaults to `gpt-5.6-sol`
 - `APIFY_API_TOKEN` enables Apify-backed LinkedIn profiles, posts, reactions, employee search, and company firmographics, plus Crunchbase company enrichment
 - a standard proxy URL optionally enables browser proxying
 - CapSolver or 2Captcha keys enable challenge solving
 - concurrency, ports, database pool size, and operation timeout have defaults in `.env.example`
 
 Never commit `.env`.
+
+### ChatGPT subscription authentication
+
+Enable device code authorization under ChatGPT **Settings → Security and login**. Then authenticate the Compose worker:
+
+```bash
+docker compose run --rm --no-deps worker auth
+```
+
+Open the displayed URL, enter the device code, and wait for Freegent to save the credentials. Set this value in `.env`:
+
+```dotenv
+FREEGENT_MODEL_PROVIDER=codex
+```
+
+Restart the worker with `docker compose up -d --force-recreate worker`. The credentials live in the `freegent_codex_auth` Docker volume, are stored with mode `0600`, and are refreshed by the worker. Freegent calls the ChatGPT Codex Responses backend directly. It does not require an OpenAI API key or the Codex app server.
+
+The direct ChatGPT Codex endpoint is not the public OpenAI API contract and may change.
+
+For a worker running directly on the host, use `freegent auth`. The credential path defaults to the operating system's user configuration directory and can be overridden with `FREEGENT_CODEX_AUTH_FILE` or `freegent auth -file path`.
 
 ## Local development
 

@@ -11,6 +11,12 @@ if command -v docker >/dev/null 2>&1; then
     exit 1
   fi
   if [ -f "$install_dir/compose.yaml" ]; then
+    credential_dir="$(mktemp -d)"
+    if docker compose -f "$install_dir/compose.yaml" run --rm --no-deps --entrypoint sh worker -c 'test -s "$FREEGENT_CODEX_AUTH_FILE"' \
+      && docker compose -f "$install_dir/compose.yaml" run --rm --no-deps -T --entrypoint sh worker -c 'cat "$FREEGENT_CODEX_AUTH_FILE"' > "$credential_dir/codex-auth.json"; then
+      install -m 0600 "$credential_dir/codex-auth.json" "$install_dir/codex-auth.json"
+    fi
+    rm -rf "$credential_dir"
     echo "Removing Freegent containers, volumes, and networks"
     docker compose -f "$install_dir/compose.yaml" down --volumes --remove-orphans
     while IFS= read -r volume_name; do
@@ -23,7 +29,7 @@ fi
 rm -f /usr/local/bin/freegent "$HOME/.local/bin/freegent"
 rm -rf "$HOME/.codex/skills/freegent" "$HOME/.claude/skills/freegent"
 if [ "$install_dir" = "$HOME/freegent" ] && [ -d "$install_dir" ]; then
-  find "$install_dir" -mindepth 1 -maxdepth 1 ! -name .env -exec rm -rf -- {} +
+  find "$install_dir" -mindepth 1 -maxdepth 1 ! -name .env ! -name codex-auth.json -exec rm -rf -- {} +
 else
   rm -f \
     "$install_dir/compose.yaml" \
@@ -32,4 +38,4 @@ else
     "$install_dir/uninstall.sh"
 fi
 
-echo "Freegent was removed. Credentials remain in $install_dir/.env"
+echo "Freegent was removed. Credentials remain in $install_dir/.env and, when configured, $install_dir/codex-auth.json"

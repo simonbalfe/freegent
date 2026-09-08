@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/simonbalfe/freegent/internal/agent"
+	"github.com/simonbalfe/freegent/internal/codex"
 	"github.com/simonbalfe/freegent/internal/config"
 	"github.com/simonbalfe/freegent/internal/openrouter"
 	"github.com/simonbalfe/freegent/internal/tools/apify"
@@ -88,20 +89,12 @@ func Serve(args []string) {
 	}
 }
 
-func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(agent.AgentEvent), cache operationCache, providers config.Providers) (APIResult, error) {
-	modelName := request.Model
-	if modelName == "" {
-		modelName = providers.OpenRouterModel
-	}
-	result := APIResult{Result: nil, Sources: []string{}, AgentLog: []agent.Step{}, Evidence: []agent.Evidence{}, Model: modelName}
+func runOneWithEvents(ctx context.Context, request APIRequest, values map[string]any, event func(agent.AgentEvent), cache operationCache, providers config.Providers, codexAuth *codex.TokenSource, client *http.Client) (APIResult, error) {
+	modelName, modelIdentity := selectedModel(request.Model, providers)
+	result := APIResult{Result: nil, Sources: []string{}, AgentLog: []agent.Step{}, Evidence: []agent.Evidence{}, Model: modelIdentity}
 	row := agent.Row{}
 	for key, value := range values {
 		row[key] = fmt.Sprint(value)
-	}
-	key := providers.OpenRouterAPIKey
-	if key == "" {
-		result.Error = "OPENROUTER_API_KEY is not set"
-		return result, agent.Permanent(errors.New(result.Error))
 	}
 	compiledSchema, err := agent.CompileOutputSchema(request.Schema)
 	if err != nil {
@@ -126,8 +119,25 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 	for _, name := range slices.Sorted(maps.Keys(tools)) {
 		toolList = append(toolList, tools[name])
 	}
-	model := openrouter.OpenRouterModel{APIKey: key, Model: modelName, Client: &http.Client{Timeout: 150 * time.Second}, Tools: toolList, MaxOutputTokens: request.MaxOutputTokens}
-	runner := agent.Agent{Model: newCachedModel(model, cache, modelName, request.MaxOutputTokens, toolList), Tools: tools, MaxSteps: maxSteps, Event: event}
+	var model agent.Model
+	switch providers.ModelProvider {
+	case "openrouter":
+		if providers.OpenRouterAPIKey == "" {
+			result.Error = "OPENROUTER_API_KEY is not set"
+			return result, agent.Permanent(errors.New(result.Error))
+		}
+		model = openrouter.OpenRouterModel{APIKey: providers.OpenRouterAPIKey, Model: modelName, Client: client, Tools: toolList, MaxOutputTokens: request.MaxOutputTokens}
+	case "codex":
+		if codexAuth == nil {
+			result.Error = "Codex authentication is not available; run freegent auth"
+			return result, agent.Permanent(errors.New(result.Error))
+		}
+		model = codex.Model{Model: modelName, Client: client, Auth: codexAuth, Tools: toolList, MaxOutputTokens: request.MaxOutputTokens}
+	default:
+		result.Error = fmt.Sprintf("unsupported model provider %q", providers.ModelProvider)
+		return result, agent.Permanent(errors.New(result.Error))
+	}
+	runner := agent.Agent{Model: newCachedModel(model, cache, modelIdentity, request.MaxOutputTokens, toolList), Tools: tools, MaxSteps: maxSteps, Event: event}
 	run, err := runner.Run(ctx, action, row)
 	result.Result, result.Sources, result.AgentLog, result.Evidence, result.Tokens, result.Costs = run.Answer, run.Sources, run.Steps, run.Evidence, run.Tokens, run.Costs
 	if err != nil {
@@ -135,6 +145,21 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 		result.Error = err.Error()
 	}
 	return result, err
+}
+
+func selectedModel(requested string, providers config.Providers) (string, string) {
+	name := requested
+	if name == "" {
+		if providers.ModelProvider == "codex" {
+			name = providers.CodexModel
+		} else {
+			name = providers.OpenRouterModel
+		}
+	}
+	if providers.ModelProvider == "codex" {
+		return name, "codex/" + name
+	}
+	return name, name
 }
 
 func defaultTools(providers config.Providers) map[string]agent.Tool {

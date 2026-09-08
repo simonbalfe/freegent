@@ -67,7 +67,7 @@ LinkedIn profile and post URLs must come from the input row or evidence gathered
 You need:
 
 1. [Docker](https://docs.docker.com/get-docker/)
-2. an [OpenRouter API key](https://openrouter.ai/settings/keys)
+2. an [OpenRouter API key](https://openrouter.ai/settings/keys), or a ChatGPT subscription with Codex access
 3. at least one search key from [Serper](https://serper.dev/), [Exa](https://dashboard.exa.ai/api-keys), or [Tavily](https://app.tavily.com/home)
 
 You can add all three search keys to improve coverage and fallback. You can also add an optional [Apify API token](https://console.apify.com/account/integrations) for LinkedIn profiles, posts, reactions, employee search, company firmographics, and Crunchbase company enrichment.
@@ -79,7 +79,7 @@ curl -fsSL https://raw.githubusercontent.com/simonbalfe/freegent/main/install.sh
 ```
 
 Enter your keys when asked. The installer starts Freegent and installs the `freegent` command.
-It stops before starting Docker unless an OpenRouter key and at least one Serper, Exa, or Tavily search key are present.
+It stops before starting Docker unless model authentication and at least one Serper, Exa, or Tavily search key are present. OpenRouter remains the default model provider. See the [setup guide](docs/setup.md#chatgpt-subscription-authentication) to use a ChatGPT subscription directly.
 The installer pulls prebuilt images and extracts the native CLI, Compose file, and agent skill. It does not clone the repository or require Go.
 
 Check that it worked:

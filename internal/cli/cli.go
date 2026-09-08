@@ -55,6 +55,11 @@ One row:
 
   The answer is written as JSON.
 
+Codex subscription:
+  freegent auth
+
+  Authenticates direct Codex access for a host worker.
+
 Options:
   --csv file       Upload a CSV batch
   --row json       Submit one JSON object

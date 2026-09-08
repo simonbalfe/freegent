@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/simonbalfe/freegent/internal/openextract"
@@ -33,10 +34,11 @@ type Action struct {
 }
 
 type Message struct {
-	Role      string
-	Content   string
-	ToolCall  *ToolCall
-	ToolCalls []ToolCall
+	Role         string
+	Content      string
+	ToolCall     *ToolCall
+	ToolCalls    []ToolCall
+	ProviderData json.RawMessage
 }
 
 type ToolCall struct {
@@ -46,11 +48,12 @@ type ToolCall struct {
 }
 
 type ModelResponse struct {
-	ToolCalls   []ToolCall
-	Final       map[string]any
-	OutputError string
-	Usage       TokenUsage
-	CostUSD     *float64
+	ToolCalls    []ToolCall
+	Final        map[string]any
+	OutputError  string
+	Usage        TokenUsage
+	CostUSD      *float64
+	ProviderData json.RawMessage
 }
 
 type Model interface {

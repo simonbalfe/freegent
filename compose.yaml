@@ -46,13 +46,18 @@ services:
     environment:
       FREEGENT_DATABASE_URL: postgres://freegent:${FREEGENT_POSTGRES_PASSWORD:-freegent}@postgres:5432/freegent?sslmode=disable
       FREEGENT_DATABASE_MAX_CONNS: ${FREEGENT_DATABASE_MAX_CONNS:-30}
+      FREEGENT_MODEL_PROVIDER: ${FREEGENT_MODEL_PROVIDER:-openrouter}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-deepseek/deepseek-v4-flash}
+      CODEX_MODEL: ${CODEX_MODEL:-gpt-5.6-sol}
+      FREEGENT_CODEX_AUTH_FILE: /var/lib/freegent-auth/codex-auth.json
       SERPER_API_KEY: ${SERPER_API_KEY:-}
       EXA_API_KEY: ${EXA_API_KEY:-}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       APIFY_API_TOKEN: ${APIFY_API_TOKEN:-}
       OPENEXTRACT_URL: http://openextract:8081
+    volumes:
+      - freegent_codex_auth:/var/lib/freegent-auth
     depends_on:
       api:
         condition: service_healthy
@@ -80,3 +85,4 @@ services:
     restart: unless-stopped
 volumes:
   freegent_postgres:
+  freegent_codex_auth:

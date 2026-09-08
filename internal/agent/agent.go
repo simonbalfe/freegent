@@ -62,7 +62,7 @@ func (a Agent) Run(ctx context.Context, action Action, row Row) (RunResult, erro
 			a.tracef("model_empty", "", "model returned no tool call; finalizing from %d evidence items", len(evidence))
 			return a.finalize(ctx, task, action, ledger, evidence, steps, tokens, costs)
 		}
-		messages = append(messages, Message{Role: "assistant", ToolCalls: response.ToolCalls})
+		messages = append(messages, Message{Role: "assistant", ToolCalls: response.ToolCalls, ProviderData: response.ProviderData})
 
 		for _, call := range response.ToolCalls {
 			a.tracef("tool_requested", call.Name, "model requested tool=%s input=%v", call.Name, call.Input)

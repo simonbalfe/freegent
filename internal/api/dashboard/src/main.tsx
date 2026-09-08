@@ -586,10 +586,12 @@ function DetailedStats({ job, onClose }: {
 
   const estimates = stats?.models.map((model) => {
     const price = prices[model.model];
+    const subscriptionIncluded = model.model.startsWith("codex/");
     return {
       ...model,
       estimate: price === undefined ? 0 : model.unpricedInputTokens * price.prompt + model.unpricedOutputTokens * price.completion,
-      missingPrice: price === undefined && model.unpricedInputTokens + model.unpricedOutputTokens > 0,
+      missingPrice: !subscriptionIncluded && price === undefined && model.unpricedInputTokens + model.unpricedOutputTokens > 0,
+      subscriptionIncluded,
     };
   }) ?? [];
   const estimatedOpenRouter = estimates.reduce((sum, model) => sum + model.estimate, 0);
@@ -635,7 +637,7 @@ function DetailedStats({ job, onClose }: {
               <h3 className="m-0 border-b border-slate-200 pb-2 text-[10px] font-extrabold tracking-wide text-slate-500 uppercase">Model and token breakdown</h3>
               <table className="w-full min-w-[620px] border-collapse text-left">
                 <thead><tr className="text-[10px] text-slate-500"><th className="py-2">Model</th><th>Input</th><th>Output</th><th>Total</th><th className="text-right">Cost</th></tr></thead>
-                <tbody>{estimates.map((model) => <tr className="border-t border-slate-100" key={model.model}><td className="py-2 font-semibold">{model.model || "Unknown"}</td><td>{model.inputTokens.toLocaleString()}</td><td>{model.outputTokens.toLocaleString()}</td><td>{(model.inputTokens + model.outputTokens).toLocaleString()}</td><td className="text-right font-semibold">{usd(model.openRouterUSD + model.estimate)}{model.estimate > 0 && <span className="ml-1 text-[9px] font-normal text-slate-500">est.</span>}</td></tr>)}</tbody>
+                <tbody>{estimates.map((model) => <tr className="border-t border-slate-100" key={model.model}><td className="py-2 font-semibold">{model.model || "Unknown"}</td><td>{model.inputTokens.toLocaleString()}</td><td>{model.outputTokens.toLocaleString()}</td><td>{(model.inputTokens + model.outputTokens).toLocaleString()}</td><td className="text-right font-semibold">{model.subscriptionIncluded ? "Included" : usd(model.openRouterUSD + model.estimate)}{model.estimate > 0 && <span className="ml-1 text-[9px] font-normal text-slate-500">est.</span>}</td></tr>)}</tbody>
               </table>
             </section>
             <div className="grid grid-cols-4 border border-slate-200 max-md:grid-cols-2">
@@ -644,7 +646,7 @@ function DetailedStats({ job, onClose }: {
               <Stat label="Agent steps" value={stats.agentSteps.toLocaleString()} />
               <Stat label="Source references" value={stats.sources.toLocaleString()} />
             </div>
-            <p className="m-0 text-[10px] text-slate-500">New runs use provider-reported charges. Legacy OpenRouter rows use current model rates. Apify uses each authenticated run’s billed total. Serper uses the current Starter rate; larger credit packs cost less. <a href="https://openrouter.ai/docs/cookbook/administration/usage-accounting" target="_blank" rel="noreferrer">OpenRouter accounting</a> · <a href="https://docs.apify.com/api/v2/actor-run-get" target="_blank" rel="noreferrer">Apify run costs</a> · <a href="https://serper.dev/" target="_blank" rel="noreferrer">Serper pricing</a></p>
+            <p className="m-0 text-[10px] text-slate-500">Codex model usage is included with the authenticated ChatGPT subscription. OpenRouter runs use provider-reported charges, while legacy rows use current model rates. Apify uses each authenticated run’s billed total. Serper uses the current Starter rate; larger credit packs cost less. <a href="https://openrouter.ai/docs/cookbook/administration/usage-accounting" target="_blank" rel="noreferrer">OpenRouter accounting</a> · <a href="https://docs.apify.com/api/v2/actor-run-get" target="_blank" rel="noreferrer">Apify run costs</a> · <a href="https://serper.dev/" target="_blank" rel="noreferrer">Serper pricing</a></p>
           </div>
         )}
       </div>
