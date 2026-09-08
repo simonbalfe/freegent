@@ -132,7 +132,7 @@ func runOneWithEvents(ctx context.Context, request APIRequest, values map[string
 			result.Error = "Codex authentication is not available; run freegent auth"
 			return result, agent.Permanent(errors.New(result.Error))
 		}
-		model = codex.Model{Model: modelName, Client: client, Auth: codexAuth, Tools: toolList, MaxOutputTokens: request.MaxOutputTokens}
+		model = codex.Model{Model: modelName, Client: client, Auth: codexAuth, Tools: toolList}
 	default:
 		result.Error = fmt.Sprintf("unsupported model provider %q", providers.ModelProvider)
 		return result, agent.Permanent(errors.New(result.Error))

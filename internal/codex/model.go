@@ -17,12 +17,11 @@ import (
 const responsesEndpoint = "https://chatgpt.com/backend-api/codex/responses"
 
 type Model struct {
-	Model           string
-	Endpoint        string
-	Client          *http.Client
-	Auth            *TokenSource
-	Tools           []agent.Tool
-	MaxOutputTokens int
+	Model    string
+	Endpoint string
+	Client   *http.Client
+	Auth     *TokenSource
+	Tools    []agent.Tool
 }
 
 type responseItem struct {
@@ -92,9 +91,6 @@ func (m Model) respond(ctx context.Context, messages []agent.Message, enableTool
 		"store":        false,
 		"stream":       true,
 	}
-	if limit := m.outputTokenLimit(enableTools); limit > 0 {
-		body["max_output_tokens"] = limit
-	}
 	if enableTools {
 		body["tools"] = responseTools(m.Tools)
 		body["tool_choice"] = "auto"
@@ -140,14 +136,6 @@ func (m Model) respond(ctx context.Context, messages []agent.Message, enableTool
 	}
 	defer response.Body.Close()
 	return parseResponseStream(response.Body)
-}
-
-func (m Model) outputTokenLimit(enableTools bool) int {
-	limit := m.MaxOutputTokens
-	if !enableTools && limit < 8000 {
-		return 8000
-	}
-	return limit
 }
 
 func responseInput(messages []agent.Message) (string, []map[string]any, error) {

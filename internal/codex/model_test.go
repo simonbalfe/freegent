@@ -42,7 +42,8 @@ func TestModelSendsCodexResponsesRequest(t *testing.T) {
 			return
 		}
 		tools, _ := payload["tools"].([]any)
-		if payload["model"] != "gpt-test" || payload["store"] != false || payload["stream"] != true || len(tools) != 1 {
+		_, hasMaxOutputTokens := payload["max_output_tokens"]
+		if payload["model"] != "gpt-test" || payload["store"] != false || payload["stream"] != true || len(tools) != 1 || hasMaxOutputTokens {
 			t.Errorf("request payload = %#v", payload)
 		}
 		writer.Header().Set("Content-Type", "text/event-stream")
@@ -115,12 +116,5 @@ func TestParseResponseStreamFinalJSON(t *testing.T) {
 	}
 	if response.Final["company"] != "Acme" {
 		t.Fatalf("final response = %+v", response)
-	}
-}
-
-func TestFinalizerOutputTokenLimit(t *testing.T) {
-	model := Model{MaxOutputTokens: 1500}
-	if got := model.outputTokenLimit(false); got != 8000 {
-		t.Fatalf("finalizer output limit = %d, want 8000", got)
 	}
 }
