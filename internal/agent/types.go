@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/simonbalfe/freegent/internal/openextract"
+	"github.com/simonbalfe/freegent/internal/pagelode"
 )
 
 type permanentError struct {
@@ -96,7 +96,7 @@ type Evidence struct {
 	Attempts []FetchAttempt `json:"attempts,omitempty"`
 }
 
-type FetchAttempt = openextract.Attempt
+type FetchAttempt = pagelode.Attempt
 
 type Step struct {
 	Kind  string         `json:"kind"`

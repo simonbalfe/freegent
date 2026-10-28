@@ -20,7 +20,7 @@ services:
       context: .
       target: api
     ports:
-      - "127.0.0.1:${FREEGENT_PORT:-8080}:8080"
+      - "${FREEGENT_LISTEN_HOST:-127.0.0.1}:${FREEGENT_PORT:-8080}:8080"
     environment:
       FREEGENT_DATABASE_URL: postgres://freegent:${FREEGENT_POSTGRES_PASSWORD:-freegent}@postgres:5432/freegent?sslmode=disable
       FREEGENT_DATABASE_MAX_CONNS: ${FREEGENT_DATABASE_MAX_CONNS:-30}
@@ -55,34 +55,14 @@ services:
       EXA_API_KEY: ${EXA_API_KEY:-}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       APIFY_API_TOKEN: ${APIFY_API_TOKEN:-}
-      OPENEXTRACT_URL: http://openextract:8081
+      PAGELODE_URL: ${PAGELODE_URL:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - freegent_codex_auth:/var/lib/freegent-auth
     depends_on:
       api:
         condition: service_healthy
-      openextract:
-        condition: service_healthy
-    restart: unless-stopped
-
-  openextract:
-    image: ${OPENEXTRACT_IMAGE:-ghcr.io/simonbalfe/openextract:latest}
-    ports:
-      - "127.0.0.1:${OPENEXTRACT_PORT:-8081}:8081"
-    environment:
-      PORT: "8081"
-      OPENEXTRACT_MAX_CONCURRENCY: ${OPENEXTRACT_MAX_CONCURRENCY:-20}
-      OPENEXTRACT_BROWSER_CONCURRENCY: ${OPENEXTRACT_BROWSER_CONCURRENCY:-4}
-      OPENEXTRACT_MAX_WAITING: ${OPENEXTRACT_MAX_WAITING:-100}
-      OPENEXTRACT_PROXY_URL: ${OPENEXTRACT_PROXY_URL:-}
-      OPENEXTRACT_PROXY_COUNTRY: ${OPENEXTRACT_PROXY_COUNTRY:-}
-      CAPSOLVER_API_KEY: ${CAPSOLVER_API_KEY:-}
-      TWOCAPTCHA_API_KEY: ${TWOCAPTCHA_API_KEY:-}
-    init: true
-    shm_size: "1gb"
-    security_opt:
-      - seccomp:unconfined
-    restart: unless-stopped
 volumes:
   freegent_postgres:
   freegent_codex_auth:

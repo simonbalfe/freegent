@@ -18,9 +18,11 @@ import (
 	"github.com/simonbalfe/freegent/internal/codex"
 	"github.com/simonbalfe/freegent/internal/config"
 	"github.com/simonbalfe/freegent/internal/openrouter"
+	"github.com/simonbalfe/freegent/internal/pagelode"
 	"github.com/simonbalfe/freegent/internal/tools/apify"
 	"github.com/simonbalfe/freegent/internal/tools/fetch"
 	"github.com/simonbalfe/freegent/internal/tools/search"
+	"github.com/simonbalfe/freegent/internal/tools/site"
 )
 
 type APIRequest struct {
@@ -163,9 +165,15 @@ func selectedModel(requested string, providers config.Providers) (string, string
 }
 
 func defaultTools(providers config.Providers) map[string]agent.Tool {
+	pageLode := pagelode.Client{BaseURL: providers.PageLodeURL}
 	tools := map[string]agent.Tool{
 		"web_search": search.New(providers.SerperAPIKey, providers.ExaAPIKey, providers.TavilyAPIKey),
-		"fetch_page": fetch.New(providers.OpenExtractURL, providers.ExaAPIKey, providers.TavilyAPIKey),
+		"fetch_page": fetch.New(pageLode, providers.ExaAPIKey, providers.TavilyAPIKey),
+	}
+	if pageLode.Configured() {
+		for _, tool := range site.Tools(pageLode) {
+			tools[tool.Name()] = tool
+		}
 	}
 	if providers.ApifyAPIToken != "" {
 		for _, tool := range apify.Tools(providers.ApifyAPIToken) {

@@ -7,12 +7,14 @@ import (
 	"net/http/httptest"
 	"slices"
 	"testing"
+
+	"github.com/simonbalfe/freegent/internal/pagelode"
 )
 
-func TestToolCallsOpenExtract(t *testing.T) {
-	openExtract := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+func TestToolCallsPageLode(t *testing.T) {
+	pageLode := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.URL.Path != "/extract" {
-			t.Fatalf("unexpected OpenExtract request: %s", request.URL.String())
+			t.Fatalf("unexpected PageLode request: %s", request.URL.String())
 		}
 		_ = json.NewEncoder(writer).Encode(map[string]any{
 			"content":  "Readable page content",
@@ -22,18 +24,18 @@ func TestToolCallsOpenExtract(t *testing.T) {
 			"attempts": []map[string]any{{"provider": "patchright", "outcome": "ok", "durationMs": 20}},
 		})
 	}))
-	defer openExtract.Close()
+	defer pageLode.Close()
 
-	result, err := New(openExtract.URL, "", "").Run(context.Background(), map[string]any{"url": "https://example.com"})
+	result, err := New(pagelode.Client{BaseURL: pageLode.URL}, "", "").Run(context.Background(), map[string]any{"url": "https://example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if result.Provider != "patchright" || len(result.Attempts) != 1 || len(result.SeenURLs) != 1 {
-		t.Fatalf("unexpected OpenExtract result: %+v", result)
+		t.Fatalf("unexpected PageLode result: %+v", result)
 	}
 }
 
-func TestToolFallsBackFromOpenExtractThroughManagedProviders(t *testing.T) {
+func TestToolFallsBackFromPageLodeThroughManagedProviders(t *testing.T) {
 	tests := []struct {
 		name         string
 		exaFails     bool
@@ -46,14 +48,14 @@ func TestToolFallsBackFromOpenExtractThroughManagedProviders(t *testing.T) {
 	}
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			openExtract := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+			pageLode := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 				_ = json.NewEncoder(writer).Encode(map[string]any{
 					"provider": "impit",
 					"outcome":  "failed",
 					"attempts": []map[string]any{{"provider": "impit", "outcome": "blocked", "durationMs": 10}},
 				})
 			}))
-			defer openExtract.Close()
+			defer pageLode.Close()
 
 			providers := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				switch request.URL.Path {
@@ -76,7 +78,7 @@ func TestToolFallsBackFromOpenExtractThroughManagedProviders(t *testing.T) {
 			defer providers.Close()
 
 			result, err := (Tool{
-				openExtractURL: openExtract.URL,
+				pageLode:       pagelode.Client{BaseURL: pageLode.URL},
 				exaAPIKey:      "exa-key",
 				tavilyAPIKey:   "tavily-key",
 				client:         providers.Client(),

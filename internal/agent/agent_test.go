@@ -322,7 +322,7 @@ func (deadPageTool) GuardedURL(input map[string]any) string {
 	return value
 }
 func (deadPageTool) Run(context.Context, map[string]any) (ToolResult, error) {
-	return ToolResult{}, errors.New("OpenExtract could not extract the URL: HTTP 404")
+	return ToolResult{}, errors.New("PageLode could not extract the URL: HTTP 404")
 }
 
 type deadPageRecoveryModel struct {

@@ -4,16 +4,11 @@ Freegent is a general-purpose AI research agent for spreadsheets, similar to a s
 
 Give it any CSV and a prompt. Freegent researches every row and returns the same CSV with one new `answer` column.
 
-See the [project documentation](docs/index.md) for architecture, setup, development, OpenExtract, and the roadmap. The [Freegent and Claygent comparison](docs/claygent-comparison.md) documents a reproducible cost benchmark.
+See the [project documentation](docs/index.md) for architecture, setup, development, PageLode, and the roadmap. The [Freegent and Claygent comparison](docs/claygent-comparison.md) documents a reproducible cost benchmark.
 
-## OpenExtract renderer
+## PageLode tools
 
-Freegent uses OpenExtract to fetch and render page content. Its source code does not live in this repository. OpenExtract is maintained as a separate public source repository:
-
-- source: [github.com/simonbalfe/openextract](https://github.com/simonbalfe/openextract)
-- public image: `ghcr.io/simonbalfe/openextract:latest`
-
-Freegent's Docker Compose stack pulls that image. See the [OpenExtract integration documentation](docs/openextract.md) for the service boundary and configuration.
+Freegent is the agent; the tools it calls run elsewhere. Set `PAGELODE_URL` to a running [PageLode](https://github.com/simonbalfe/pagelode) service to give the agent page loading, Google search with the AI Overview, email finding, and site mapping. Without it, `fetch_page` uses Exa and Tavily only. See the [PageLode integration documentation](docs/pagelode.md).
 
 ## Example
 
@@ -167,7 +162,7 @@ docker compose ps
 View logs:
 
 ```bash
-docker compose logs -f api worker openextract
+docker compose logs -f api worker
 ```
 
 Update:

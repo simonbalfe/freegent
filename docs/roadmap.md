@@ -7,7 +7,6 @@ Freegent currently runs as one Docker Compose stack:
 - PostgreSQL
 - Go API
 - Go workers
-- OpenExtract
 
 Increase capacity with worker replicas or per-worker concurrency.
 
@@ -75,10 +74,9 @@ Model answers remain isolated to one row operation by default. Cross-job model-r
 
 Keep row step results in JSONB while the bounded agent loop makes writes small. Move them to a separate table only if measured PostgreSQL write amplification becomes a bottleneck.
 
-### OpenExtract
+### PageLode tools
 
-- preserve complete extracted content instead of silently truncating it
-- add structured sections and query-aware passage selection
-- measure evidence recall and answer quality
+- measure evidence recall and answer quality per tool
+- expose more PageLode endpoints, such as `map endpoints`, when a research use needs them
 
-Managed extraction fallbacks belong to Freegent's `fetch_page` tool. OpenExtract stays a local extraction service.
+Managed extraction fallbacks belong to Freegent's `fetch_page` tool. Scraping and rendering belong to PageLode.

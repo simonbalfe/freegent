@@ -8,12 +8,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
 	"github.com/simonbalfe/freegent/internal/agent"
-	"github.com/simonbalfe/freegent/internal/openextract"
+	"github.com/simonbalfe/freegent/internal/pagelode"
 )
 
 const (
@@ -23,7 +22,7 @@ const (
 )
 
 type Tool struct {
-	openExtractURL string
+	pageLode       pagelode.Client
 	exaAPIKey      string
 	tavilyAPIKey   string
 	client         *http.Client
@@ -31,8 +30,8 @@ type Tool struct {
 	tavilyEndpoint string
 }
 
-func New(openExtractURL, exaAPIKey, tavilyAPIKey string) Tool {
-	return Tool{openExtractURL: openExtractURL, exaAPIKey: exaAPIKey, tavilyAPIKey: tavilyAPIKey}
+func New(pageLode pagelode.Client, exaAPIKey, tavilyAPIKey string) Tool {
+	return Tool{pageLode: pageLode, exaAPIKey: exaAPIKey, tavilyAPIKey: tavilyAPIKey}
 }
 
 type fallbackProvider struct {
@@ -44,7 +43,7 @@ type fallbackProvider struct {
 func (Tool) Name() string { return "fetch_page" }
 
 func (Tool) Description() string {
-	return "Fetch and clean one URL discovered by web_search or supplied in the input row. OpenExtract runs first, with managed extraction providers used automatically if it fails."
+	return "Fetch and clean one URL discovered by a search or site tool or supplied in the input row. PageLode runs first, with managed extraction providers used automatically if it fails."
 }
 
 func (Tool) Schema() map[string]any {
@@ -65,29 +64,35 @@ func (Tool) GuardedURL(input map[string]any) string {
 }
 
 func (tool Tool) Run(ctx context.Context, input map[string]any) (agent.ToolResult, error) {
-	rawURL := strings.TrimSpace(stringValue(input["url"]))
-	target, err := url.ParseRequestURI(rawURL)
-	if err != nil || target.Host == "" || (target.Scheme != "http" && target.Scheme != "https") {
-		return agent.ToolResult{}, errors.New("URL must use http or https")
+	rawURL, err := pagelode.ValidURL(stringValue(input["url"]))
+	if err != nil {
+		return agent.ToolResult{}, err
 	}
-	rawURL = target.String()
-	started := time.Now()
-	result, extractErr := openextract.Extract(ctx, rawURL, openextract.Config{BaseURL: tool.openExtractURL})
-	if extractErr == nil {
-		return agent.ToolResult{
-			Text:     result.Text,
-			URLs:     []string{rawURL},
-			SeenURLs: result.Links,
-			Provider: result.Provider,
-			Attempts: result.Attempts,
-		}, nil
-	}
-	if ctx.Err() != nil {
-		return agent.ToolResult{}, ctx.Err()
-	}
-	attempts := append([]agent.FetchAttempt{}, result.Attempts...)
-	if len(result.Attempts) == 0 {
-		attempts = append(attempts, agent.FetchAttempt{Provider: "openextract", Outcome: "error", DurationMS: time.Since(started).Milliseconds(), Detail: conciseError(extractErr)})
+	attempts := []agent.FetchAttempt{}
+	var extractErr error
+	if tool.pageLode.Configured() {
+		started := time.Now()
+		page, err := tool.pageLode.Extract(ctx, rawURL)
+		if err == nil {
+			return agent.ToolResult{
+				Text:     page.Content,
+				URLs:     []string{rawURL},
+				SeenURLs: page.Links,
+				Provider: page.Provider,
+				Attempts: page.Attempts,
+			}, nil
+		}
+		if ctx.Err() != nil {
+			return agent.ToolResult{}, ctx.Err()
+		}
+		extractErr = err
+		attempts = append(attempts, page.Attempts...)
+		if len(page.Attempts) == 0 {
+			attempts = append(attempts, agent.FetchAttempt{Provider: "pagelode", Outcome: "error", DurationMS: time.Since(started).Milliseconds(), Detail: conciseError(err)})
+		}
+	} else {
+		extractErr = errors.New("PAGELODE_URL is not configured")
+		attempts = append(attempts, agent.FetchAttempt{Provider: "pagelode", Outcome: "skipped", Detail: "not configured"})
 	}
 
 	client := tool.client

@@ -4,7 +4,6 @@ set -euo pipefail
 install_dir="${FREEGENT_DIR:-$HOME/freegent}"
 api_image="ghcr.io/simonbalfe/freegent-api:${FREEGENT_IMAGE_TAG:-latest}"
 api_url="http://localhost:${FREEGENT_PORT:-8080}"
-openextract_url="http://localhost:${OPENEXTRACT_PORT:-8081}"
 
 host_cli_platform() {
   case "$(uname -s)" in
@@ -235,11 +234,9 @@ for attempt in $(seq 1 30); do
     model_ready=1
   fi
   if curl -fsS "$api_url/health" >/dev/null 2>&1 \
-    && curl -fsS "$openextract_url/healthz" >/dev/null 2>&1 \
     && printf '%s\n' "$running_services" | grep -qx postgres \
     && printf '%s\n' "$running_services" | grep -qx api \
     && printf '%s\n' "$running_services" | grep -qx worker \
-    && printf '%s\n' "$running_services" | grep -qx openextract \
     && [ "$model_ready" = "1" ] \
     && "$cli_path" --help >/dev/null 2>&1; then
     echo

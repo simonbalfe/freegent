@@ -23,7 +23,6 @@ Check the result:
 ```bash
 freegent --help
 curl -fsS http://localhost:8080/health
-curl -fsS http://localhost:8081/healthz
 ```
 
 The dashboard is at [http://localhost:8080/dashboard](http://localhost:8080/dashboard).
@@ -42,8 +41,8 @@ Optional:
 - `OPENROUTER_MODEL` selects the model and defaults to `deepseek/deepseek-v4-flash`
 - `CODEX_MODEL` selects the direct Codex model and defaults to `gpt-5.6-sol`
 - `APIFY_API_TOKEN` enables Apify-backed LinkedIn profiles, posts, reactions, employee search, and company firmographics, plus Crunchbase company enrichment
-- a standard proxy URL optionally enables browser proxying
-- CapSolver or 2Captcha keys enable challenge solving
+- `FREEGENT_LISTEN_HOST` defaults to `127.0.0.1`; set it to a private network address when hosting the dashboard for trusted Tailnet users
+- `PAGELODE_URL` enables PageLode page loading, `google_search`, `find_emails`, and `map_site`; see [PageLode](pagelode.md)
 - concurrency, ports, database pool size, and operation timeout have defaults in `.env.example`
 
 Never commit `.env`.
@@ -107,7 +106,7 @@ npm run dev
 
 The Vite development server proxies job API calls to `http://localhost:8080`. Commit the production build under `dist`; Docker embeds it in the Go binary.
 
-OpenExtract source and tests live in its [standalone repository](https://github.com/simonbalfe/openextract). Freegent pulls its published image during stack startup.
+Set `PAGELODE_URL` to enable the PageLode tools; see [PageLode](pagelode.md).
 
 ## Operations
 
@@ -121,7 +120,7 @@ docker compose ps
 View logs:
 
 ```bash
-docker compose logs -f api worker openextract
+docker compose logs -f api worker
 ```
 
 Update:

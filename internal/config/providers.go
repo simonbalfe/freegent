@@ -11,7 +11,7 @@ type Providers struct {
 	OpenRouterModel  string
 	CodexModel       string
 	CodexAuthFile    string
-	OpenExtractURL   string
+	PageLodeURL      string
 	SerperAPIKey     string
 	ExaAPIKey        string
 	TavilyAPIKey     string
@@ -25,7 +25,7 @@ func LoadProviders() Providers {
 		OpenRouterModel:  envOr("OPENROUTER_MODEL", "deepseek/deepseek-v4-flash"),
 		CodexModel:       envOr("CODEX_MODEL", "gpt-5.6-sol"),
 		CodexAuthFile:    strings.TrimSpace(os.Getenv("FREEGENT_CODEX_AUTH_FILE")),
-		OpenExtractURL:   envOr("OPENEXTRACT_URL", "http://localhost:8081"),
+		PageLodeURL:      strings.TrimSpace(os.Getenv("PAGELODE_URL")),
 		SerperAPIKey:     strings.TrimSpace(os.Getenv("SERPER_API_KEY")),
 		ExaAPIKey:        strings.TrimSpace(os.Getenv("EXA_API_KEY")),
 		TavilyAPIKey:     strings.TrimSpace(os.Getenv("TAVILY_API_KEY")),
